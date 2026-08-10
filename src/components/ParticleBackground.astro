@@ -9,25 +9,22 @@
 
 <script>
   // 粒子网络动画：光点 + 连线 + 鼠标吸引
-  // 用 astro:page-load 确保 DOM 渲染完成后初始化（Astro 官方事件）
-  // 容器尺寸未就绪时重试，最多 10 次
-  let retryCount = 0;
-  const MAX_RETRY = 10;
-  document.addEventListener('astro:page-load', () => {
+  // 顶层执行（Astro 脚本在 body 末尾，DOM 已就绪）+ DOMContentLoaded 兜底
+  function startParticleBg() {
     const canvas = document.getElementById('particle-canvas');
-    if (!canvas) return;
+    if (!canvas || canvas.dataset.started) return;
+    canvas.dataset.started = '1';
     const ctx = canvas.getContext('2d');
 
     // 性能与数量配置（移动端减少粒子数）
     const isMobile = window.matchMedia('(max-width: 768px)').matches;
     const PARTICLE_COUNT = isMobile ? 40 : 80;
-    const MAX_DISTANCE = 150; // 连线最大距离
-    const MOUSE_RADIUS = 180; // 鼠标影响半径
+    const MAX_DISTANCE = 150;
+    const MOUSE_RADIUS = 180;
 
-    // 粒子颜色（两种主题）
     const COLORS = {
-      light: { particle: '79, 70, 229', line: '79, 70, 229' }, // indigo
-      dark: { particle: '129, 140, 248', line: '129, 140, 248' }, // indigo-400
+      light: { particle: '79, 70, 229', line: '79, 70, 229' },
+      dark: { particle: '129, 140, 248', line: '129, 140, 248' },
     };
 
     let particles = [];
@@ -42,9 +39,8 @@
     function resize() {
       dpr = Math.min(window.devicePixelRatio || 1, 2);
       const parent = canvas.parentElement;
-      width = parent.offsetWidth;
-      height = parent.offsetHeight;
-      if (width === 0 || height === 0) return; // 容器未就绪
+      width = parent.clientWidth || window.innerWidth || 800;
+      height = parent.clientHeight || window.innerHeight || 600;
       canvas.width = width * dpr;
       canvas.height = height * dpr;
       canvas.style.width = width + 'px';
@@ -68,22 +64,18 @@
       ctx.clearRect(0, 0, width, height);
       const color = COLORS[theme];
 
-      // 画粒子
       for (const p of particles) {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(${color.particle}, 0.7)`;
         ctx.fill();
 
-        // 移动
         p.x += p.vx;
         p.y += p.vy;
 
-        // 边界反弹
         if (p.x < 0 || p.x > width) p.vx *= -1;
         if (p.y < 0 || p.y > height) p.vy *= -1;
 
-        // 鼠标吸引
         if (mouse.x !== null) {
           const dx = mouse.x - p.x;
           const dy = mouse.y - p.y;
@@ -96,7 +88,6 @@
         }
       }
 
-      // 连线
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const a = particles[i];
@@ -128,13 +119,11 @@
       mouse.y = null;
     }
 
-    // 监听系统主题变化
     const themeQuery = window.matchMedia('(prefers-color-scheme: dark)');
     themeQuery.addEventListener('change', (e) => {
       theme = e.matches ? 'dark' : 'light';
     });
 
-    // 启动动画：rAF + setInterval 双保险
     let lastTime = 0;
     const FPS = 30;
     const loop = () => {
@@ -145,11 +134,7 @@
     function start() {
       resize();
       if (width === 0 || height === 0) {
-        // 容器未就绪，重试
-        if (retryCount < MAX_RETRY) {
-          retryCount++;
-          setTimeout(start, 100);
-        }
+        setTimeout(start, 100);
         return;
       }
       draw();
@@ -170,7 +155,6 @@
       window.addEventListener('mousemove', onMouseMove);
       window.addEventListener('mouseleave', onMouseLeave);
 
-      // 清理（Astro 页面切换时）
       document.addEventListener('astro:before-swap', () => {
         cancelAnimationFrame(rafId);
         if (fallbackTimer) clearInterval(fallbackTimer);
@@ -181,7 +165,16 @@
     }
 
     start();
-  });
+  }
+
+  // 立即尝试 + DOMContentLoaded 兜底 + 延迟兜底（兼容各种加载时机）
+  startParticleBg();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startParticleBg);
+  } else {
+    setTimeout(startParticleBg, 0);
+  }
+  setTimeout(startParticleBg, 200);
 </script>
 
 <style>
