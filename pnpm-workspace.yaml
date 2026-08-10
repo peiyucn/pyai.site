@@ -1,4 +1,7 @@
-# pnpm 配置：允许 esbuild / sharp 执行构建脚本（Astro 构建所需）
+# pnpm 配置：根目录是唯一包；允许 esbuild / sharp 执行构建脚本（Astro 构建所需）
+packages:
+  - "."
+
 allowBuilds:
   esbuild: true
   sharp: true
