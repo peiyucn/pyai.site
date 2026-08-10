@@ -1,0 +1,100 @@
+---
+import type { Locale } from '../i18n/ui';
+import type { Project } from '../utils/content';
+
+interface Props {
+  project: Project;
+  locale: Locale;
+}
+
+const { project, locale } = Astro.props;
+const statusText: Record<string, { label: string; class: string }> = {
+  active: { label: locale === 'zh' ? '维护中' : 'Active', class: 'status-active' },
+  wip: { label: locale === 'zh' ? '开发中' : 'WIP', class: 'status-wip' },
+  archived: { label: locale === 'zh' ? '已归档' : 'Archived', class: 'status-archived' },
+};
+const status = statusText[project.data.status];
+---
+
+<article class="project-card">
+  <div class="project-card-head">
+    <h2 class="project-card-title">{project.data.title}</h2>
+    <span class:list={['status', status.class]}>{status.label}</span>
+  </div>
+  <p class="project-card-desc">{project.data.description}</p>
+  <div class="project-card-links">
+    {
+      project.data.repo && (
+        <a href={project.data.repo} target="_blank" rel="noopener noreferrer">
+          <span aria-hidden="true">GitHub</span>
+        </a>
+      )
+    }
+    {
+      project.data.link && (
+        <a href={project.data.link} target="_blank" rel="noopener noreferrer">
+          <span aria-hidden="true">↗</span> 链接
+        </a>
+      )
+    }
+  </div>
+</article>
+
+<style>
+  .project-card {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  .project-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .project-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .project-card-title {
+    margin: 0;
+    font-size: 1.2rem;
+  }
+  .status {
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 0.15em 0.8em;
+    white-space: nowrap;
+  }
+  .status-active {
+    color: #059669;
+    background: rgba(5, 150, 105, 0.12);
+  }
+  .status-wip {
+    color: #d97706;
+    background: rgba(217, 119, 6, 0.12);
+  }
+  .status-archived {
+    color: var(--fg-muted);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+  }
+  .project-card-desc {
+    margin: 0;
+    color: var(--fg-muted);
+    font-size: 0.95rem;
+    flex: 1;
+  }
+  .project-card-links {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+</style>

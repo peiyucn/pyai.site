@@ -1,0 +1,40 @@
+---
+import ListLayout from '../../../layouts/ListLayout.astro';
+import ProjectCard from '../../../components/ProjectCard.astro';
+import type { Locale } from '../../../i18n/ui';
+import { t } from '../../../i18n/utils';
+import { getProjects } from '../../../utils/content';
+
+export function getStaticPaths() {
+  return [{ params: { locale: 'zh' } }, { params: { locale: 'en' } }];
+}
+
+const { locale } = Astro.params as { locale: Locale };
+const pathname = Astro.url.pathname;
+const projects = await getProjects(locale);
+---
+
+<ListLayout
+  locale={locale}
+  pathname={pathname}
+  title={t(locale, 'projects.title')}
+  description={t(locale, 'projects.description')}
+>
+  {
+    projects.length > 0 ? (
+      <div class="project-grid">
+        {projects.map((project) => <ProjectCard project={project} locale={locale} />)}
+      </div>
+    ) : (
+      <p>{t(locale, 'common.noContent')}</p>
+    )
+  }
+</ListLayout>
+
+<style>
+  .project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+</style>

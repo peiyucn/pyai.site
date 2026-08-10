@@ -1,0 +1,155 @@
+---
+import Base from '../../layouts/Base.astro';
+import PostCard from '../../components/PostCard.astro';
+import NoteCard from '../../components/NoteCard.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import type { Locale } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import { getPosts, getNotes, getProjects } from '../../utils/content';
+
+// 生成 zh / en 两套主页
+export function getStaticPaths() {
+  return [{ params: { locale: 'zh' } }, { params: { locale: 'en' } }];
+}
+
+const { locale } = Astro.params as { locale: Locale };
+const pathname = Astro.url.pathname;
+
+const recentPosts = (await getPosts(locale)).slice(0, 3);
+const recentNotes = (await getNotes(locale)).slice(0, 3);
+const featuredProjects = (await getProjects(locale))
+  .filter((p) => p.data.featured)
+  .slice(0, 3);
+---
+
+<Base
+  title="pyai.site"
+  description={t(locale, 'home.heroSubtitle')}
+  locale={locale}
+  pathname={pathname}
+>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <h1 class="hero-title">{t(locale, 'home.heroTitle')}</h1>
+      <p class="hero-subtitle">{t(locale, 'home.heroSubtitle')}</p>
+    </div>
+  </section>
+
+  <!-- 最新文章 -->
+  <section class="container section">
+    <div class="section-head">
+      <h2>{t(locale, 'home.recentPosts')}</h2>
+      <a class="section-more" href={`/${locale}/blog/`}>
+        {t(locale, 'common.viewAll')} →
+      </a>
+    </div>
+    {
+      recentPosts.length > 0 ? (
+        recentPosts.map((post) => <PostCard post={post} locale={locale} />)
+      ) : (
+        <p class="empty">{t(locale, 'common.noContent')}</p>
+      )
+    }
+  </section>
+
+  <!-- 最近笔记 -->
+  <section class="container section">
+    <div class="section-head">
+      <h2>{t(locale, 'home.recentNotes')}</h2>
+      <a class="section-more" href={`/${locale}/notes/`}>
+        {t(locale, 'common.viewAll')} →
+      </a>
+    </div>
+    {
+      recentNotes.length > 0 ? (
+        recentNotes.map((note) => <NoteCard note={note} locale={locale} />)
+      ) : (
+        <p class="empty">{t(locale, 'common.noContent')}</p>
+      )
+    }
+  </section>
+
+  <!-- 精选项目 -->
+  <section class="container section">
+    <div class="section-head">
+      <h2>{t(locale, 'home.featuredProjects')}</h2>
+      <a class="section-more" href={`/${locale}/projects/`}>
+        {t(locale, 'common.viewAll')} →
+      </a>
+    </div>
+    {
+      featuredProjects.length > 0 ? (
+        <div class="project-grid">
+          {
+            featuredProjects.map((project) => (
+              <ProjectCard project={project} locale={locale} />
+            ))
+          }
+        </div>
+      ) : (
+        <p class="empty">{t(locale, 'common.noContent')}</p>
+      )
+    }
+  </section>
+</Base>
+
+<style>
+  .hero {
+    padding: 4.5rem 0 3rem;
+  }
+  .hero-title {
+    margin: 0 0 0.5em;
+    font-size: 2.6rem;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+  .hero-subtitle {
+    margin: 0;
+    font-size: 1.15rem;
+    color: var(--fg-muted);
+    max-width: 34em;
+  }
+  .section {
+    padding: 1.5rem 0 2.5rem;
+  }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.6rem;
+  }
+  .section-head h2 {
+    margin: 0;
+    font-size: 1.4rem;
+  }
+  .section-more {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--fg-muted);
+    white-space: nowrap;
+  }
+  .section-more:hover {
+    color: var(--accent);
+  }
+  .empty {
+    color: var(--fg-muted);
+    font-size: 0.95rem;
+  }
+  .project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+  @media (max-width: 640px) {
+    .hero {
+      padding: 3rem 0 2rem;
+    }
+    .hero-title {
+      font-size: 2rem;
+    }
+  }
+</style>

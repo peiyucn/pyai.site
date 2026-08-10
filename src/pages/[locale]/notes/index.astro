@@ -1,0 +1,30 @@
+---
+import ListLayout from '../../../layouts/ListLayout.astro';
+import NoteCard from '../../../components/NoteCard.astro';
+import type { Locale } from '../../../i18n/ui';
+import { t } from '../../../i18n/utils';
+import { getNotes } from '../../../utils/content';
+
+export function getStaticPaths() {
+  return [{ params: { locale: 'zh' } }, { params: { locale: 'en' } }];
+}
+
+const { locale } = Astro.params as { locale: Locale };
+const pathname = Astro.url.pathname;
+const notes = await getNotes(locale);
+---
+
+<ListLayout
+  locale={locale}
+  pathname={pathname}
+  title={t(locale, 'notes.title')}
+  description={t(locale, 'notes.description')}
+>
+  {
+    notes.length > 0 ? (
+      notes.map((note) => <NoteCard note={note} locale={locale} />)
+    ) : (
+      <p>{t(locale, 'common.noContent')}</p>
+    )
+  }
+</ListLayout>

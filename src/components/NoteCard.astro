@@ -1,0 +1,83 @@
+---
+import type { Locale } from '../i18n/ui';
+import { t } from '../i18n/utils';
+import type { Note } from '../utils/content';
+import { formatDate, stripLocale } from '../utils/content';
+
+interface Props {
+  note: Note;
+  locale: Locale;
+}
+
+const { note, locale } = Astro.props;
+const url = `/${locale}/notes/${stripLocale(note.id)}/`;
+---
+
+<article class="note-card">
+  <a href={url} class="note-card-link">
+    <h2 class="note-card-title">{note.data.title}</h2>
+    {
+      note.data.description && (
+        <p class="note-card-desc">{note.data.description}</p>
+      )
+    }
+  </a>
+  <div class="note-card-meta">
+    <time datetime={note.data.date.toISOString()}>
+      {formatDate(note.data.date, locale)}
+    </time>
+    {
+      note.data.tags.length > 0 && (
+        <div class="note-card-tags">
+          {note.data.tags.slice(0, 3).map((tag) => <span class="tag">{tag}</span>)}
+        </div>
+      )
+    }
+    <a href={url} class="note-card-more">{t(locale, 'common.readMore')}</a>
+  </div>
+</article>
+
+<style>
+  .note-card {
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .note-card:last-child {
+    border-bottom: none;
+  }
+  .note-card-link:hover {
+    text-decoration: none;
+  }
+  .note-card-title {
+    margin: 0 0 0.35em;
+    font-size: 1.15rem;
+    line-height: 1.4;
+    color: var(--fg);
+    transition: color 0.15s ease;
+  }
+  .note-card-link:hover .note-card-title {
+    color: var(--accent);
+  }
+  .note-card-desc {
+    margin: 0 0 0.6em;
+    color: var(--fg-muted);
+    font-size: 0.92rem;
+  }
+  .note-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+    color: var(--fg-muted);
+  }
+  .note-card-tags {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .note-card-more {
+    margin-left: auto;
+    font-weight: 500;
+  }
+</style>

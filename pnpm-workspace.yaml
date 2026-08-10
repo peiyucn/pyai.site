@@ -1,0 +1,4 @@
+# pnpm 配置：允许 esbuild / sharp 执行构建脚本（Astro 构建所需）
+allowBuilds:
+  esbuild: true
+  sharp: true

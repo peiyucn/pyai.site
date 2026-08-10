@@ -1,0 +1,41 @@
+---
+import Base from './Base.astro';
+import type { Locale } from '../i18n/ui';
+
+interface Props {
+  locale: Locale;
+  pathname: string;
+  title: string;
+  description: string;
+}
+
+const { locale, pathname, title, description } = Astro.props;
+---
+
+<Base title={title} description={description} locale={locale} pathname={pathname}>
+  <div class="container list-page">
+    <header class="list-header">
+      <h1>{title}</h1>
+      {description && <p class="list-desc">{description}</p>}
+    </header>
+    <slot />
+  </div>
+</Base>
+
+<style>
+  .list-page {
+    padding-top: 2.5rem;
+    padding-bottom: 2rem;
+  }
+  .list-header {
+    margin-bottom: 1.5rem;
+  }
+  .list-header h1 {
+    margin: 0 0 0.4em;
+    font-size: 2rem;
+  }
+  .list-desc {
+    margin: 0;
+    color: var(--fg-muted);
+  }
+</style>

@@ -1,0 +1,41 @@
+---
+import { languages, type Locale } from '../i18n/ui';
+import { localizePath } from '../i18n/utils';
+
+interface Props {
+  locale: Locale;
+  pathname: string;
+}
+
+const { locale, pathname } = Astro.props;
+const other: Locale = locale === 'zh' ? 'en' : 'zh';
+---
+
+<a href={localizePath(pathname, other)} class="lang-switch" aria-label={`Switch to ${languages[other]}`}>
+  <span class="lang-switch-icon" aria-hidden="true">🌐</span>
+  {languages[other]}
+</a>
+
+<style>
+  .lang-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--fg-muted);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.25em 0.9em;
+    white-space: nowrap;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .lang-switch:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    text-decoration: none;
+  }
+  .lang-switch-icon {
+    font-size: 0.9em;
+  }
+</style>

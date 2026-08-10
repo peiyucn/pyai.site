@@ -1,0 +1,83 @@
+---
+import type { Locale } from '../i18n/ui';
+import { t } from '../i18n/utils';
+import type { Post } from '../utils/content';
+import { formatDate, stripLocale } from '../utils/content';
+
+interface Props {
+  post: Post;
+  locale: Locale;
+}
+
+const { post, locale } = Astro.props;
+const url = `/${locale}/blog/${stripLocale(post.id)}/`;
+---
+
+<article class="post-card">
+  <a href={url} class="post-card-link">
+    <h2 class="post-card-title">{post.data.title}</h2>
+    {
+      post.data.description && (
+        <p class="post-card-desc">{post.data.description}</p>
+      )
+    }
+  </a>
+  <div class="post-card-meta">
+    <time datetime={post.data.date.toISOString()}>
+      {formatDate(post.data.date, locale)}
+    </time>
+    {
+      post.data.tags.length > 0 && (
+        <div class="post-card-tags">
+          {post.data.tags.slice(0, 3).map((tag) => <span class="tag">{tag}</span>)}
+        </div>
+      )
+    }
+    <a href={url} class="post-card-more">{t(locale, 'common.readMore')}</a>
+  </div>
+</article>
+
+<style>
+  .post-card {
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .post-card:last-child {
+    border-bottom: none;
+  }
+  .post-card-link:hover {
+    text-decoration: none;
+  }
+  .post-card-title {
+    margin: 0 0 0.35em;
+    font-size: 1.25rem;
+    line-height: 1.4;
+    color: var(--fg);
+    transition: color 0.15s ease;
+  }
+  .post-card-link:hover .post-card-title {
+    color: var(--accent);
+  }
+  .post-card-desc {
+    margin: 0 0 0.6em;
+    color: var(--fg-muted);
+    font-size: 0.95rem;
+  }
+  .post-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+    color: var(--fg-muted);
+  }
+  .post-card-tags {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .post-card-more {
+    margin-left: auto;
+    font-weight: 500;
+  }
+</style>

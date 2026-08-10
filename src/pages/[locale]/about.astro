@@ -1,0 +1,69 @@
+---
+import Base from '../../layouts/Base.astro';
+import type { Locale } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+
+export function getStaticPaths() {
+  return [{ params: { locale: 'zh' } }, { params: { locale: 'en' } }];
+}
+
+const { locale } = Astro.params as { locale: Locale };
+const pathname = Astro.url.pathname;
+---
+
+<Base
+  title={t(locale, 'about.title')}
+  description={t(locale, 'about.description')}
+  locale={locale}
+  pathname={pathname}
+>
+  <div class="container about-page">
+    <h1>{t(locale, 'about.title')}</h1>
+
+    <div class="prose">
+      {
+        locale === 'zh' ? (
+          <>
+            <p>你好，我是 Pei，一名程序员。</p>
+            <p>
+              这个站点是我的数字花园：用 <strong>博客</strong> 记录想法与经验，用{' '}
+              <strong>笔记</strong> 沉淀学习过程中的知识，用 <strong>项目</strong>{' '}
+              展示我的一些开源作品。
+            </p>
+            <p>最近在关注 AI 工具链、自动化工作流，以及如何用 AI 加速软件开发。</p>
+            <p>
+              你可以通过 GitHub 找到我：<a href="https://github.com/peiyucn" target="_blank" rel="noopener noreferrer">github.com/peiyucn</a>
+            </p>
+          </>
+        ) : (
+          <>
+            <p>Hi, I'm Pei, a software developer.</p>
+            <p>
+              This site is my digital garden: <strong>Blog</strong> for thoughts and
+              experiences, <strong>Notes</strong> for distilled knowledge, and{' '}
+              <strong>Projects</strong> for my open-source work.
+            </p>
+            <p>
+              Recently interested in AI tooling, automation workflows, and using AI
+              to accelerate software development.
+            </p>
+            <p>
+              Find me on GitHub:{' '}
+              <a href="https://github.com/peiyucn" target="_blank" rel="noopener noreferrer">github.com/peiyucn</a>
+            </p>
+          </>
+        )
+      }
+    </div>
+  </div>
+</Base>
+
+<style>
+  .about-page {
+    padding-top: 2.5rem;
+  }
+  .about-page h1 {
+    font-size: 2rem;
+    margin: 0 0 0.6em;
+  }
+</style>
