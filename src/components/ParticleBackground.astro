@@ -1,0 +1,198 @@
+---
+// 粒子网络背景组件（Canvas + 鼠标互动）
+// 纯原生实现，无第三方依赖，自动适配深色/浅色模式
+---
+
+<div class="particle-bg" aria-hidden="true">
+  <canvas id="particle-canvas"></canvas>
+</div>
+
+<script>
+  // 粒子网络动画：光点 + 连线 + 鼠标吸引
+  // 用 astro:page-load 确保 DOM 渲染完成后初始化（Astro 官方事件）
+  // 容器尺寸未就绪时重试，最多 10 次
+  let retryCount = 0;
+  const MAX_RETRY = 10;
+  document.addEventListener('astro:page-load', () => {
+    const canvas = document.getElementById('particle-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    // 性能与数量配置（移动端减少粒子数）
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    const PARTICLE_COUNT = isMobile ? 40 : 80;
+    const MAX_DISTANCE = 150; // 连线最大距离
+    const MOUSE_RADIUS = 180; // 鼠标影响半径
+
+    // 粒子颜色（两种主题）
+    const COLORS = {
+      light: { particle: '79, 70, 229', line: '79, 70, 229' }, // indigo
+      dark: { particle: '129, 140, 248', line: '129, 140, 248' }, // indigo-400
+    };
+
+    let particles = [];
+    let mouse = { x: null, y: null };
+    let width = 0, height = 0, dpr = 1;
+    let theme = window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light';
+    let rafId = null;
+    let fallbackTimer = null;
+
+    function resize() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const parent = canvas.parentElement;
+      width = parent.offsetWidth;
+      height = parent.offsetHeight;
+      if (width === 0 || height === 0) return; // 容器未就绪
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      initParticles();
+    }
+
+    function initParticles() {
+      particles = Array.from({ length: PARTICLE_COUNT }, () => ({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        size: Math.random() * 2 + 0.5,
+      }));
+    }
+
+    function draw() {
+      if (width === 0 || height === 0) return;
+      ctx.clearRect(0, 0, width, height);
+      const color = COLORS[theme];
+
+      // 画粒子
+      for (const p of particles) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${color.particle}, 0.7)`;
+        ctx.fill();
+
+        // 移动
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // 边界反弹
+        if (p.x < 0 || p.x > width) p.vx *= -1;
+        if (p.y < 0 || p.y > height) p.vy *= -1;
+
+        // 鼠标吸引
+        if (mouse.x !== null) {
+          const dx = mouse.x - p.x;
+          const dy = mouse.y - p.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < MOUSE_RADIUS) {
+            const force = (MOUSE_RADIUS - dist) / MOUSE_RADIUS;
+            p.x += (dx / dist) * force * 1.2;
+            p.y += (dy / dist) * force * 1.2;
+          }
+        }
+      }
+
+      // 连线
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const a = particles[i];
+          const b = particles[j];
+          const dx = a.x - b.x;
+          const dy = a.y - b.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < MAX_DISTANCE) {
+            const opacity = (1 - dist / MAX_DISTANCE) * 0.25;
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.strokeStyle = `rgba(${color.line}, ${opacity})`;
+            ctx.lineWidth = 0.6;
+            ctx.stroke();
+          }
+        }
+      }
+    }
+
+    function onMouseMove(e) {
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+    }
+
+    function onMouseLeave() {
+      mouse.x = null;
+      mouse.y = null;
+    }
+
+    // 监听系统主题变化
+    const themeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    themeQuery.addEventListener('change', (e) => {
+      theme = e.matches ? 'dark' : 'light';
+    });
+
+    // 启动动画：rAF + setInterval 双保险
+    let lastTime = 0;
+    const FPS = 30;
+    const loop = () => {
+      draw();
+      rafId = requestAnimationFrame(loop);
+    };
+
+    function start() {
+      resize();
+      if (width === 0 || height === 0) {
+        // 容器未就绪，重试
+        if (retryCount < MAX_RETRY) {
+          retryCount++;
+          setTimeout(start, 100);
+        }
+        return;
+      }
+      draw();
+      try {
+        rafId = requestAnimationFrame(loop);
+      } catch {
+        /* rAF 不可用时回退 */
+      }
+      fallbackTimer = setInterval(() => {
+        const now = Date.now();
+        if (now - lastTime > 1000 / FPS) {
+          lastTime = now;
+          draw();
+        }
+      }, 1000 / FPS);
+
+      window.addEventListener('resize', resize);
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseleave', onMouseLeave);
+
+      // 清理（Astro 页面切换时）
+      document.addEventListener('astro:before-swap', () => {
+        cancelAnimationFrame(rafId);
+        if (fallbackTimer) clearInterval(fallbackTimer);
+        window.removeEventListener('resize', resize);
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseleave', onMouseLeave);
+      });
+    }
+
+    start();
+  });
+</script>
+
+<style>
+  .particle-bg {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .particle-bg canvas {
+    display: block;
+  }
+</style>

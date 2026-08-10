@@ -3,6 +3,7 @@ import Base from '../../layouts/Base.astro';
 import PostCard from '../../components/PostCard.astro';
 import NoteCard from '../../components/NoteCard.astro';
 import ProjectCard from '../../components/ProjectCard.astro';
+import ParticleBackground from '../../components/ParticleBackground.astro';
 import type { Locale } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
 import { getPosts, getNotes, getProjects } from '../../utils/content';
@@ -28,26 +29,27 @@ const featuredProjects = (await getProjects(locale))
   locale={locale}
   pathname={pathname}
 >
-  <!-- Hero -->
-  <section class="px-5 pb-12 pt-16 text-center sm:pt-20">
-    <div class="mx-auto flex max-w-2xl flex-col items-center animate-in">
-      <p class="mb-3 text-5xl leading-none">👋</p>
-      <h1 class="text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
+  <!-- Hero：粒子 + 光晕 + 动效 -->
+  <section class="hero-section">
+    <ParticleBackground />
+    <div class="hero-content mx-auto flex max-w-3xl flex-col items-center px-5 text-center">
+      <p class="hero-badge animate-in">👋</p>
+      <h1 class="hero-title animate-in text-gradient">
         {t(locale, 'home.heroTitle')}
       </h1>
-      <p class="mt-4 max-w-xl text-lg text-zinc-500 dark:text-zinc-400">
+      <p class="hero-subtitle animate-in">
         {t(locale, 'home.heroSubtitle')}
       </p>
-      <div class="mt-8 flex flex-wrap justify-center gap-3">
+      <div class="mt-10 flex flex-wrap justify-center gap-4 animate-in">
         <a
           href={`/${locale}/blog/`}
-          class="rounded-full bg-accent px-6 py-2.5 text-base font-semibold text-white shadow-md transition-all hover:-translate-y-0.5 hover:no-underline hover:shadow-lg dark:bg-indigo-500"
+          class="hero-btn-primary"
         >
           {t(locale, 'nav.blog')} →
         </a>
         <a
           href={`/${locale}/about/`}
-          class="rounded-full border border-zinc-200 bg-white px-6 py-2.5 text-base font-medium text-zinc-700 transition-all hover:-translate-y-0.5 hover:no-underline hover:shadow-md dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+          class="hero-btn-secondary"
         >
           {t(locale, 'nav.about')}
         </a>
@@ -120,5 +122,116 @@ const featuredProjects = (await getProjects(locale))
 </Base>
 
 <style>
-  /* 主页样式已使用 Tailwind utility class，此 style 仅保留少量补充 */
+  /* 炫酷 Hero：光晕渐变 + 粒子 + 动效 */
+  .hero-section {
+    position: relative;
+    overflow: hidden;
+    padding: 6rem 0 5rem;
+    text-align: center;
+    /* 兜底宽度：确保即使在异常容器下也有尺寸 */
+    width: 100%;
+    /* 背景：多层径向渐变光晕 */
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 20%, rgba(79, 70, 229, 0.35), transparent 60%),
+      radial-gradient(ellipse 50% 35% at 80% 25%, rgba(124, 58, 237, 0.3), transparent 60%),
+      radial-gradient(ellipse 55% 40% at 50% 80%, rgba(219, 39, 119, 0.2), transparent 60%),
+      var(--bg);
+  }
+  @media (prefers-color-scheme: dark) {
+    .hero-section {
+      background:
+        radial-gradient(ellipse 60% 40% at 20% 20%, rgba(99, 102, 241, 0.3), transparent 60%),
+        radial-gradient(ellipse 50% 35% at 80% 25%, rgba(168, 85, 247, 0.25), transparent 60%),
+        radial-gradient(ellipse 55% 40% at 50% 80%, rgba(244, 114, 182, 0.15), transparent 60%),
+        var(--bg);
+    }
+  }
+  /* Hero 内容在粒子层之上 */
+  .hero-content {
+    position: relative;
+    z-index: 1;
+  }
+  .hero-badge {
+    font-size: 3rem;
+    line-height: 1;
+    margin-bottom: 0.8rem;
+  }
+  .hero-title {
+    font-size: 3.2rem;
+    font-weight: 800;
+    line-height: 1.12;
+    letter-spacing: -0.03em;
+    margin: 0 0 0.6em;
+  }
+  .hero-subtitle {
+    font-size: 1.25rem;
+    color: var(--fg-muted);
+    max-width: 36em;
+    margin: 0 auto;
+  }
+  .hero-btn-primary {
+    border-radius: 9999px;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #db2777 100%);
+    padding: 0.7em 2em;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(79, 70, 229, 0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .hero-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(79, 70, 229, 0.5);
+    text-decoration: none;
+  }
+  .hero-btn-secondary {
+    border-radius: 9999px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(8px);
+    padding: 0.7em 2em;
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: var(--fg);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  @media (prefers-color-scheme: dark) {
+    .hero-btn-secondary {
+      background: rgba(24, 24, 27, 0.6);
+    }
+  }
+  .hero-btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    text-decoration: none;
+  }
+
+  /* 渐入动画：延迟递增制造层叠感 */
+  .hero-section .animate-in {
+    animation-delay: 0s;
+  }
+  .hero-section .animate-in:nth-of-type(1) {
+    animation-delay: 0.1s;
+  }
+  .hero-section .animate-in:nth-of-type(2) {
+    animation-delay: 0.25s;
+  }
+  .hero-section .animate-in:nth-of-type(3) {
+    animation-delay: 0.4s;
+  }
+  .hero-section .animate-in:nth-of-type(4) {
+    animation-delay: 0.55s;
+  }
+
+  @media (max-width: 640px) {
+    .hero-section {
+      padding: 4rem 0 3.5rem;
+    }
+    .hero-title {
+      font-size: 2.4rem;
+    }
+    .hero-subtitle {
+      font-size: 1.1rem;
+    }
+  }
 </style>
