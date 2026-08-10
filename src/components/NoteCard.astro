@@ -13,71 +13,41 @@ const { note, locale } = Astro.props;
 const url = `/${locale}/notes/${stripLocale(note.id)}/`;
 ---
 
-<article class="note-card">
-  <a href={url} class="note-card-link">
-    <h2 class="note-card-title">{note.data.title}</h2>
+<article
+  class="group border-b border-zinc-200 py-5 last:border-b-0 dark:border-zinc-800"
+>
+  <a href={url} class="block hover:no-underline">
+    <h2
+      class="text-lg font-semibold leading-snug text-zinc-900 transition-colors group-hover:text-accent dark:text-zinc-100"
+    >
+      {note.data.title}
+    </h2>
     {
       note.data.description && (
-        <p class="note-card-desc">{note.data.description}</p>
+        <p class="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+          {note.data.description}
+        </p>
       )
     }
   </a>
-  <div class="note-card-meta">
+  <div class="mt-2.5 flex flex-wrap items-center gap-3 text-xs text-zinc-400 dark:text-zinc-500">
     <time datetime={note.data.date.toISOString()}>
       {formatDate(note.data.date, locale)}
     </time>
     {
       note.data.tags.length > 0 && (
-        <div class="note-card-tags">
-          {note.data.tags.slice(0, 3).map((tag) => <span class="tag">{tag}</span>)}
+        <div class="flex flex-wrap gap-1">
+          {
+            note.data.tags.slice(0, 3).map((tag) => <span class="tag">{tag}</span>)
+          }
         </div>
       )
     }
-    <a href={url} class="note-card-more">{t(locale, 'common.readMore')}</a>
+    <a
+      href={url}
+      class="ml-auto font-medium text-accent hover:underline dark:text-indigo-400"
+    >
+      {t(locale, 'common.readMore')} →
+    </a>
   </div>
 </article>
-
-<style>
-  .note-card {
-    padding: 1.25rem 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .note-card:last-child {
-    border-bottom: none;
-  }
-  .note-card-link:hover {
-    text-decoration: none;
-  }
-  .note-card-title {
-    margin: 0 0 0.35em;
-    font-size: 1.15rem;
-    line-height: 1.4;
-    color: var(--fg);
-    transition: color 0.15s ease;
-  }
-  .note-card-link:hover .note-card-title {
-    color: var(--accent);
-  }
-  .note-card-desc {
-    margin: 0 0 0.6em;
-    color: var(--fg-muted);
-    font-size: 0.92rem;
-  }
-  .note-card-meta {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-    font-size: 0.85rem;
-    color: var(--fg-muted);
-  }
-  .note-card-tags {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  .note-card-more {
-    margin-left: auto;
-    font-weight: 500;
-  }
-</style>

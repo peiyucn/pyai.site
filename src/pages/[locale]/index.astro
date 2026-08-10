@@ -29,18 +29,39 @@ const featuredProjects = (await getProjects(locale))
   pathname={pathname}
 >
   <!-- Hero -->
-  <section class="hero">
-    <div class="container">
-      <h1 class="hero-title">{t(locale, 'home.heroTitle')}</h1>
-      <p class="hero-subtitle">{t(locale, 'home.heroSubtitle')}</p>
+  <section class="px-5 pb-12 pt-16 text-center sm:pt-20">
+    <div class="mx-auto flex max-w-2xl flex-col items-center animate-in">
+      <p class="mb-3 text-5xl leading-none">👋</p>
+      <h1 class="text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
+        {t(locale, 'home.heroTitle')}
+      </h1>
+      <p class="mt-4 max-w-xl text-lg text-zinc-500 dark:text-zinc-400">
+        {t(locale, 'home.heroSubtitle')}
+      </p>
+      <div class="mt-8 flex flex-wrap justify-center gap-3">
+        <a
+          href={`/${locale}/blog/`}
+          class="rounded-full bg-accent px-6 py-2.5 text-base font-semibold text-white shadow-md transition-all hover:-translate-y-0.5 hover:no-underline hover:shadow-lg dark:bg-indigo-500"
+        >
+          {t(locale, 'nav.blog')} →
+        </a>
+        <a
+          href={`/${locale}/about/`}
+          class="rounded-full border border-zinc-200 bg-white px-6 py-2.5 text-base font-medium text-zinc-700 transition-all hover:-translate-y-0.5 hover:no-underline hover:shadow-md dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+        >
+          {t(locale, 'nav.about')}
+        </a>
+      </div>
     </div>
   </section>
 
   <!-- 最新文章 -->
-  <section class="container section">
-    <div class="section-head">
-      <h2>{t(locale, 'home.recentPosts')}</h2>
-      <a class="section-more" href={`/${locale}/blog/`}>
+  <section class="mx-auto max-w-3xl px-5 py-6 animate-in">
+    <div class="mb-2 flex items-baseline justify-between gap-4 border-b border-zinc-200 pb-3 dark:border-zinc-800">
+      <h2 class="text-xl font-bold tracking-tight">
+        <span class="mr-1.5">✍️</span> {t(locale, 'home.recentPosts')}
+      </h2>
+      <a class="whitespace-nowrap text-sm font-medium text-zinc-500 hover:no-underline hover:text-accent dark:text-zinc-400" href={`/${locale}/blog/`}>
         {t(locale, 'common.viewAll')} →
       </a>
     </div>
@@ -48,16 +69,18 @@ const featuredProjects = (await getProjects(locale))
       recentPosts.length > 0 ? (
         recentPosts.map((post) => <PostCard post={post} locale={locale} />)
       ) : (
-        <p class="empty">{t(locale, 'common.noContent')}</p>
+        <p class="text-sm text-zinc-500">{t(locale, 'common.noContent')}</p>
       )
     }
   </section>
 
   <!-- 最近笔记 -->
-  <section class="container section">
-    <div class="section-head">
-      <h2>{t(locale, 'home.recentNotes')}</h2>
-      <a class="section-more" href={`/${locale}/notes/`}>
+  <section class="mx-auto max-w-3xl px-5 py-6 animate-in">
+    <div class="mb-2 flex items-baseline justify-between gap-4 border-b border-zinc-200 pb-3 dark:border-zinc-800">
+      <h2 class="text-xl font-bold tracking-tight">
+        <span class="mr-1.5">📚</span> {t(locale, 'home.recentNotes')}
+      </h2>
+      <a class="whitespace-nowrap text-sm font-medium text-zinc-500 hover:no-underline hover:text-accent dark:text-zinc-400" href={`/${locale}/notes/`}>
         {t(locale, 'common.viewAll')} →
       </a>
     </div>
@@ -65,22 +88,24 @@ const featuredProjects = (await getProjects(locale))
       recentNotes.length > 0 ? (
         recentNotes.map((note) => <NoteCard note={note} locale={locale} />)
       ) : (
-        <p class="empty">{t(locale, 'common.noContent')}</p>
+        <p class="text-sm text-zinc-500">{t(locale, 'common.noContent')}</p>
       )
     }
   </section>
 
   <!-- 精选项目 -->
-  <section class="container section">
-    <div class="section-head">
-      <h2>{t(locale, 'home.featuredProjects')}</h2>
-      <a class="section-more" href={`/${locale}/projects/`}>
+  <section class="mx-auto max-w-3xl px-5 py-6 animate-in">
+    <div class="mb-3 flex items-baseline justify-between gap-4 border-b border-zinc-200 pb-3 dark:border-zinc-800">
+      <h2 class="text-xl font-bold tracking-tight">
+        <span class="mr-1.5">🚀</span> {t(locale, 'home.featuredProjects')}
+      </h2>
+      <a class="whitespace-nowrap text-sm font-medium text-zinc-500 hover:no-underline hover:text-accent dark:text-zinc-400" href={`/${locale}/projects/`}>
         {t(locale, 'common.viewAll')} →
       </a>
     </div>
     {
       featuredProjects.length > 0 ? (
-        <div class="project-grid">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {
             featuredProjects.map((project) => (
               <ProjectCard project={project} locale={locale} />
@@ -88,68 +113,12 @@ const featuredProjects = (await getProjects(locale))
           }
         </div>
       ) : (
-        <p class="empty">{t(locale, 'common.noContent')}</p>
+        <p class="text-sm text-zinc-500">{t(locale, 'common.noContent')}</p>
       )
     }
   </section>
 </Base>
 
 <style>
-  .hero {
-    padding: 4.5rem 0 3rem;
-  }
-  .hero-title {
-    margin: 0 0 0.5em;
-    font-size: 2.6rem;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
-  }
-  .hero-subtitle {
-    margin: 0;
-    font-size: 1.15rem;
-    color: var(--fg-muted);
-    max-width: 34em;
-  }
-  .section {
-    padding: 1.5rem 0 2.5rem;
-  }
-  .section-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 0.6rem;
-  }
-  .section-head h2 {
-    margin: 0;
-    font-size: 1.4rem;
-  }
-  .section-more {
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--fg-muted);
-    white-space: nowrap;
-  }
-  .section-more:hover {
-    color: var(--accent);
-  }
-  .empty {
-    color: var(--fg-muted);
-    font-size: 0.95rem;
-  }
-  .project-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
-  }
-  @media (max-width: 640px) {
-    .hero {
-      padding: 3rem 0 2rem;
-    }
-    .hero-title {
-      font-size: 2rem;
-    }
-  }
+  /* 主页样式已使用 Tailwind utility class，此 style 仅保留少量补充 */
 </style>

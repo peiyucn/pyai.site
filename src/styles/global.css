@@ -1,201 +1,99 @@
-/* ===== pyai.site 全局样式 ===== */
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
-/* 主题变量：浅色 / 深色 */
-:root {
-  --bg: #ffffff;
-  --bg-subtle: #f7f7f9;
-  --fg: #1a1d23;
-  --fg-muted: #6b7280;
-  --border: #e5e7eb;
-  --accent: #4f46e5;
-  --accent-soft: rgba(79, 70, 229, 0.08);
-  --radius: 10px;
-  --content-width: 720px;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas,
-    'Liberation Mono', monospace;
-}
+/* ===== Tailwind 4 主题定制 ===== */
+@theme {
+  --color-accent: #4f46e5;
+  --color-accent-2: #7c3aed;
+  --color-accent-3: #db2777;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0f1115;
-    --bg-subtle: #16181e;
-    --fg: #e6e8eb;
-    --fg-muted: #9ca3af;
-    --border: #26282f;
-    --accent: #818cf8;
-    --accent-soft: rgba(129, 140, 248, 0.12);
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', 'Helvetica Neue',
+    Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas,
+    'Liberation Mono', 'Courier New', monospace;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12);
+
+  --animate-fade-in-up: fade-in-up 0.6s ease both;
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }
 
-* {
-  box-sizing: border-box;
+/* ===== 基础样式 ===== */
+@layer base {
+  body {
+    @apply bg-zinc-50 text-zinc-900 antialiased transition-colors duration-300;
+    font-family: var(--font-sans);
+    /* 顶部细微品牌色光晕，增强质感 */
+    background-image: radial-gradient(
+      ellipse 80% 50% at 50% -20%,
+      color-mix(in srgb, var(--color-accent) 8%, transparent),
+      transparent
+    );
+    background-attachment: fixed;
+  }
+
+  /* 深色模式 */
+  @media (prefers-color-scheme: dark) {
+    body {
+      @apply bg-zinc-950 text-zinc-100;
+    }
+  }
+
+  a {
+    @apply text-accent transition-colors;
+  }
+  a:hover {
+    @apply underline;
+  }
+
+  img {
+    @apply max-w-full h-auto rounded-xl;
+  }
 }
 
-html {
-  scroll-behavior: smooth;
+/* ===== 通用工具组件样式 ===== */
+@layer components {
+  /* 渐变文字 */
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(
+      135deg,
+      var(--color-accent) 0%,
+      var(--color-accent-2) 50%,
+      var(--color-accent-3) 100%
+    );
+  }
+
+  /* 标签 */
+  .tag {
+    @apply inline-block rounded-full border border-zinc-200 bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-500 transition-colors;
+  }
+  .tag:hover {
+    @apply border-accent text-accent;
+  }
+
+  /* 进入动画 */
+  .animate-in {
+    animation: var(--animate-fade-in-up);
+  }
 }
 
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--fg);
-  font-family: var(--font-sans);
-  font-size: 17px;
-  line-height: 1.75;
-  -webkit-font-smoothing: antialiased;
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-a {
-  color: var(--accent);
-  text-decoration: none;
-}
-
-a:hover {
-  text-decoration: underline;
-}
-
-img {
-  max-width: 100%;
-  height: auto;
-  border-radius: var(--radius);
-}
-
-/* 内容容器 */
-.container {
-  width: 100%;
-  max-width: var(--content-width);
-  margin: 0 auto;
-  padding: 0 1.25rem;
-}
-
-/* 文章 / 笔记正文排版 */
-.prose {
-  font-size: 1.05rem;
-  word-wrap: break-word;
-}
-
-.prose h1,
-.prose h2,
-.prose h3,
-.prose h4 {
-  line-height: 1.3;
-  margin: 2em 0 0.6em;
-}
-
-.prose h1 {
-  font-size: 1.8rem;
-}
-
-.prose h2 {
-  font-size: 1.45rem;
-  padding-bottom: 0.3em;
-  border-bottom: 1px solid var(--border);
-}
-
-.prose h3 {
-  font-size: 1.2rem;
-}
-
-.prose p {
-  margin: 1em 0;
-}
-
-.prose ul,
-.prose ol {
-  padding-left: 1.5em;
-}
-
-.prose li {
-  margin: 0.4em 0;
-}
-
-.prose code {
-  font-family: var(--font-mono);
-  font-size: 0.88em;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 0.15em 0.4em;
-}
-
-.prose pre {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1rem 1.25rem;
-  overflow-x: auto;
-  line-height: 1.6;
-}
-
-.prose pre code {
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 0.88em;
-}
-
-.prose blockquote {
-  margin: 1.5em 0;
-  padding: 0.1em 1.2em;
-  border-left: 3px solid var(--accent);
-  color: var(--fg-muted);
-  background: var(--bg-subtle);
-  border-radius: 0 var(--radius) var(--radius) 0;
-}
-
-.prose table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 1.5em 0;
-  font-size: 0.95em;
-}
-
-.prose th,
-.prose td {
-  border: 1px solid var(--border);
-  padding: 0.5em 0.9em;
-  text-align: left;
-}
-
-.prose th {
-  background: var(--bg-subtle);
-}
-
-.prose hr {
-  border: none;
-  border-top: 1px solid var(--border);
-  margin: 2.5em 0;
-}
-
-/* 标签 */
-.tag {
-  display: inline-block;
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--fg-muted);
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 0.1em 0.8em;
-  margin: 0 0.4em 0.4em 0;
-}
-
-/* 按钮 */
-.btn {
-  display: inline-block;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--accent);
-  background: var(--accent-soft);
-  border-radius: 999px;
-  padding: 0.45em 1.4em;
-  transition: opacity 0.15s ease;
-}
-
-.btn:hover {
-  text-decoration: none;
-  opacity: 0.85;
+/* 深色模式下标签适配 */
+@media (prefers-color-scheme: dark) {
+  .tag {
+    @apply border-zinc-800 bg-zinc-900 text-zinc-400;
+  }
 }

@@ -16,85 +16,46 @@ const statusText: Record<string, { label: string; class: string }> = {
 const status = statusText[project.data.status];
 ---
 
-<article class="project-card">
-  <div class="project-card-head">
-    <h2 class="project-card-title">{project.data.title}</h2>
-    <span class:list={['status', status.class]}>{status.label}</span>
+<article
+  class="group flex flex-col gap-2.5 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-accent hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
+>
+  <div class="flex items-center justify-between gap-3">
+    <h2
+      class="text-lg font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-accent"
+    >
+      {project.data.title}
+    </h2>
+    <span class:list={['rounded-full px-2.5 py-0.5 text-xs font-semibold', status.class]}>
+      {status.label}
+    </span>
   </div>
-  <p class="project-card-desc">{project.data.description}</p>
-  <div class="project-card-links">
+  <p class="flex-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+    {project.data.description}
+  </p>
+  <div class="flex gap-4 text-sm font-medium">
     {
       project.data.repo && (
-        <a href={project.data.repo} target="_blank" rel="noopener noreferrer">
-          <span aria-hidden="true">GitHub</span>
+        <a
+          href={project.data.repo}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-accent hover:underline dark:text-indigo-400"
+        >
+          <span aria-hidden="true">⤴</span> GitHub
         </a>
       )
     }
     {
       project.data.link && (
-        <a href={project.data.link} target="_blank" rel="noopener noreferrer">
-          <span aria-hidden="true">↗</span> 链接
+        <a
+          href={project.data.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-accent hover:underline dark:text-indigo-400"
+        >
+          <span aria-hidden="true">↗</span> {locale === 'zh' ? '链接' : 'Link'}
         </a>
       )
     }
   </div>
 </article>
-
-<style>
-  .project-card {
-    background: var(--bg-subtle);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-    transition: border-color 0.15s ease, transform 0.15s ease;
-  }
-  .project-card:hover {
-    border-color: var(--accent);
-    transform: translateY(-2px);
-  }
-  .project-card-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-  .project-card-title {
-    margin: 0;
-    font-size: 1.2rem;
-  }
-  .status {
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: 999px;
-    padding: 0.15em 0.8em;
-    white-space: nowrap;
-  }
-  .status-active {
-    color: #059669;
-    background: rgba(5, 150, 105, 0.12);
-  }
-  .status-wip {
-    color: #d97706;
-    background: rgba(217, 119, 6, 0.12);
-  }
-  .status-archived {
-    color: var(--fg-muted);
-    background: var(--bg-subtle);
-    border: 1px solid var(--border);
-  }
-  .project-card-desc {
-    margin: 0;
-    color: var(--fg-muted);
-    font-size: 0.95rem;
-    flex: 1;
-  }
-  .project-card-links {
-    display: flex;
-    gap: 1rem;
-    font-size: 0.9rem;
-    font-weight: 500;
-  }
-</style>

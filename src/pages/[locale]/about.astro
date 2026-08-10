@@ -17,10 +17,10 @@ const pathname = Astro.url.pathname;
   locale={locale}
   pathname={pathname}
 >
-  <div class="container about-page">
-    <h1>{t(locale, 'about.title')}</h1>
+  <div class="mx-auto max-w-3xl px-5 pb-8 pt-14 animate-in">
+    <h1 class="text-3xl font-extrabold tracking-tight">{t(locale, 'about.title')}</h1>
 
-    <div class="prose">
+    <div class="prose dark:prose-invert mt-6 max-w-none">
       {
         locale === 'zh' ? (
           <>
@@ -57,13 +57,3 @@ const pathname = Astro.url.pathname;
     </div>
   </div>
 </Base>
-
-<style>
-  .about-page {
-    padding-top: 2.5rem;
-  }
-  .about-page h1 {
-    font-size: 2rem;
-    margin: 0 0 0.6em;
-  }
-</style>

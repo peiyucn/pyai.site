@@ -1,11 +1,13 @@
-import { defineCollection, z } from 'astro:content';
+import { defineCollection } from 'astro:content';
+import { glob } from 'astro/loaders';
+import { z } from 'astro/zod';
 
 // 语言集合
 const localeEnum = z.enum(['zh', 'en']);
 
 // 文章（博客）
 const posts = defineCollection({
-  type: 'content',
+  loader: glob({ pattern: '**/*.md', base: './src/content/posts' }),
   schema: z.object({
     title: z.string(),
     description: z.string().default(''),
@@ -21,7 +23,7 @@ const posts = defineCollection({
 
 // 知识库笔记
 const notes = defineCollection({
-  type: 'content',
+  loader: glob({ pattern: '**/*.md', base: './src/content/notes' }),
   schema: z.object({
     title: z.string(),
     description: z.string().default(''),
@@ -36,15 +38,15 @@ const notes = defineCollection({
 
 // 项目
 const projects = defineCollection({
-  type: 'content',
+  loader: glob({ pattern: '**/*.md', base: './src/content/projects' }),
   schema: z.object({
     title: z.string(),
     description: z.string(),
     locale: localeEnum,
     // GitHub 仓库地址
-    repo: z.string().url().optional(),
+    repo: z.url().optional(),
     // 在线演示 / 官网
-    link: z.string().url().optional(),
+    link: z.url().optional(),
     status: z.enum(['active', 'wip', 'archived']).default('active'),
     // 首页展示优先级（越大越靠前）
     order: z.number().default(0),
