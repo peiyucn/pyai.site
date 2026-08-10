@@ -16,19 +16,10 @@ export type UIKey =
   | 'nav.about'
   // 通用
   | 'common.readMore'
-  | 'common.backHome'
   | 'common.publishedAt'
   | 'common.updatedAt'
   | 'common.tags'
   | 'common.noContent'
-  | 'common.viewAll'
-  | 'common.language'
-  // 主页
-  | 'home.heroTitle'
-  | 'home.heroSubtitle'
-  | 'home.recentPosts'
-  | 'home.recentNotes'
-  | 'home.featuredProjects'
   // 博客 / 笔记
   | 'blog.title'
   | 'blog.description'
@@ -52,18 +43,10 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'nav.projects': '项目',
     'nav.about': '关于',
     'common.readMore': '阅读全文',
-    'common.backHome': '返回首页',
     'common.publishedAt': '发布于',
     'common.updatedAt': '更新于',
     'common.tags': '标签',
     'common.noContent': '暂无内容',
-    'common.viewAll': '查看全部',
-    'common.language': '语言',
-    'home.heroTitle': '你好，我是 Pei 👋',
-    'home.heroSubtitle': '用技术记录生活，用 AI 加速创造。这里是博客、笔记与项目的集合。',
-    'home.recentPosts': '最新文章',
-    'home.recentNotes': '最近笔记',
-    'home.featuredProjects': '精选项目',
     'blog.title': '博客',
     'blog.description': '技术、生活与思考。',
     'notes.title': '笔记',
@@ -82,18 +65,10 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'nav.projects': 'Projects',
     'nav.about': 'About',
     'common.readMore': 'Read more',
-    'common.backHome': 'Back to home',
     'common.publishedAt': 'Published',
     'common.updatedAt': 'Updated',
     'common.tags': 'Tags',
     'common.noContent': 'No content yet',
-    'common.viewAll': 'View all',
-    'common.language': 'Language',
-    'home.heroTitle': "Hi, I'm Pei 👋",
-    'home.heroSubtitle': 'Building with code, learning with AI. A collection of blog posts, notes and projects.',
-    'home.recentPosts': 'Latest Posts',
-    'home.recentNotes': 'Recent Notes',
-    'home.featuredProjects': 'Featured Projects',
     'blog.title': 'Blog',
     'blog.description': 'Technology, life and thoughts.',
     'notes.title': 'Notes',

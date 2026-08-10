@@ -12,7 +12,20 @@ const other: Locale = locale === 'zh' ? 'en' : 'zh';
 ---
 
 <a href={localizePath(pathname, other)} class="lang-switch" aria-label={`Switch to ${languages[other]}`}>
-  <span class="lang-switch-icon" aria-hidden="true">🌐</span>
+  <svg
+    class="lang-switch-icon"
+    aria-hidden="true"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3 12h18" />
+    <path d="M12 3a14.5 14.5 0 0 1 0 18 14.5 14.5 0 0 1 0-18z" />
+  </svg>
   {languages[other]}
 </a>
 
@@ -23,7 +36,7 @@ const other: Locale = locale === 'zh' ? 'en' : 'zh';
     gap: 0.35em;
     font-size: 0.88rem;
     font-weight: 500;
-    color: var(--fg-muted);
+    color: #18181b; /* 黑色图标+文字 */
     border: 1px solid var(--border);
     border-radius: 999px;
     padding: 0.25em 0.9em;
@@ -36,6 +49,8 @@ const other: Locale = locale === 'zh' ? 'en' : 'zh';
     text-decoration: none;
   }
   .lang-switch-icon {
-    font-size: 0.9em;
+    width: 0.95em;
+    height: 0.95em;
+    flex-shrink: 0;
   }
 </style>

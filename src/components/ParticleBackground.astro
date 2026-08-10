@@ -23,16 +23,12 @@
     const MOUSE_RADIUS = 180;
 
     const COLORS = {
-      light: { particle: '79, 70, 229', line: '79, 70, 229' },
-      dark: { particle: '129, 140, 248', line: '129, 140, 248' },
+      light: { particle: '99, 102, 241', line: '99, 102, 241' }, // indigo-500
     };
 
     let particles = [];
     let mouse = { x: null, y: null };
     let width = 0, height = 0, dpr = 1;
-    let theme = window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light';
     let rafId = null;
     let fallbackTimer = null;
 
@@ -62,7 +58,7 @@
     function draw() {
       if (width === 0 || height === 0) return;
       ctx.clearRect(0, 0, width, height);
-      const color = COLORS[theme];
+      const color = COLORS.light;
 
       for (const p of particles) {
         ctx.beginPath();
@@ -118,11 +114,6 @@
       mouse.x = null;
       mouse.y = null;
     }
-
-    const themeQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    themeQuery.addEventListener('change', (e) => {
-      theme = e.matches ? 'dark' : 'light';
-    });
 
     let lastTime = 0;
     const FPS = 30;

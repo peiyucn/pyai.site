@@ -1,0 +1,148 @@
+---
+// 方案 A：极光流体 AuroraFlow（v2 —— 细长极光帷幕）
+// 背景中 4 条细长的紫/靛蓝"极光帷幕"，大幅流动、旋转、摆动，动效一眼可见
+// 纯 CSS 实现，无 JS 运行时开销
+---
+
+<div class="aurora-bg" aria-hidden="true">
+  <div class="aurora-veil aurora-veil-1"></div>
+  <div class="aurora-veil aurora-veil-2"></div>
+  <div class="aurora-veil aurora-veil-3"></div>
+  <div class="aurora-veil aurora-veil-4"></div>
+</div>
+
+<style>
+  .aurora-bg {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* 极光帷幕：细长条带，倾斜放置，大模糊 */
+  .aurora-veil {
+    position: absolute;
+    width: 18vmax;
+    height: 140vmax; /* 超长条带，倾斜后扫过全屏 */
+    border-radius: 50%;
+    filter: blur(38px);
+    will-change: transform;
+    opacity: 0.45; /* 与粒子网络叠加时调低，让粒子清晰可见 */
+    mix-blend-mode: multiply; /* 灰白底上叠色更柔和 */
+  }
+
+  /* 帷幕 1：靛蓝，从左上垂下，左右摆动 + 旋转 */
+  .aurora-veil-1 {
+    background: linear-gradient(
+      180deg,
+      rgba(99, 102, 241, 0),
+      rgba(99, 102, 241, 0.75) 40%,
+      rgba(99, 102, 241, 0) 100%
+    );
+    top: -30vmax;
+    left: 8%;
+    transform: rotate(18deg);
+    animation: veil-sway-1 16s ease-in-out infinite alternate;
+  }
+
+  /* 帷幕 2：紫色，从右上方垂入，反向摆动 */
+  .aurora-veil-2 {
+    background: linear-gradient(
+      180deg,
+      rgba(139, 92, 246, 0),
+      rgba(139, 92, 246, 0.7) 45%,
+      rgba(139, 92, 246, 0) 100%
+    );
+    top: -35vmax;
+    right: 5%;
+    transform: rotate(-14deg);
+    animation: veil-sway-2 20s ease-in-out infinite alternate;
+  }
+
+  /* 帷幕 3：淡紫，居中偏下，横向飘移 */
+  .aurora-veil-3 {
+    background: linear-gradient(
+      180deg,
+      rgba(167, 139, 250, 0),
+      rgba(167, 139, 250, 0.6) 50%,
+      rgba(167, 139, 250, 0) 100%
+    );
+    top: 10%;
+    left: 35%;
+    transform: rotate(6deg);
+    animation: veil-sway-3 24s ease-in-out infinite alternate;
+  }
+
+  /* 帷幕 4：深靛蓝，最细，快速扫动（点睛） */
+  .aurora-veil-4 {
+    background: linear-gradient(
+      180deg,
+      rgba(79, 70, 229, 0),
+      rgba(79, 70, 229, 0.65) 45%,
+      rgba(79, 70, 229, 0) 100%
+    );
+    top: -20vmax;
+    left: 55%;
+    width: 10vmax;
+    transform: rotate(-22deg);
+    animation: veil-sway-4 12s ease-in-out infinite alternate;
+  }
+
+  /* 摆动动画：大位移 + 旋转，制造"帷幕摇曳"感 */
+  @keyframes veil-sway-1 {
+    0% {
+      transform: translate(0, 0) rotate(18deg);
+    }
+    50% {
+      transform: translate(18vmax, -10vmax) rotate(30deg);
+    }
+    100% {
+      transform: translate(-12vmax, 14vmax) rotate(8deg);
+    }
+  }
+  @keyframes veil-sway-2 {
+    0% {
+      transform: translate(0, 0) rotate(-14deg);
+    }
+    50% {
+      transform: translate(-16vmax, 12vmax) rotate(-28deg);
+    }
+    100% {
+      transform: translate(10vmax, -8vmax) rotate(-4deg);
+    }
+  }
+  @keyframes veil-sway-3 {
+    0% {
+      transform: translate(0, 0) rotate(6deg) scaleX(1);
+    }
+    50% {
+      transform: translate(14vmax, -6vmax) rotate(16deg) scaleX(1.2);
+    }
+    100% {
+      transform: translate(-10vmax, 10vmax) rotate(-2deg) scaleX(0.9);
+    }
+  }
+  @keyframes veil-sway-4 {
+    0% {
+      transform: translate(0, 0) rotate(-22deg);
+      opacity: 0.5;
+    }
+    50% {
+      transform: translate(-14vmax, -12vmax) rotate(-34deg);
+      opacity: 0.8;
+    }
+    100% {
+      transform: translate(12vmax, 8vmax) rotate(-10deg);
+      opacity: 0.55;
+    }
+  }
+
+  /* 系统"减少动态效果"：放慢而非禁用（背景氛围动画） */
+  @media (prefers-reduced-motion: reduce) {
+    .aurora-veil {
+      animation-duration: 40s;
+      animation-timing-function: linear;
+    }
+  }
+</style>

@@ -6,7 +6,7 @@
 
 ```bash
 pnpm install
-pnpm dev       # 本地开发 http://localhost:4321
+pnpm dev       # 本地开发 http://localhost:4322
 pnpm build     # 构建到 dist/
 pnpm preview   # 预览构建产物
 ```
@@ -24,7 +24,9 @@ pnpm preview   # 预览构建产物
     │   ├── ui.ts           # UI 文案字典（zh/en）
     │   └── utils.ts        # 语言工具（t / localizePath 等）
     ├── layouts/            # Base / ListLayout / PostLayout
-    ├── components/         # Header / Footer / 卡片 / 语言切换
+    ├── components/         # Header / Footer / 卡片 / 语言切换 / 背景动效
+    │   ├── ParticleBackground.astro  # 粒子连线网络
+    │   └── AuroraFlow.astro          # 极光光幕
     ├── pages/
     │   └── [locale]/       # zh 与 en 两套路由
     │       ├── index.astro         # 主页
@@ -33,7 +35,7 @@ pnpm preview   # 预览构建产物
     │       ├── projects/           # 项目
     │       ├── about.astro         # 关于
     │       └── rss.xml.ts          # RSS
-    ├── styles/global.css   # 全局样式（含深色模式）
+    ├── styles/global.css   # 全局样式（灰白极简，无深色模式）
     └── content/
         ├── posts/{zh,en}/          # 博客文章
         ├── notes/{zh,en}/          # 知识库笔记
@@ -86,4 +88,4 @@ push 到 `master` 分支后，GitHub Actions 自动构建并部署。
 
 ## 技术栈
 
-Astro 5 · TypeScript · GitHub Pages · pnpm
+Astro 7 · Tailwind CSS 4 · TypeScript · GitHub Pages · pnpm

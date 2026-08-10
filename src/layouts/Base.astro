@@ -13,9 +13,20 @@ interface Props {
   locale: Locale;
   /** 当前路径（用于导航高亮与语言切换） */
   pathname: string;
+  /** 是否隐藏顶部导航栏（首页用：导航以药丸形式放在内容区） */
+  hideHeader?: boolean;
+  /** 是否隐藏页脚（首页全屏 Hero 用） */
+  hideFooter?: boolean;
 }
 
-const { title, description, locale, pathname } = Astro.props;
+const {
+  title,
+  description,
+  locale,
+  pathname,
+  hideHeader = false,
+  hideFooter = false,
+} = Astro.props;
 
 const siteTitle = 'pyai.site';
 const fullTitle = title === siteTitle ? siteTitle : `${title} · ${siteTitle}`;
@@ -56,10 +67,10 @@ const og = {
     />
   </head>
   <body>
-    <Header locale={locale} pathname={pathname} />
+    {!hideHeader && <Header locale={locale} pathname={pathname} />}
     <main>
       <slot />
     </main>
-    <Footer locale={locale} />
+    {!hideFooter && <Footer locale={locale} />}
   </body>
 </html>

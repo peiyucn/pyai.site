@@ -1,12 +1,22 @@
 ---
 import Base from '../../layouts/Base.astro';
-import PostCard from '../../components/PostCard.astro';
-import NoteCard from '../../components/NoteCard.astro';
-import ProjectCard from '../../components/ProjectCard.astro';
-import ParticleBackground from '../../components/ParticleBackground.astro';
-import type { Locale } from '../../i18n/ui';
+// 首页背景动效：粒子网络 / 极光光幕 / 两者叠加
+import ParticleBackground from '../../components/ParticleBackground.astro'; // 粒子连线网络
+import AuroraFlow from '../../components/AuroraFlow.astro'; // 极光光幕
+import LanguageSwitcher from '../../components/LanguageSwitcher.astro';
+import type { Locale, UIKey } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
-import { getPosts, getNotes, getProjects } from '../../utils/content';
+
+// ============================================================
+// 首页背景动效切换：'particles' | 'aurora' | 'combined'
+// ============================================================
+const HOME_EFFECT = 'combined';
+
+const effectComponents: Record<string, any> = {
+  particles: ParticleBackground,
+  aurora: AuroraFlow,
+};
+const EffectComponent = effectComponents[HOME_EFFECT] ?? ParticleBackground;
 
 // 生成 zh / en 两套主页
 export function getStaticPaths() {
@@ -16,194 +26,201 @@ export function getStaticPaths() {
 const { locale } = Astro.params as { locale: Locale };
 const pathname = Astro.url.pathname;
 
-const recentPosts = (await getPosts(locale)).slice(0, 3);
-const recentNotes = (await getNotes(locale)).slice(0, 3);
-const featuredProjects = (await getProjects(locale))
-  .filter((p) => p.data.featured)
-  .slice(0, 3);
+// 首页导航：以药丸形式放在 Hero 中间（不含"首页"自身）
+const pills: { key: UIKey; href: string }[] = [
+  { key: 'nav.blog', href: `/${locale}/blog/` },
+  { key: 'nav.notes', href: `/${locale}/notes/` },
+  { key: 'nav.projects', href: `/${locale}/projects/` },
+  { key: 'nav.about', href: `/${locale}/about/` },
+];
 ---
 
 <Base
   title="pyai.site"
-  description={t(locale, 'home.heroSubtitle')}
+  description={t(locale, 'footer.tagline')}
   locale={locale}
   pathname={pathname}
+  hideHeader
+  hideFooter
 >
-  <!-- Hero：粒子 + 光晕 + 动效 -->
+  <!-- 极简首页：仅 Hero（背景动效 + logo + 副标题 + 药丸导航） -->
   <section class="hero-section">
-    <ParticleBackground />
+    {
+      HOME_EFFECT === 'combined' ? (
+        <>
+          {/* 底层：粒子连线网络 */}
+          <ParticleBackground />
+          {/* 上层：极光光幕（大块模糊紫光流动） */}
+          <AuroraFlow />
+        </>
+      ) : (
+        <EffectComponent />
+      )
+    }
     <div class="hero-content mx-auto flex max-w-3xl flex-col items-center px-5 text-center">
-      <p class="hero-badge animate-in">👋</p>
-      <h1 class="hero-title animate-in text-gradient">
-        {t(locale, 'home.heroTitle')}
+      <h1 class="hero-logo animate-in">
+        pyai<span class="text-gradient">.site</span><span class="hero-caret" aria-hidden="true"></span>
       </h1>
-      <p class="hero-subtitle animate-in">
-        {t(locale, 'home.heroSubtitle')}
+      <p class="hero-tagline animate-in">
+        {t(locale, 'footer.tagline')}
       </p>
-      <div class="mt-10 flex flex-wrap justify-center gap-4 animate-in">
-        <a
-          href={`/${locale}/blog/`}
-          class="hero-btn-primary"
-        >
-          {t(locale, 'nav.blog')} →
-        </a>
-        <a
-          href={`/${locale}/about/`}
-          class="hero-btn-secondary"
-        >
-          {t(locale, 'nav.about')}
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- 最新文章 -->
-  <section class="mx-auto max-w-3xl px-5 py-6 animate-in">
-    <div class="mb-2 flex items-baseline justify-between gap-4 border-b border-zinc-200 pb-3 dark:border-zinc-800">
-      <h2 class="text-xl font-bold tracking-tight">
-        <span class="mr-1.5">✍️</span> {t(locale, 'home.recentPosts')}
-      </h2>
-      <a class="whitespace-nowrap text-sm font-medium text-zinc-500 hover:no-underline hover:text-accent dark:text-zinc-400" href={`/${locale}/blog/`}>
-        {t(locale, 'common.viewAll')} →
-      </a>
-    </div>
-    {
-      recentPosts.length > 0 ? (
-        recentPosts.map((post) => <PostCard post={post} locale={locale} />)
-      ) : (
-        <p class="text-sm text-zinc-500">{t(locale, 'common.noContent')}</p>
-      )
-    }
-  </section>
-
-  <!-- 最近笔记 -->
-  <section class="mx-auto max-w-3xl px-5 py-6 animate-in">
-    <div class="mb-2 flex items-baseline justify-between gap-4 border-b border-zinc-200 pb-3 dark:border-zinc-800">
-      <h2 class="text-xl font-bold tracking-tight">
-        <span class="mr-1.5">📚</span> {t(locale, 'home.recentNotes')}
-      </h2>
-      <a class="whitespace-nowrap text-sm font-medium text-zinc-500 hover:no-underline hover:text-accent dark:text-zinc-400" href={`/${locale}/notes/`}>
-        {t(locale, 'common.viewAll')} →
-      </a>
-    </div>
-    {
-      recentNotes.length > 0 ? (
-        recentNotes.map((note) => <NoteCard note={note} locale={locale} />)
-      ) : (
-        <p class="text-sm text-zinc-500">{t(locale, 'common.noContent')}</p>
-      )
-    }
-  </section>
-
-  <!-- 精选项目 -->
-  <section class="mx-auto max-w-3xl px-5 py-6 animate-in">
-    <div class="mb-3 flex items-baseline justify-between gap-4 border-b border-zinc-200 pb-3 dark:border-zinc-800">
-      <h2 class="text-xl font-bold tracking-tight">
-        <span class="mr-1.5">🚀</span> {t(locale, 'home.featuredProjects')}
-      </h2>
-      <a class="whitespace-nowrap text-sm font-medium text-zinc-500 hover:no-underline hover:text-accent dark:text-zinc-400" href={`/${locale}/projects/`}>
-        {t(locale, 'common.viewAll')} →
-      </a>
-    </div>
-    {
-      featuredProjects.length > 0 ? (
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <nav class="mt-10 flex flex-col items-center gap-4 animate-in" aria-label="Main navigation">
+        <div class="flex flex-wrap items-center justify-center gap-3">
           {
-            featuredProjects.map((project) => (
-              <ProjectCard project={project} locale={locale} />
+            pills.map((pill) => (
+              <a
+                href={pill.href}
+                class:list={[
+                  'hero-pill',
+                  pill.key === 'nav.about' && 'hero-pill-about',
+                ]}
+              >
+                {t(locale, pill.key)}
+              </a>
             ))
           }
         </div>
-      ) : (
-        <p class="text-sm text-zinc-500">{t(locale, 'common.noContent')}</p>
-      )
-    }
+        <LanguageSwitcher locale={locale} pathname={pathname} />
+      </nav>
+    </div>
   </section>
 </Base>
 
 <style>
-  /* 炫酷 Hero：光晕渐变 + 粒子 + 动效 */
+  /* 极简首页：全屏 Hero，内容垂直居中，不触发滚动条 */
   .hero-section {
     position: relative;
     overflow: hidden;
-    padding: 6rem 0 5rem;
-    text-align: center;
-    /* 兜底宽度：确保即使在异常容器下也有尺寸 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    /* 无顶部导航：精确占满整个视口 */
+    height: 100vh;
     width: 100%;
-    /* 背景：多层径向渐变光晕 */
+    /* 背景：灰白基调 + 极淡的光晕 */
     background:
-      radial-gradient(ellipse 60% 40% at 20% 20%, rgba(79, 70, 229, 0.35), transparent 60%),
-      radial-gradient(ellipse 50% 35% at 80% 25%, rgba(124, 58, 237, 0.3), transparent 60%),
-      radial-gradient(ellipse 55% 40% at 50% 80%, rgba(219, 39, 119, 0.2), transparent 60%),
-      var(--bg);
-  }
-  @media (prefers-color-scheme: dark) {
-    .hero-section {
-      background:
-        radial-gradient(ellipse 60% 40% at 20% 20%, rgba(99, 102, 241, 0.3), transparent 60%),
-        radial-gradient(ellipse 50% 35% at 80% 25%, rgba(168, 85, 247, 0.25), transparent 60%),
-        radial-gradient(ellipse 55% 40% at 50% 80%, rgba(244, 114, 182, 0.15), transparent 60%),
-        var(--bg);
-    }
+      radial-gradient(ellipse 60% 40% at 20% 20%, rgba(99, 102, 241, 0.12), transparent 60%),
+      radial-gradient(ellipse 50% 35% at 80% 25%, rgba(139, 92, 246, 0.1), transparent 60%),
+      radial-gradient(ellipse 55% 40% at 50% 80%, rgba(167, 139, 250, 0.08), transparent 60%),
+      #f6f5f2;
   }
   /* Hero 内容在粒子层之上 */
   .hero-content {
     position: relative;
-    z-index: 1;
+    z-index: 2;
+    /* 留出弹性空隙：内容超高时避免贴边 */
+    padding-block: 1rem;
   }
-  .hero-badge {
-    font-size: 3rem;
-    line-height: 1;
-    margin-bottom: 0.8rem;
-  }
-  .hero-title {
-    font-size: 3.2rem;
+  /* 大 logo：黑色 + 紫色渐变后缀（沿用菜单栏配色） */
+  .hero-logo {
+    display: inline-flex;
+    align-items: center; /* 光标垂直居中于文字 */
+    font-size: 4rem;
     font-weight: 800;
-    line-height: 1.12;
+    line-height: 1.1;
     letter-spacing: -0.03em;
-    margin: 0 0 0.6em;
+    margin: 0 0 0.4em;
+    color: #18181b;
   }
-  .hero-subtitle {
+
+  /* 打字机光标：黑色竖线，闪烁（对齐字母视觉主体，非整行高） */
+  .hero-caret {
+    display: inline-block;
+    width: 0.09em;
+    height: 0.72em;
+    margin-left: 0.12em;
+    background: #18181b; /* 与 logo 文字同色，方正无圆角 */
+    /* 贴合小写字母主体：顶对齐后向下压，视觉居中 */
+    transform: translateY(0.14em);
+    animation: caret-blink 1.1s steps(2, start) infinite;
+  }
+  @keyframes caret-blink {
+    0%, 49% {
+      opacity: 1;
+    }
+    50%, 100% {
+      opacity: 0;
+    }
+  }
+  .hero-tagline {
     font-size: 1.25rem;
     color: var(--fg-muted);
     max-width: 36em;
     margin: 0 auto;
   }
-  .hero-btn-primary {
+
+  /* 药丸导航：紫色渐变主按钮 */
+  .hero-pill {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
     border-radius: 9999px;
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #db2777 100%);
-    padding: 0.7em 2em;
-    font-size: 1.05rem;
+    /* 1.5px 细边框：默认与内部渐变完全一致（视觉无缝） */
+    border: 1.5px solid transparent;
+    background:
+      linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%) padding-box,
+      linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%) border-box;
+    padding: calc(0.6em - 1.5px) calc(1.8em - 1.5px); /* 减去边框厚度，视觉尺寸不变 */
+    font-size: 1rem;
     font-weight: 600;
     color: #fff;
-    box-shadow: 0 4px 20px rgba(79, 70, 229, 0.4);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+    transition: box-shadow 0.2s ease;
   }
-  .hero-btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(79, 70, 229, 0.5);
+  .hero-pill:hover {
+    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.4);
+    color: #fff;
     text-decoration: none;
   }
-  .hero-btn-secondary {
-    border-radius: 9999px;
-    border: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(8px);
-    padding: 0.7em 2em;
-    font-size: 1.05rem;
-    font-weight: 500;
-    color: var(--fg);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  /* hover 时边框变为单束亮弧：窄弧 + 柔和衰减，沿边缘转圈 */
+  .hero-pill:hover {
+    background:
+      linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%) padding-box,
+      conic-gradient(
+        from var(--angle),
+        transparent 0deg,
+        rgba(167, 139, 250, 0.15) 40deg,
+        rgba(255, 255, 255, 0.95) 85deg,
+        rgba(255, 255, 255, 0.4) 115deg,
+        transparent 145deg,
+        transparent 360deg
+      ) border-box;
+    animation: pill-sweep 2s linear infinite;
   }
-  @media (prefers-color-scheme: dark) {
-    .hero-btn-secondary {
-      background: rgba(24, 24, 27, 0.6);
+  @property --angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }
+  @keyframes pill-sweep {
+    to {
+      --angle: 360deg;
     }
   }
-  .hero-btn-secondary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-    text-decoration: none;
+  /* "关于"按钮：纯白底（用白色渐变表达，避免压缩器丢失纯色），与紫色渐变区分 */
+  .hero-pill-about {
+    background:
+      linear-gradient(#ffffff, #ffffff) padding-box,
+      linear-gradient(#ffffff, #ffffff) border-box;
+    color: var(--fg);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  }
+  .hero-pill-about:hover {
+    background:
+      linear-gradient(#ffffff, #ffffff) padding-box,
+      conic-gradient(
+        from var(--angle),
+        transparent 0deg,
+        rgba(139, 92, 246, 0.2) 40deg,
+        rgba(167, 139, 250, 0.95) 85deg,
+        rgba(99, 102, 241, 0.45) 115deg,
+        transparent 145deg,
+        transparent 360deg
+      ) border-box;
+    color: var(--accent);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.2);
+    animation: pill-sweep 2s linear infinite;
   }
 
   /* 渐入动画：延迟递增制造层叠感 */
@@ -224,13 +241,10 @@ const featuredProjects = (await getProjects(locale))
   }
 
   @media (max-width: 640px) {
-    .hero-section {
-      padding: 4rem 0 3.5rem;
+    .hero-logo {
+      font-size: 2.8rem;
     }
-    .hero-title {
-      font-size: 2.4rem;
-    }
-    .hero-subtitle {
+    .hero-tagline {
       font-size: 1.1rem;
     }
   }
