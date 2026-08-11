@@ -83,9 +83,18 @@ async function main() {
     // 失败重试：最多重试 2 次，等待 5s/15s
     for (let attempt = 0; attempt <= 2; attempt++) {
       try {
-        const resp = await fetch(`https://movie.douban.com/j/subject_abstract?subject_id=${id}`, {
-          headers: { 'User-Agent': UA, Referer: 'https://movie.douban.com/' },
-        });
+        // 15s 超时：防止豆瓣接口对某些 IP 挂起连接导致无限等待
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 15000);
+        let resp;
+        try {
+          resp = await fetch(`https://movie.douban.com/j/subject_abstract?subject_id=${id}`, {
+            headers: { 'User-Agent': UA, Referer: 'https://movie.douban.com/' },
+            signal: controller.signal,
+          });
+        } finally {
+          clearTimeout(timer);
+        }
         if (resp.ok) {
           const j = await resp.json();
           const s = j.subject || {};
