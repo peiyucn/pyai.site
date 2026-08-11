@@ -13,6 +13,7 @@ export type UIKey =
   | 'nav.blog'
   | 'nav.notes'
   | 'nav.projects'
+  | 'nav.movies'
   | 'nav.about'
   // 通用
   | 'common.readMore'
@@ -27,6 +28,26 @@ export type UIKey =
   | 'notes.description'
   | 'projects.title'
   | 'projects.description'
+  | 'movies.title'
+  | 'movies.description'
+  | 'movies.stats'
+  | 'movies.watched'
+  | 'movies.watching'
+  | 'movies.wishlist'
+  | 'movies.rating'
+  | 'movies.date'
+  | 'movies.comment'
+  | 'movies.year'
+  | 'movies.years'
+  | 'movies.byYear'
+  | 'movies.byRating'
+  | 'movies.byStatus'
+  | 'movies.byDirector'
+  | 'movies.byGenre'
+  | 'movies.byReleaseYear'
+  | 'movies.total'
+  | 'movies.viewStats'
+  | 'movies.backToList'
   // 关于
   | 'about.title'
   | 'about.description'
@@ -41,6 +62,7 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'nav.blog': '博客',
     'nav.notes': '笔记',
     'nav.projects': '项目',
+    'nav.movies': '观影',
     'nav.about': '关于',
     'common.readMore': '阅读全文',
     'common.publishedAt': '发布于',
@@ -53,6 +75,26 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'notes.description': '学习过程中的知识沉淀。',
     'projects.title': '项目',
     'projects.description': '我的一些开源作品。',
+    'movies.title': '观影',
+    'movies.description': '我的豆瓣观影记录，由 douban-sync 自动同步。',
+    'movies.stats': '统计',
+    'movies.watched': '看过',
+    'movies.watching': '在看',
+    'movies.wishlist': '想看',
+    'movies.rating': '评分',
+    'movies.date': '标记日期',
+    'movies.comment': '短评',
+    'movies.year': '年',
+    'movies.years': '年',
+    'movies.byYear': '按标记年份',
+    'movies.byRating': '按评分',
+    'movies.byStatus': '状态',
+    'movies.byDirector': '导演 Top',
+    'movies.byGenre': '类型 Top',
+    'movies.byReleaseYear': '按上映年份',
+    'movies.total': '共',
+    'movies.viewStats': '查看统计',
+    'movies.backToList': '返回明细',
     'about.title': '关于',
     'about.description': '关于我。',
     'footer.tagline': '记录 · 沉淀 · 创造',
@@ -63,6 +105,7 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'nav.blog': 'Blog',
     'nav.notes': 'Notes',
     'nav.projects': 'Projects',
+    'nav.movies': 'Movies',
     'nav.about': 'About',
     'common.readMore': 'Read more',
     'common.publishedAt': 'Published',
@@ -75,6 +118,26 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'notes.description': 'Knowledge distilled from learning.',
     'projects.title': 'Projects',
     'projects.description': 'Some of my open-source work.',
+    'movies.title': 'Movies',
+    'movies.description': 'My Douban watchlist, auto-synced by douban-sync.',
+    'movies.stats': 'Stats',
+    'movies.watched': 'Watched',
+    'movies.watching': 'Watching',
+    'movies.wishlist': 'Wishlist',
+    'movies.rating': 'Rating',
+    'movies.date': 'Marked',
+    'movies.comment': 'Comment',
+    'movies.year': '',
+    'movies.years': 'yrs',
+    'movies.byYear': 'By marked year',
+    'movies.byRating': 'By rating',
+    'movies.byStatus': 'Status',
+    'movies.byDirector': 'Top directors',
+    'movies.byGenre': 'Top genres',
+    'movies.byReleaseYear': 'By release year',
+    'movies.total': 'Total',
+    'movies.viewStats': 'View stats',
+    'movies.backToList': 'Back to list',
     'about.title': 'About',
     'about.description': 'About me.',
     'footer.tagline': 'Record · Distill · Create',

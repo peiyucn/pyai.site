@@ -18,8 +18,12 @@ pnpm preview   # 预览构建产物
 ├── pnpm-workspace.yaml     # pnpm 配置（允许 esbuild/sharp 构建脚本）
 ├── CNAME                   # 自定义域名 pyai.site
 ├── .github/workflows/deploy.yml   # push 到 master 自动部署
+├── .github/workflows/douban-sync.yml  # 每日同步豆瓣观影记录
+├── data/pei830/            # 豆瓣观影数据（自动同步生成）
+│   ├── movies.json         # 全量记录（含导演/年份/类型）
+│   └── 影视.csv            # 兼容 douban-sync 格式
 └── src/
-    ├── content.config.ts   # 内容集合 schema（posts/notes/projects）
+    ├── content.config.ts   # 内容集合 schema（posts/notes/projects/movies）
     ├── i18n/
     │   ├── ui.ts           # UI 文案字典（zh/en）
     │   └── utils.ts        # 语言工具（t / localizePath 等）
@@ -32,6 +36,7 @@ pnpm preview   # 预览构建产物
     │       ├── index.astro         # 主页
     │       ├── blog/               # 博客列表 + 文章页
     │       ├── notes/              # 笔记列表 + 笔记页
+    │       ├── movies/             # 观影明细 + 统计
     │       ├── projects/           # 项目
     │       ├── about.astro         # 关于
     │       └── rss.xml.ts          # RSS
@@ -40,6 +45,21 @@ pnpm preview   # 预览构建产物
         ├── posts/{zh,en}/          # 博客文章
         ├── notes/{zh,en}/          # 知识库笔记
         └── projects/{zh,en}/       # 项目
+```
+
+## 观影记录
+
+豆瓣观影记录通过 `scripts/douban-sync/douban-full-export.mjs` 全量抓取，数据存在 `data/pei830/`：
+
+- **movies.json** — 站点数据源（标题/链接/日期/评分/导演/上映年份/类型）
+- **影视.csv** — 兼容 douban-sync 格式
+
+`movies` collection 的自定义 loader 读取 `movies.json`，生成 `/zh/movies/` 和 `/en/movies/` 页面（明细 + 统计）。
+
+GitHub Actions 每日 08:30（UTC+8）自动重新抓取并提交更新，触发重新部署。手动同步：
+
+```bash
+DOUBAN_USER=pei830 DOUBAN_OUTPUT_DIR=data node scripts/douban-sync/douban-full-export.mjs
 ```
 
 ## 如何写内容

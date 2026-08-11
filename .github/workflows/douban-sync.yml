@@ -1,0 +1,40 @@
+name: Sync Douban
+
+on:
+  schedule:
+    - cron: '30 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: douban-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # 全量同步：抓取所有列表页（约 2-3 分钟），自动覆盖最新数据
+      # 相比 RSS 增量：不丢条目、自动修复、无需登录
+      - name: Sync Douban (full export)
+        env:
+          DOUBAN_USER: pei830
+          DOUBAN_OUTPUT_DIR: ${{ github.workspace }}/data
+        run: node scripts/douban-sync/douban-full-export.mjs
+
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore(douban): sync watchlist from Douban'
+          file_pattern: 'data/**'
+
