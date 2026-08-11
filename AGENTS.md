@@ -1,67 +1,121 @@
-# AGENTS.md — 站点维护指南
+# AGENTS.md — pyai.site 开发规范
 
-本文件为 AI 编码助手（Copilot / Claude Code 等）提供本站的维护约定。
+本文件为 AI 编码助手（Copilot / Claude Code 等）提供本站的开发约定。
 
-## 内容发布工作流（写手稿 → AI 处理）
+> **首要原则：一切开发必须遵循 Astro 官方标准规范（docs.astro.build），禁止 hack、投机取巧或绕过框架正常机制的做法。**
+
+## 一、开发铁律（必须遵守）
+
+### 1. 遵循官方标准规范
+
+- 所有页面、组件、集合、路由、i18n 实现，一律以 **Astro 官方文档**（<https://docs.astro.build>）为准
+- 禁止以下"hack 式"做法：
+  - 在 `getStaticPaths` 里依赖顶层 `const` 或"碰巧能跑"的变量作用域技巧
+  - 用内联 `<script>` 绕过框架应有的服务端渲染能力（除非确实需要客户端交互）
+  - 为规避编译错误而修改源码结构去"适配"编译器，而不是查明根因
+  - 手写 HTML 字符串拼装替代 Astro 组件语法（`{Pagination()}` 这类在 frontmatter 返回 JSX 的方式已被证明会触发编译器崩溃，应使用独立 `.astro` 组件）
+- 遇到编译错误、构建崩溃，先查根因（错误日志、官方文档、issue），**禁止用删除功能、绕过校验、改默认行为等方式"糊弄"过去**
+
+### 2. 已知技术约束（历史踩坑，务必避开）
+
+- **`[locale]` 目录名的方括号是路径通配符陷阱**：
+  - PowerShell 的 `Get-ChildItem` / `Set-Content` 等（非 `-LiteralPath`）会把方括号当通配符，**写文件会跑到错误位置甚至覆盖别的文件**——曾导致 8 个页面被 Base.astro 内容覆盖
+  - 凡涉及 `[locale]` 路径的操作必须用 `-LiteralPath`，或用绝对路径 + `[System.IO.File]::WriteAllText`
+- **Astro 顶层 `const` 陷阱**：`[page].astro` 的 `getStaticPaths` 若引用顶层 `const PER_PAGE` 会导致构建静默崩溃（编译器把顶层 const 移进组件作用域）。正确做法：`getStaticPaths` 内**内联数字**，或用模块级函数读取（如 `getMoviesCount()`）
+- **BOM 陷阱**：PowerShell `Set-Content -Encoding UTF8` 会写 BOM，node 脚本 shebang 后带 BOM 直接 SyntaxError。写脚本用 `[System.IO.File]::WriteAllText(path, content, [System.Text.UTF8Encoding]::new($false))`
+- **Tailwind 4 的 hover 变体**：`hover:*` 类被编译进 `@media (hover: hover)`，这是官方标准行为（触屏保护），不要移除或绕过
+- **dev server 缓存**：删过 `.astro` 缓存目录后 dev 可能显示"共 0"数据或启动失败，重启 dev 即可；构建崩溃时先 `Remove-Item .astro, dist` 再试
+
+### 3. 开发流程
+
+1. 改动前先读懂相关文件（布局、组件、集合、i18n）
+2. 遵循官方模式：页面用 `ListLayout`/`PostLayout`/`Base` 布局，组件用 `.astro` 单文件组件
+3. 改动后必须 `pnpm build` 验证构建通过（exit=0），且不出现新的错误
+4. 中英双语都要验证（`/zh/` 与 `/en/`）
+
+## 二、项目结构（摘要）
+
+完整目录树见 `README.md`。AI 开发只需关注以下路径：
+
+- `src/pages/[locale]/` — 双语页面（index / records / projects / movies / about）
+- `src/components/` — 组件（Header / MovieList / RecordCard / Pagination 等）
+- `src/layouts/` — Base / ListLayout / PostLayout
+- `src/content.config.ts` — 内容集合 schema（records / projects / movies）
+- `src/content/records/` — 记录（zh/en 双语，用 tags 区分类型）
+- `src/i18n/` — UI 文案字典（新增文案先加 ui.ts 的 zh/en）
+- `src/utils/` — douban.ts（观影数据）/ content.ts（内容工具）
+- `data/pei830/` — 豆瓣数据（movies.json + meta.json）
+- `scripts/douban-sync/` — 同步脚本
+
+## 三、技术配置要点
+
+- **i18n**：`prefixDefaultLocale: true`（zh/en 都带前缀）、`redirectToDefaultLocale: true`
+- **Content Layer**：movies 用自定义 loader 读 `data/pei830/movies.json`，注意函数式 loader 返回扁平结构（id 与 data 字段平级）
+- **Tailwind 4**：主题在 `src/styles/global.css` 的 `@theme`，新增颜色/动画在此处定义
+- **构建**：`pnpm build`（`astro build`，静态输出 `dist/`），改动后必须验证 exit=0
+
+## 四、部署与数据同步（维护细节）
+
+### 部署
+
+- push `master` 自动触发 GitHub Pages 部署（`.github/workflows/deploy.yml`，Node 22）
+- 自定义域名 `pyai.site` 由仓库根目录 `CNAME` 文件指定
+- 首次配置：GitHub 仓库 Settings → Pages → Source 选择 "GitHub Actions"
+
+### 豆瓣数据同步
+
+数据位置：`data/pei830/`（`movies.json` 全量 + `meta.json` 快照时间）。GitHub Actions 每日 08:30（UTC+8）自动执行（`.github/workflows/douban-sync.yml`）：
+
+1. **列表增量**（`douban-incremental.mjs`）：抓列表页第 1 页（最近 30 条），与现有数据按 URL 去重，只追加新条目（秒级）
+2. **评分补充**（`douban-enrich.mjs`）：调用 `subject_abstract` 接口，只处理缺豆瓣评分的条目，`MAX_PER_RUN` 限批
+
+首次初始化（全量 2000+ 条）手动执行 `douban-full-export.mjs`：
+
+```bash
+DOUBAN_USER=pei830 DOUBAN_OUTPUT_DIR=data node scripts/douban-sync/douban-full-export.mjs
+```
+
+注意：豆瓣评分/导演/地区为**同步时快照**，三个脚本写 `movies.json` 时都要顺带更新 `meta.json` 的 `updatedAt`。
+
+## 五、内容发布工作流
 
 ### 快速开始（给人类）
 
-你只需要：
+在 `drafts/` 下新建 Markdown 文件，纯中文、专注内容即可（文件名随意，建议用简短英文或拼音标识）：
 
-1. 在 `drafts/` 目录下新建一个 Markdown 文件，**纯中文、专注内容**，不要管任何格式：
-   - `drafts/blog-xxx.md` — 想发到**博客**（正式文章）
-   - `drafts/note-xxx.md` — 想发到**笔记**（知识沉淀）
-   - 文件名随意，内容随意，格式随意（你甚至可以只写标题和正文）
-2. 告诉 AI："处理 `drafts/xxx.md`"
+- `drafts/xxx.md` — 任何想发的内容（文章、随笔、笔记、心得……）
 
-### AI 处理步骤（给 AI）
+然后告诉 AI："处理 `drafts/xxx.md`"
 
-收到处理请求后，按以下步骤执行：
+### AI 处理步骤
 
-1. **阅读手稿**，判断类型：
-   - 文件名以 `note-` 开头 → 笔记；以 `blog-` 开头 → 博客
-   - 文件名不清晰时，根据内容自行判断（经验知识 → 笔记；想法/长文 → 博客）
-
-2. **生成目标文件**（写入 `src/content/` 下）：
-
-   | 手稿 | 中文文件 | 英文文件 |
-   |---|---|---|
-   | `drafts/blog-xxx.md` | `src/content/posts/zh/xxx.md` | `src/content/posts/en/xxx.md` |
-   | `drafts/note-xxx.md` | `src/content/notes/zh/xxx.md` | `src/content/notes/en/xxx.md` |
-
-3. **frontmatter 要求**（中文 + 英文都要）：
+1. 阅读手稿，判断适合的标签（如：随笔 / 技术 / 笔记 / 读书 / 生活……）
+2. 生成目标文件：`src/content/records/zh/xxx.md` 与 `src/content/records/en/xxx.md`（**站点只有一个 records 集合，用 tags 区分内容类型，不再区分 blog / note**）
+3. frontmatter 要求：
 
    ```yaml
    ---
-   title: 标题          # 中英各自对应
-   description: 一句话摘要  # 中英各自对应
-   date: 2026-08-11      # 当天日期
-   tags: [标签1, 标签2]   # 2~4 个相关标签
+   title: 标题
+   description: 一句话摘要
+   date: 2026-08-11
+   tags: [标签1, 标签2]   # 2~4 个；用标签区分"随笔/技术/笔记"等类型
    locale: zh            # 或 en
    translationOf: xxx    # 中英相同（去掉语言前缀的文件名）
    ---
    ```
 
-4. **内容处理**：
-   - **默认原样发布**：手稿内容原样写入中文文件，不做任何改写/润色/优化，除非用户明确要求（"优化一下/帮我改改"等）
-   - 英文文件：由 AI **完整翻译**为英文，保持同样的结构
-   - 正文用标准 Markdown（标题分级、列表、代码块），不要在正文里重复标题
+4. 内容处理：
+   - 中文：默认原样发布，不润色（除非用户明确要求）
+   - 英文：完整翻译为英文，保持结构
+   - 正文用标准 Markdown，不在正文重复标题
+5. 写作约定：
+   - `description` 里避免未加引号的半角冒号（YAML 解析问题），如 `description: "a: b"`
+   - 未完成的内容加 `draft: true`，不会出现在列表里
+6. 完成后：永不删除 `drafts/` 手稿（如需避免重复处理，在手稿顶部加 `<!-- processed -->`）；`pnpm build` 验证；汇报生成的文件与标签
 
-5. **处理完成**后：
-   - **永不删除手稿**：原手稿保留在 `drafts/` 下，任何时候都不要删除（如需避免重复处理，可在手稿顶部加一行 `<!-- processed -->` 标记，或告诉我你已经确认过）
-   - 运行 `pnpm build` 验证构建通过
-   - 汇报：生成了哪两个文件、标题、标签；如果原样发布，说明"内容未改动"
+## 六、其他约定
 
-### 注意事项
-
-- 手稿可能只有标题没有正文 → 生成最小可用内容（正文留标题即可）
-- 手稿可能很长 → 保持完整，不要截断或总结替代
-- 手稿中有代码 → 用代码块包裹，保留原样
-- 中文手稿中如有英文专有名词（如 GitHub、VS Code），保留不译
-
-## 其他约定
-
-- **项目页**（`src/content/projects/`）：每个 GitHub 仓库一个目录下的 `zh`/`en` 两个文件，字段见 `src/content.config.ts`
-- **构建命令**：`pnpm build`（Astro 7 + Tailwind 4）
-- **部署**：push 到 `master` 自动部署 GitHub Pages
-- **导航**：站点只有 Blog / Notes / Projects / About 四个板块
+- **项目页**（`src/content/projects/`）：每个仓库一个目录，含 `zh`/`en` 两文件，字段见 `src/content.config.ts`（status: active/wip/archived）
+- **导航板块**：首页 / 记录 / 项目 / 观影 / 关于
+- **观影数据**：`data/pei830/movies.json` 由同步脚本生成，勿手改；`meta.json` 的 `updatedAt` 决定页面底部"更新于"时间
+- **邮箱反爬**：关于页邮箱用 charCode 混淆 + 运行时 JS 拼接，不要在源码中写完整邮箱
