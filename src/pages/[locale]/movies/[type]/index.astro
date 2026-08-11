@@ -1,0 +1,47 @@
+---
+import ListLayout from '../../../../layouts/ListLayout.astro';
+import MovieList from '../../../../components/MovieList.astro';
+import type { Locale } from '../../../../i18n/ui';
+import { t } from '../../../../i18n/utils';
+import { getMovies } from '../../../../utils/douban';
+
+type MovieFilter = 'films' | 'series';
+
+export function getStaticPaths() {
+  const paths: { params: { locale: Locale; type: MovieFilter } }[] = [];
+  for (const locale of ['zh', 'en'] as Locale[]) {
+    for (const type of ['films', 'series'] as MovieFilter[]) {
+      paths.push({ params: { locale, type } });
+    }
+  }
+  return paths;
+}
+
+const { locale, type } = Astro.params as { locale: Locale; type: MovieFilter };
+const pathname = Astro.url.pathname;
+const movies = await getMovies();
+
+/** 按影/剧过滤（type 由路径参数决定，静态生成时即生效） */
+const filtered = movies.filter((m) => (type === 'series' ? m.data.isTv : !m.data.isTv));
+
+const PER_PAGE = 50;
+const currentPage = 1;
+const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+const pageMovies = filtered.slice(0, PER_PAGE);
+---
+
+<ListLayout
+  locale={locale}
+  pathname={pathname}
+  title={t(locale, 'movies.title')}
+  description={t(locale, 'movies.description')}
+>
+  <MovieList
+    movies={pageMovies}
+    locale={locale}
+    total={filtered.length}
+    currentPage={currentPage}
+    totalPages={totalPages}
+    filter={type}
+  />
+</ListLayout>

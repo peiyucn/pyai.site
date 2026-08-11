@@ -115,6 +115,9 @@ export async function enrichWithRexxar(items) {
           genre: (j.genres || []).join(' / '),
           year: j.year ? String(j.year) : extractYear(item.intro),
           doubanRating: typeof j.rating?.value === 'number' ? j.rating.value : 0,
+          // 影/剧区分：rexxar type 为 'tv' 即剧集
+          isTv: j.type === 'tv',
+          subtype: typeof j.subtype === 'string' ? j.subtype.toLowerCase() : '',
         };
       } else {
         // 条目可能已下架：保留 intro fallback
@@ -125,6 +128,8 @@ export async function enrichWithRexxar(items) {
           genre: extractGenre(item.intro),
           year: extractYear(item.intro),
           doubanRating: 0,
+          isTv: false,
+          subtype: '',
         };
       }
     } catch {
@@ -135,6 +140,8 @@ export async function enrichWithRexxar(items) {
         genre: extractGenre(item.intro),
         year: extractYear(item.intro),
         doubanRating: 0,
+        isTv: false,
+        subtype: '',
       };
     }
     await sleep(DELAY_MS); // 限速保护
@@ -236,6 +243,7 @@ async function main() {
     doubanRating: it.doubanRating ?? 0,
   }));
   fs.writeFileSync(jsonPath, JSON.stringify(output, null, 2), 'utf8');
+  fs.writeFileSync(path.join(OUTPUT_DIR, 'meta.json'), JSON.stringify({ updatedAt: new Date().toISOString(), type: 'douban-sync' }, null, 2), 'utf8');
   console.log(`Written ${output.length} records to ${jsonPath}`);
 }
 

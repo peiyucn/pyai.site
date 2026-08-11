@@ -19,6 +19,8 @@ type MovieJson = {
   year?: string;
   genre?: string;
   doubanRating?: number;
+  isTv?: boolean;
+  subtype?: string;
 };
 
 function loadMoviesJson(): MovieJson[] {
@@ -87,6 +89,7 @@ const movies = defineCollection({
       year: row.year ?? '',
       genre: row.genre ?? '',
       doubanRating: row.doubanRating ?? 0,
+      isTv: row.isTv ?? false,
     }));
   },
   schema: z.object({
@@ -104,6 +107,8 @@ const movies = defineCollection({
     genre: z.string().default(''),
     // 豆瓣当前评分（0-10 分）
     doubanRating: z.number().default(0),
+    // 是否为剧集（豆瓣 type: 'tv'），用于影/剧区分
+    isTv: z.boolean().default(false),
   }),
 });
 

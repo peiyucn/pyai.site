@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  # 需要 actions: write 才能在工作流内触发 deploy（GITHUB_TOKEN 的 push 不会触发其他 workflow）
+  actions: write
 
 concurrency:
   group: douban-sync
@@ -24,17 +26,34 @@ jobs:
         with:
           node-version: 22
 
-      # 全量同步：抓取所有列表页（约 2-3 分钟），自动覆盖最新数据
-      # 相比 RSS 增量：不丢条目、自动修复、无需登录
-      - name: Sync Douban (full export)
+      # 增量同步：只抓列表页第 1 页（最近 30 条），与现有数据按 URL 去重追加
+      # 秒级完成；新标记的电影必然在最近 30 条内
+      - name: Sync Douban (incremental)
         env:
           DOUBAN_USER: pei830
           DOUBAN_OUTPUT_DIR: ${{ github.workspace }}/data
-        run: node scripts/douban-sync/douban-full-export.mjs
+        run: node scripts/douban-sync/douban-incremental.mjs
+
+      # 补充豆瓣评分/导演/地区（subject_abstract 接口，只处理缺数据的条目）
+      # 单次限 500 条，分批补全；首次初始化用 douban-full-export 全量导出
+      - name: Enrich Douban ratings (batch)
+        env:
+          DOUBAN_USER: pei830
+          DOUBAN_OUTPUT_DIR: ${{ github.workspace }}/data
+          MAX_PER_RUN: '500'
+        run: node scripts/douban-sync/douban-enrich.mjs
 
       - name: Commit changes
+        id: commit
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: 'chore(douban): sync watchlist from Douban'
           file_pattern: 'data/**'
+
+      # 数据有变动时，显式触发部署（GITHUB_TOKEN 的 push 不会触发 deploy.yml 的 on: push）
+      - name: Trigger deploy
+        if: steps.commit.outputs.changes_detected == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --ref master
 

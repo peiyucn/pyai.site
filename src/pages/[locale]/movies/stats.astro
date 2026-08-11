@@ -1,4 +1,4 @@
-﻿---
+---
 import ListLayout from '../../../layouts/ListLayout.astro';
 import type { Locale } from '../../../i18n/ui';
 import { t } from '../../../i18n/utils';
@@ -6,9 +6,8 @@ import {
   getMovies,
   statsByYear,
   statsByRating,
-  statsByDirector,
   statsByGenre,
-  statsByReleaseYear,
+  statsByRatingGap,
 } from '../../../utils/douban';
 
 export function getStaticPaths() {
@@ -19,16 +18,14 @@ const { locale } = Astro.params as { locale: Locale };
 const pathname = Astro.url.pathname;
 const movies = await getMovies();
 
+const byGenre = statsByGenre(movies);
 const byYear = statsByYear(movies);
 const byRating = statsByRating(movies);
-const byDirector = statsByDirector(movies);
-const byGenre = statsByGenre(movies);
-const byReleaseYear = statsByReleaseYear(movies);
+const byRatingGap = statsByRatingGap(movies);
 
+const maxGenre = Math.max(1, ...byGenre.map((d) => d.count));
 const maxYear = Math.max(1, ...byYear.map((d) => d.count));
 const maxRating = Math.max(1, ...byRating.map((d) => d.count));
-const maxDirector = Math.max(1, ...byDirector.map((d) => d.count));
-const maxReleaseYear = Math.max(1, ...byReleaseYear.map((d) => d.count));
 
 // 中文星级标签
 const ratingLabel = (rating: number) =>
@@ -44,11 +41,11 @@ const ratingLabel = (rating: number) =>
   <div class="mb-6 flex items-center justify-between">
     <a
       href={`/${locale}/movies/`}
-      class="text-sm text-accent transition-colors hover:bg-zinc-100"
+      class="text-sm text-accent hover:underline"
     >
       ← {t(locale, 'movies.backToList')}
     </a>
-    <p class="text-sm text-zinc-500">
+    <p class="text-sm text-zinc-600">
       {t(locale, 'movies.total')} {movies.length}
     </p>
   </div>
@@ -56,14 +53,33 @@ const ratingLabel = (rating: number) =>
   {
     movies.length > 0 ? (
       <>
+        {/* 类型 Top */}
+        <section class="mb-10">
+          <h2 class="mb-4 text-lg font-bold">{t(locale, 'movies.byGenre')}</h2>
+          {byGenre.length > 0 ? (
+            <div class="flex flex-wrap gap-2">
+              {byGenre.map((d) => (
+                <span
+                  class="rounded-full border border-zinc-300 px-3 py-1 text-sm text-zinc-800"
+                  title={`${d.genre}: ${d.count}`}
+                >
+                  {d.genre} <b class="text-accent">{d.count}</b>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p class="text-sm text-zinc-500">{t(locale, 'common.noContent')}</p>
+          )}
+        </section>
+
         {/* 按标记年份 */}
         <section class="mb-10">
           <h2 class="mb-4 text-lg font-bold">{t(locale, 'movies.byYear')}</h2>
           <div class="space-y-3">
             {byYear.map((d) => (
               <div class="flex items-center gap-3">
-                <span class="w-14 shrink-0 text-sm tabular-nums text-zinc-500">{d.year}</span>
-                <div class="h-5 flex-1 overflow-hidden rounded bg-zinc-100">
+                <span class="w-14 shrink-0 text-sm tabular-nums text-zinc-600">{d.year}</span>
+                <div class="h-5 flex-1">
                   <div
                     class="flex h-full items-center justify-end rounded bg-gradient-to-r from-accent/70 to-accent pr-2 transition-all"
                     style={`width: ${(d.count / maxYear) * 100}%`}
@@ -84,7 +100,7 @@ const ratingLabel = (rating: number) =>
               {byRating.map((d) => (
                 <div class="flex items-center gap-3">
                   <span class="w-16 shrink-0 text-sm text-amber-500">{ratingLabel(d.rating)}</span>
-                  <div class="h-5 flex-1 overflow-hidden rounded bg-zinc-100">
+                  <div class="h-5 flex-1">
                     <div
                       class="flex h-full items-center justify-end rounded bg-gradient-to-r from-zinc-400 to-zinc-600 pr-2 transition-all"
                       style={`width: ${(d.count / maxRating) * 100}%`}
@@ -100,65 +116,40 @@ const ratingLabel = (rating: number) =>
           )}
         </section>
 
-        {/* 导演 Top */}
-        <section class="mb-10">
-          <h2 class="mb-4 text-lg font-bold">{t(locale, 'movies.byDirector')}</h2>
-          {byDirector.length > 0 ? (
-            <div class="space-y-3">
-              {byDirector.map((d) => (
-                <div class="flex items-center gap-3">
-                  <span class="w-40 shrink-0 truncate text-sm text-zinc-600">{d.director}</span>
-                  <div class="h-5 flex-1 overflow-hidden rounded bg-zinc-100">
-                    <div
-                      class="flex h-full items-center justify-end rounded bg-gradient-to-r from-zinc-500 to-zinc-700 pr-2 transition-all"
-                      style={`width: ${(d.count / maxDirector) * 100}%`}
-                    >
-                      <span class="text-xs font-semibold text-white">{d.count}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p class="text-sm text-zinc-500">{t(locale, 'common.noContent')}</p>
-          )}
-        </section>
-
-        {/* 类型 Top */}
-        <section class="mb-10">
-          <h2 class="mb-4 text-lg font-bold">{t(locale, 'movies.byGenre')}</h2>
-          {byGenre.length > 0 ? (
-            <div class="flex flex-wrap gap-2">
-              {byGenre.map((d) => (
-                <span
-                  class="rounded-full border border-zinc-200 px-3 py-1 text-sm text-zinc-700"
-                  title={`${d.genre}: ${d.count}`}
-                >
-                  {d.genre} <b class="text-accent">{d.count}</b>
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p class="text-sm text-zinc-500">{t(locale, 'common.noContent')}</p>
-          )}
-        </section>
-
-        {/* 按上映年份 */}
+        {/* 并不觉得好的电影 Top 10（仅电影） */}
         <section>
-          <h2 class="mb-4 text-lg font-bold">{t(locale, 'movies.byReleaseYear')}</h2>
-          {byReleaseYear.length > 0 ? (
-            <div class="space-y-3">
-              {byReleaseYear.map((d) => (
+          <h2 class="mb-4 text-lg font-bold">{t(locale, 'movies.byRatingGap')}</h2>
+          {byRatingGap.length > 0 ? (
+            <div class="space-y-2">
+              {byRatingGap.map((d, i) => (
                 <div class="flex items-center gap-3">
-                  <span class="w-14 shrink-0 text-sm tabular-nums text-zinc-500">{d.year}</span>
-                  <div class="h-5 flex-1 overflow-hidden rounded bg-zinc-100">
-                    <div
-                      class="flex h-full items-center justify-end rounded bg-gradient-to-r from-accent/70 to-accent pr-2 transition-all"
-                      style={`width: ${(d.count / maxReleaseYear) * 100}%`}
-                    >
-                      <span class="text-xs font-semibold text-white">{d.count}</span>
-                    </div>
-                  </div>
+                  <span class="w-7 shrink-0 text-sm tabular-nums text-zinc-400">{i + 1}</span>
+                  <a
+                    href={d.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="min-w-0 flex-1 truncate text-sm text-zinc-800 hover:text-accent hover:underline"
+                    title={d.title}
+                  >
+                    {d.title}
+                  </a>
+                  <span class="shrink-0 text-sm tabular-nums text-zinc-600">
+                    <span class="text-amber-500">{d.myRating}★</span>
+                    <span class="mx-1 text-zinc-300">/</span>
+                    <span class="text-zinc-500">{d.doubanRating}</span>
+                  </span>
+                  <span
+                    class="shrink-0 rounded px-1.5 py-0.5 text-xs font-semibold"
+                    class:list={[
+                      d.gap >= 4
+                        ? 'bg-red-100 text-red-600'
+                        : d.gap >= 3
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-zinc-100 text-zinc-500',
+                    ]}
+                  >
+                    {t(locale, 'movies.gap')} {d.gap}
+                  </span>
                 </div>
               ))}
             </div>

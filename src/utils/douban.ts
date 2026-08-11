@@ -33,6 +33,36 @@ export function getMoviesCount(): number {
 }
 
 /**
+ * 轻量统计影/剧条数（直接读 JSON，不经过 getCollection）。
+ * 用于筛选路由（films/series）的 getStaticPaths 生成分页路径。
+ */
+export function getMoviesCountByType(type: 'films' | 'series'): number {
+  try {
+    const file = path.resolve(process.cwd(), 'data', 'pei830', 'movies.json');
+    if (!fs.existsSync(file)) return 0;
+    const raw = fs.readFileSync(file, 'utf8');
+    const rows = JSON.parse(raw) as { isTv?: boolean }[];
+    return rows.filter((m) => (type === 'series' ? m.isTv : !m.isTv)).length;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * 轻量读取豆瓣同步快照的元信息（取分/更新时间）。
+ * 由 scripts/douban-sync 在每次写入 movies.json 时顺带生成 meta.json。
+ */
+export function getMoviesMeta(): { updatedAt?: string } {
+  try {
+    const file = path.resolve(process.cwd(), 'data', 'pei830', 'meta.json');
+    if (!fs.existsSync(file)) return {};
+    return JSON.parse(fs.readFileSync(file, 'utf8')) as { updatedAt?: string };
+  } catch {
+    return {};
+  }
+}
+
+/**
  * 解析标准 CSV（支持引号包裹的字段、内嵌逗号/引号/换行）。
  * 不依赖第三方库，数据量小，够用即可。
  */
@@ -117,7 +147,7 @@ export async function getMovies(): Promise<Movie[]> {
   return movies.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 }
 
-/** 统计：按年份分布（只看过） */
+/** 统计：按年份分布（只看过，倒序：最近年份在前） */
 export function statsByYear(movies: Movie[]): { year: number; count: number }[] {
   const map = new Map<number, number>();
   for (const m of movies) {
@@ -127,7 +157,7 @@ export function statsByYear(movies: Movie[]): { year: number; count: number }[] 
   }
   return [...map.entries()]
     .map(([year, count]) => ({ year, count }))
-    .sort((a, b) => a.year - b.year);
+    .sort((a, b) => b.year - a.year);
 }
 
 /** 统计：按评分分布（只看过且评分的） */
@@ -184,5 +214,37 @@ export function statsByGenre(movies: Movie[], limit = 12): { genre: string; coun
   return [...map.entries()]
     .map(([genre, count]) => ({ genre, count }))
     .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
+/**
+ * 统计：我的评分与豆瓣评分差距最大的电影 Top N（并不觉得好的电影）。
+ * 只看电影（isTv === false），且我的评分与豆瓣评分都有。
+ * 量纲统一：我的评分 0-5 星 ×2 → 0-10 分，与豆瓣 0-10 分对齐。
+ */
+export function statsByRatingGap(
+  movies: Movie[],
+  limit = 10,
+): { title: string; url: string; myRating: number; doubanRating: number; gap: number }[] {
+  return movies
+    .filter(
+      (m) =>
+        m.data.status === '看过' &&
+        !m.data.isTv &&
+        m.data.rating > 0 &&
+        m.data.doubanRating > 0,
+    )
+    .map((m) => {
+      const my10 = m.data.rating * 2; // 0-5 星 → 0-10 分
+      const gap = Math.abs(m.data.doubanRating - my10);
+      return {
+        title: m.data.title,
+        url: m.data.url,
+        myRating: m.data.rating,
+        doubanRating: m.data.doubanRating,
+        gap: Math.round(gap * 10) / 10,
+      };
+    })
+    .sort((a, b) => b.gap - a.gap)
     .slice(0, limit);
 }

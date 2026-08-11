@@ -1,0 +1,56 @@
+---
+import ListLayout from '../../../../../layouts/ListLayout.astro';
+import MovieList from '../../../../../components/MovieList.astro';
+import type { Locale } from '../../../../../i18n/ui';
+import { t } from '../../../../../i18n/utils';
+import { getMovies, getMoviesCountByType } from '../../../../../utils/douban';
+
+// 注意：PER_PAGE 不要用顶层 const（Astro 编译会把它移进组件作用域，
+// getStaticPaths 将拿不到），直接内联或用模块级函数常量。
+const PER_PAGE = 50;
+
+type MovieFilter = 'films' | 'series';
+
+export function getStaticPaths() {
+  // 轻量读影/剧条数（不经过 getCollection，避免构建时重复加载大 JSON）
+  const paths: { params: { locale: Locale; type: MovieFilter; page: string } }[] = [];
+  for (const locale of ['zh', 'en'] as Locale[]) {
+    for (const type of ['films', 'series'] as MovieFilter[]) {
+      const count = getMoviesCountByType(type);
+      const totalPages = Math.max(1, Math.ceil(count / 50));
+      for (let p = 2; p <= totalPages; p++) {
+        paths.push({ params: { locale, type, page: String(p) } });
+      }
+    }
+  }
+  return paths;
+}
+
+const { locale, type, page } = Astro.params as { locale: Locale; type: MovieFilter; page: string };
+const pathname = Astro.url.pathname;
+const movies = await getMovies();
+
+/** 按影/剧过滤（type 由路径参数决定） */
+const filtered = movies.filter((m) => (type === 'series' ? m.data.isTv : !m.data.isTv));
+
+const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+const currentPage = Math.min(Math.max(1, parseInt(page) || 1), totalPages);
+const start = (currentPage - 1) * PER_PAGE;
+const pageMovies = filtered.slice(start, start + PER_PAGE);
+---
+
+<ListLayout
+  locale={locale}
+  pathname={pathname}
+  title={t(locale, 'movies.title')}
+  description={t(locale, 'movies.description')}
+>
+  <MovieList
+    movies={pageMovies}
+    locale={locale}
+    total={filtered.length}
+    currentPage={currentPage}
+    totalPages={totalPages}
+    filter={type}
+  />
+</ListLayout>

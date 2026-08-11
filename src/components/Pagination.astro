@@ -1,0 +1,81 @@
+---
+import type { Locale } from '../i18n/ui';
+import { t } from '../i18n/utils';
+
+interface Props {
+  locale: Locale;
+  currentPage: number;
+  totalPages: number;
+  /** 影/剧筛选：'all' 用 /movies/ 路径，films/series 用 /movies/{type}/ 前缀 */
+  filter?: 'all' | 'films' | 'series';
+}
+
+const { locale, currentPage, totalPages, filter = 'all' } = Astro.props;
+
+/** 筛选路径前缀：all → /zh/movies，films → /zh/movies/films */
+function filterPrefix(f: 'all' | 'films' | 'series'): string {
+  return f === 'all' ? `/${locale}/movies` : `/${locale}/movies/${f}`;
+}
+
+const prefix = filterPrefix(filter);
+
+/** 生成分页导航（显示当前页前后若干页 + 首尾） */
+function pageLinks(current: number, total: number): (number | 'gap')[] {
+  const links: (number | 'gap')[] = [];
+  for (let p = 1; p <= total; p++) {
+    if (p === 1 || p === total || Math.abs(p - current) <= 2) {
+      links.push(p);
+    } else if (links[links.length - 1] !== 'gap') {
+      links.push('gap');
+    }
+  }
+  return links;
+}
+
+const pages = pageLinks(currentPage, totalPages);
+---
+
+{
+  totalPages > 1 && (
+    <nav class="flex flex-wrap items-center justify-center gap-1.5" aria-label="pagination">
+      {currentPage > 1 && (
+        <a
+          href={
+            currentPage === 2
+              ? `${prefix}/`
+              : `${prefix}/page/${currentPage - 1}/`
+          }
+          class="rounded-md px-2.5 py-1 text-sm text-zinc-600 transition-colors hover:bg-zinc-300 hover:text-zinc-900"
+        >
+          ← {t(locale, 'movies.prevPage')}
+        </a>
+      )}
+      {pages.map((p) =>
+        p === 'gap' ? (
+          <span class="px-1 text-sm text-zinc-500">…</span>
+        ) : (
+          <a
+            href={p === 1 ? `${prefix}/` : `${prefix}/page/${p}/`}
+            aria-current={p === currentPage ? 'page' : undefined}
+            class:list={[
+              'rounded-md px-2.5 py-1 text-sm transition-colors',
+              p === currentPage
+                ? 'bg-zinc-900 font-semibold text-white'
+                : 'text-zinc-600 hover:bg-zinc-300 hover:text-zinc-900',
+            ]}
+          >
+            {p}
+          </a>
+        ),
+      )}
+      {currentPage < totalPages && (
+        <a
+          href={`${prefix}/page/${currentPage + 1}/`}
+          class="rounded-md px-2.5 py-1 text-sm text-zinc-600 transition-colors hover:bg-zinc-300 hover:text-zinc-900"
+        >
+          {t(locale, 'movies.nextPage')} →
+        </a>
+      )}
+    </nav>
+  )
+}

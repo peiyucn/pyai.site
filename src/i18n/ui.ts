@@ -54,12 +54,20 @@ export type UIKey =
   | 'movies.douban'
   | 'movies.viewStats'
   | 'movies.backToList'
+  | 'movies.byRatingGap'
+  | 'movies.myVsDouban'
+  | 'movies.gap'
+  | 'movies.filterAll'
+  | 'movies.filterMovie'
+  | 'movies.filterTv'
   // 关于
   | 'about.title'
   | 'about.description'
   // 页脚
   | 'footer.tagline'
-  | 'footer.rights';
+  | 'footer.rights'
+  // 首页
+  | 'hero.workingWith';
 
 // 各语言 UI 文案
 export const ui: Record<Locale, Record<UIKey, string>> = {
@@ -107,10 +115,17 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'movies.douban': '豆瓣',
     'movies.viewStats': '查看统计',
     'movies.backToList': '返回明细',
+    'movies.byRatingGap': '并不觉得好的电影 Top 10',
+    'movies.myVsDouban': '我的 / 豆瓣',
+    'movies.gap': '差距',
+    'movies.filterAll': '全部',
+    'movies.filterMovie': '电影',
+    'movies.filterTv': '剧集',
     'about.title': '关于',
     'about.description': '关于 pyai。',
     'footer.tagline': '记录 · 沉淀 · 创造',
     'footer.rights': '保留所有权利',
+    'hero.workingWith': 'working with',
   },
   en: {
     'nav.home': 'Home',
@@ -156,9 +171,16 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'movies.douban': 'Douban',
     'movies.viewStats': 'View stats',
     'movies.backToList': 'Back to list',
+    'movies.byRatingGap': "Top 10 movies I didn't think were good",
+    'movies.myVsDouban': 'Mine / Douban',
+    'movies.gap': 'Gap',
+    'movies.filterAll': 'All',
+    'movies.filterMovie': 'Films',
+    'movies.filterTv': 'Series',
     'about.title': 'About',
     'about.description': 'About pyai.',
     'footer.tagline': 'Record · Distill · Create',
     'footer.rights': 'All rights reserved',
+    'hero.workingWith': 'working with',
   },
 };

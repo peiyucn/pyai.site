@@ -1,4 +1,4 @@
-﻿---
+---
 import ListLayout from '../../../../layouts/ListLayout.astro';
 import MovieList from '../../../../components/MovieList.astro';
 import type { Locale } from '../../../../i18n/ui';
@@ -35,7 +35,7 @@ const pageMovies = movies.slice(start, start + PER_PAGE);
 <ListLayout
   locale={locale}
   pathname={pathname}
-  title={`${t(locale, 'movies.title')} · ${currentPage}`}
+  title={t(locale, 'movies.title')}
   description={t(locale, 'movies.description')}
 >
   <MovieList
@@ -44,5 +44,6 @@ const pageMovies = movies.slice(start, start + PER_PAGE);
     total={movies.length}
     currentPage={currentPage}
     totalPages={totalPages}
+    filter="all"
   />
 </ListLayout>

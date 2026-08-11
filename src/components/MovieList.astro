@@ -1,4 +1,5 @@
-﻿---
+---
+import Pagination from './Pagination.astro';
 import type { Locale } from '../i18n/ui';
 import { t } from '../i18n/utils';
 import type { Movie } from '../utils/douban';
@@ -10,9 +11,11 @@ interface Props {
   total: number;
   currentPage: number;
   totalPages: number;
+  /** 当前影/剧筛选：'all' | 'films' | 'series' */
+  filter?: 'all' | 'films' | 'series';
 }
 
-const { movies, locale, total, currentPage, totalPages } = Astro.props;
+const { movies, locale, total, currentPage, totalPages, filter = 'all' } = Astro.props;
 
 const statusLabel: Record<string, string> = {
   看过: t(locale, 'movies.watched'),
@@ -20,151 +23,142 @@ const statusLabel: Record<string, string> = {
   想看: t(locale, 'movies.wishlist'),
 };
 
-/** 生成分页导航（显示当前页前后若干页 + 首尾） */
-function pageLinks(current: number, total: number): (number | 'gap')[] {
-  const links: (number | 'gap')[] = [];
-  for (let p = 1; p <= total; p++) {
-    if (p === 1 || p === total || Math.abs(p - current) <= 2) {
-      links.push(p);
-    } else if (links[links.length - 1] !== 'gap') {
-      links.push('gap');
-    }
-  }
-  return links;
-}
-
-const pages = pageLinks(currentPage, totalPages);
+/** 筛选标签配置：all / films / series（路径参数，静态生成友好） */
+const filterTabs: { key: 'all' | 'films' | 'series'; label: string; href: string }[] = [
+  { key: 'all', label: t(locale, 'movies.filterAll'), href: `/${locale}/movies/` },
+  { key: 'films', label: t(locale, 'movies.filterMovie'), href: `/${locale}/movies/films/` },
+  { key: 'series', label: t(locale, 'movies.filterTv'), href: `/${locale}/movies/series/` },
+];
 ---
 
 <div class="mb-6 flex items-center justify-between">
-  <p class="text-sm text-zinc-500">
+  <p class="text-sm text-zinc-600">
     {t(locale, 'movies.total')} {total}
   </p>
   <a
     href={`/${locale}/movies/stats/`}
-    class="rounded-md px-2.5 py-1 text-sm text-accent transition-colors hover:bg-zinc-100"
+    class="text-sm text-accent hover:underline"
   >
     {t(locale, 'movies.viewStats')} →
   </a>
 </div>
 
+{/* 影/剧筛选标签 */}
+<div class="mb-4 flex items-center gap-1.5">
+  {
+    filterTabs.map((tab) => (
+      <a
+        href={tab.href}
+        class:list={[
+          'rounded-full border px-3 py-1 text-sm transition-colors',
+          filter === tab.key
+            ? 'border-accent bg-accent/10 font-medium text-accent'
+            : 'border-zinc-300 text-zinc-600 hover:border-accent hover:text-accent',
+        ]}
+      >
+        {tab.label}
+      </a>
+    ))
+  }
+</div>
+
+{/* 顶部翻页 */}
+<Pagination
+  locale={locale}
+  currentPage={currentPage}
+  totalPages={totalPages}
+  filter={filter}
+/>
+
 {
   movies.length > 0 ? (
     <>
-      <ul class="divide-y divide-zinc-200">
-        {movies.map((movie) => (
-          <li class="flex items-start gap-4 py-3">
-            <div class="min-w-0 flex-1">
-              <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <a
-                  href={movie.data.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="font-medium text-zinc-900 transition-colors hover:text-accent"
-                >
-                  {movie.data.title}
-                </a>
-                <span
-                  class:list={[
-                    'rounded-full px-2 py-0.5 text-xs',
-                    movie.data.status === '看过'
-                      ? 'bg-zinc-900 text-white'
-                      : movie.data.status === '在看'
-                        ? 'bg-accent/10 text-accent'
-                        : 'bg-zinc-100 text-zinc-500',
-                  ]}
-                >
-                  {statusLabel[movie.data.status] ?? movie.data.status}
-                </span>
-              </div>
-              {(movie.data.year ||
-                movie.data.country ||
-                movie.data.director ||
-                movie.data.genre) && (
-                <p class="mt-1 text-xs text-zinc-400">
-                  {[
-                    movie.data.year,
-                    movie.data.country,
-                    movie.data.director,
-                    movie.data.genre,
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')}
-                </p>
-              )}
-              {movie.data.comment && (
-                <p class="mt-1 text-sm text-zinc-600">“{movie.data.comment}”</p>
-              )}
-            </div>
-            <div class="shrink-0 text-right">
-              <p
-                class="text-sm tracking-tighter text-amber-500"
-                aria-label={movie.data.rating + '/5'}
-              >
-                {'★'.repeat(movie.data.rating)}
-                <span class="text-zinc-300">{'★'.repeat(5 - movie.data.rating)}</span>
-              </p>
-              {movie.data.doubanRating > 0 && (
-                <p class="mt-0.5 text-xs text-zinc-400">
-                  {t(locale, 'movies.douban')}{' '}
-                  <span class="font-medium text-zinc-600">
-                    {movie.data.doubanRating.toFixed(1)}
-                  </span>
-                </p>
-              )}
-              <p class="mt-0.5 text-xs text-zinc-400">
-                {formatDate(movie.data.date, locale)}
-              </p>
-            </div>
-          </li>
-        ))}
+      <ul class="divide-y divide-zinc-300">
+        {
+          movies.map((movie) => {
+            const isWatched = movie.data.status === '看过';
+            // 看过 → 显示“何时看过”（浅色小字）；其他状态 → 浅色药丸
+            const watchedLabel = isWatched
+              ? locale === 'zh'
+                ? `${formatDate(movie.data.date, locale)} ${t(locale, 'movies.watched')}`
+                : `${t(locale, 'movies.watched')} ${formatDate(movie.data.date, locale)}`
+              : (statusLabel[movie.data.status] ?? movie.data.status);
+
+            const metaLine = [
+              movie.data.year,
+              movie.data.country,
+              movie.data.director,
+              movie.data.genre,
+            ]
+              .filter(Boolean)
+              .join(' · ');
+
+            return (
+              <li class="flex items-baseline gap-4 py-2.5">
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
+                    <a
+                      href={movie.data.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="font-medium text-zinc-900 transition-colors hover:text-accent"
+                    >
+                      {movie.data.title}
+                    </a>
+                    {
+                      isWatched ? (
+                        <span class="shrink-0 text-xs text-zinc-400">{watchedLabel}</span>
+                      ) : (
+                        <span
+                          class="shrink-0 rounded-full border border-zinc-300 bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500"
+                        >
+                          {watchedLabel}
+                        </span>
+                      )
+                    }
+                  </div>
+                  {metaLine && (
+                    <p class="mt-0.5 truncate text-xs text-zinc-500">{metaLine}</p>
+                  )}
+                  {movie.data.comment && (
+                    <p class="mt-0.5 truncate text-sm text-zinc-600">
+                      “{movie.data.comment}”
+                    </p>
+                  )}
+                </div>
+                <div class="shrink-0 text-right">
+                  <p
+                    class="text-sm tracking-tighter text-amber-500"
+                    aria-label={movie.data.rating + '/5'}
+                  >
+                    {'★'.repeat(movie.data.rating)}
+                    <span class="text-zinc-300">{'★'.repeat(5 - movie.data.rating)}</span>
+                  </p>
+                  {movie.data.doubanRating > 0 && (
+                    <p class="mt-0.5 text-xs text-zinc-500">
+                      {t(locale, 'movies.douban')}{' '}
+                      <span class="font-medium text-zinc-700">
+                        {movie.data.doubanRating.toFixed(1)}
+                      </span>
+                    </p>
+                  )}
+                </div>
+              </li>
+            );
+          })
+        }
       </ul>
 
-      {/* 分页导航 */}
-      {totalPages > 1 && (
-        <nav class="mt-8 flex flex-wrap items-center justify-center gap-1.5" aria-label="pagination">
-          {currentPage > 1 && (
-            <a
-              href={
-                currentPage === 2
-                  ? `/${locale}/movies/`
-                  : `/${locale}/movies/page/${currentPage - 1}/`
-              }
-              class="rounded-md px-2.5 py-1 text-sm text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
-            >
-              ← {t(locale, 'movies.prevPage')}
-            </a>
-          )}
-          {pages.map((p) =>
-            p === 'gap' ? (
-              <span class="px-1 text-sm text-zinc-400">…</span>
-            ) : (
-              <a
-                href={p === 1 ? `/${locale}/movies/` : `/${locale}/movies/page/${p}/`}
-                aria-current={p === currentPage ? 'page' : undefined}
-                class:list={[
-                  'rounded-md px-2.5 py-1 text-sm transition-colors',
-                  p === currentPage
-                    ? 'bg-zinc-900 font-semibold text-white'
-                    : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900',
-                ]}
-              >
-                {p}
-              </a>
-            ),
-          )}
-          {currentPage < totalPages && (
-            <a
-              href={`/${locale}/movies/page/${currentPage + 1}/`}
-              class="rounded-md px-2.5 py-1 text-sm text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
-            >
-              {t(locale, 'movies.nextPage')} →
-            </a>
-          )}
-        </nav>
-      )}
+      {/* 底部翻页 */}
+      <div class="mt-8">
+        <Pagination
+          locale={locale}
+          currentPage={currentPage}
+          totalPages={totalPages}
+        />
+      </div>
     </>
   ) : (
-    <p class="text-sm text-zinc-500">{t(locale, 'common.noContent')}</p>
+    <p class="text-sm text-zinc-600">{t(locale, 'common.noContent')}</p>
   )
 }
