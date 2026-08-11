@@ -23,37 +23,95 @@ const pathname = Astro.url.pathname;
     <div class="prose mt-6 max-w-none">
       {
         locale === 'zh' ? (
-          <>
-            <p>你好，我是 Pei，一名程序员。</p>
+          <div class="space-y-4">
             <p>
-              这个站点是我的数字花园：用 <strong>博客</strong> 记录想法与经验，用{' '}
-              <strong>笔记</strong> 沉淀学习过程中的知识，用 <strong>项目</strong>{' '}
-              展示我的一些开源作品。
+              我是 <strong>Pei Yu</strong>——<strong>py</strong> 取自名字的缩写，与
+              Python 无关。此刻，这座站点的管理员，仍是一位碳基生命。
             </p>
-            <p>最近在关注 AI 工具链、自动化工作流，以及如何用 AI 加速软件开发。</p>
             <p>
-              你可以通过 GitHub 找到我：<a href="https://github.com/peiyucn" target="_blank" rel="noopener noreferrer">github.com/peiyucn</a>
+              我最终的目标是把自己「炼化」——到那时，这里的运营权将自然移交给我身后的硅基「生命」。
+              眼下，我正一点点积累自己全生命周期的知识与信息：一部分公开展示在这里，另一部分则沉淀为
+              RAG 语料，供将来的「我」调用。
             </p>
-          </>
+            <p>
+              也许某一天，你会在这里，与「炼化之身」直接对话。这里什么都会出现——技术只是其中很小的一块，
+              甚至，大部分都与技术无关。
+            </p>
+            <p>
+              这并非一个追求流量的站点。但若你恰好路过、心生好奇，欢迎来信交流：
+              <span
+                class="ml-1 inline-flex items-center gap-1.5"
+                data-email-wrap
+              >
+                <a
+                  href="#"
+                  class="inline-block rounded border border-accent/40 bg-accent/10 px-2 py-0.5 font-mono text-sm text-accent no-underline transition-colors hover:bg-accent/20"
+                  data-email-link
+                >
+                  <span data-email-display>peiyucn<span aria-hidden="true">[at]</span>outlook.com</span>
+                </a>
+              </span>
+            </p>
+          </div>
         ) : (
-          <>
-            <p>Hi, I'm Pei, a software developer.</p>
+          <div class="space-y-4">
             <p>
-              This site is my digital garden: <strong>Blog</strong> for thoughts and
-              experiences, <strong>Notes</strong> for distilled knowledge, and{' '}
-              <strong>Projects</strong> for my open-source work.
+              I'm <strong>Pei Yu</strong> — <strong>py</strong> comes from my name,
+              not from Python. For now, this site is still run by a carbon-based
+              life form.
             </p>
             <p>
-              Recently interested in AI tooling, automation workflows, and using AI
-              to accelerate software development.
+              My ultimate goal is to "refine" myself — and eventually hand the keys
+              to a silicon-based "life form" behind the scenes. For the time being,
+              I'm slowly building a lifelong archive of knowledge and memories:
+              some of it is published here, while the rest stays private, feeding my
+              RAG corpus.
             </p>
             <p>
-              Find me on GitHub:{' '}
-              <a href="https://github.com/peiyucn" target="_blank" rel="noopener noreferrer">github.com/peiyucn</a>
+              One day, you might be able to talk to my "refined self" right here.
+              Anything goes here — tech is only a small part of it. In fact, most of
+              it won't be technical at all.
             </p>
-          </>
+            <p>
+              This site isn't meant to be promoted. But if you stumbled upon it and
+              feel like a chat, you're welcome to write to me at
+              <span
+                class="ml-1 inline-flex items-center gap-1.5"
+                data-email-wrap
+              >
+                <a
+                  href="#"
+                  class="inline-block rounded border border-accent/40 bg-accent/10 px-2 py-0.5 font-mono text-sm text-accent no-underline transition-colors hover:bg-accent/20"
+                  data-email-link
+                >
+                  <span data-email-display>peiyucn<span aria-hidden="true">[at]</span>outlook.com</span>
+                </a>
+              </span>
+            </p>
+          </div>
         )
       }
     </div>
   </div>
 </Base>
+
+<script is:inline>
+  (() => {
+    // 邮箱反爬：完整地址用 charCode 混淆，运行时才拼接
+    // 爬虫在 HTML 源码中只能看到数字数组，抓不到完整邮箱
+    const email = String.fromCharCode(
+      112, 101, 105, 121, 117, 99, 110, // peiyucn
+      64, // @
+      111, 117, 116, 108, 111, 111, 107, 46, 99, 111, 109, // outlook.com
+    );
+    const link = document.querySelector('[data-email-link]');
+    const display = document.querySelector('[data-email-display]');
+    if (link && display) {
+      link.setAttribute('href', 'mailto:' + email);
+      const at = display.querySelector('[aria-hidden]');
+      if (at) at.remove();
+      display.textContent = email;
+      link.setAttribute('aria-label', email);
+    }
+  })();
+</script>

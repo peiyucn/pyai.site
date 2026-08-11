@@ -3,10 +3,10 @@
 
 /* ===== Tailwind 4 主题定制 ===== */
 @theme {
-  /* 中性灰黑风格的强调色：保留少量蓝紫点缀 */
-  --color-accent: #6366f1;
-  --color-accent-2: #8b5cf6;
-  --color-accent-3: #a78bfa;
+  /* 中性灰黑风格的强调色：保留少量蓝紫点缀（略加深增加存在感） */
+  --color-accent: #4f46e5;
+  --color-accent-2: #7c3aed;
+  --color-accent-3: #8b5cf6;
 
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
     'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', 'Helvetica Neue',
@@ -34,9 +34,14 @@
 
 /* ===== 基础样式 ===== */
 @layer base {
+  /* 全站整体放大 125%：根字号 16px → 20px，所有 rem 单位（字号/间距/卡片/按钮）等比缩放 */
+  html {
+    font-size: 125%;
+  }
+
   body {
-    /* 灰白基调：暖灰白背景 + 深灰文字，更有纸感层次 */
-    @apply bg-[#f6f5f2] text-zinc-800 antialiased;
+    /* 灰白基调：暖灰背景 + 深灰文字，纸感层次（比之前略深） */
+    @apply bg-[#ecebe7] text-zinc-900 antialiased;
     font-family: var(--font-sans);
     /* 顶部极淡的蓝紫光晕，灰白质感 */
     background-image: radial-gradient(

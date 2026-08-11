@@ -32,13 +32,13 @@ const backLabel = locale === 'zh' ? '← 返回列表' : '← Back to list';
 <Base title={data.title} description={data.description} locale={locale} pathname={pathname}>
   <article class="mx-auto max-w-3xl px-5 pb-8 pt-14 animate-in">
     <header class="mb-10">
-      <a href={backHref} class="text-sm text-zinc-500 hover:text-accent hover:no-underline">
+      <a href={backHref} class="text-sm text-zinc-600 hover:text-accent hover:no-underline">
         {backLabel}
       </a>
       <h1 class="mt-4 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
         {data.title}
       </h1>
-      <div class="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-zinc-500">
+      <div class="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-zinc-600">
         <time datetime={data.date.toISOString()}>
           {t(locale, 'common.publishedAt')}：{formatDate(data.date, locale)}
         </time>
@@ -72,7 +72,7 @@ const backLabel = locale === 'zh' ? '← 返回列表' : '← Back to list';
       <slot />
     </div>
 
-    <footer class="mt-14 border-t border-zinc-200 pt-8">
+    <footer class="mt-14 border-t border-zinc-300 pt-8">
       <a href={backHref} class="rounded-full bg-accent px-5 py-2 text-sm font-medium text-white hover:no-underline">
         {backLabel}
       </a>

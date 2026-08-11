@@ -28,7 +28,7 @@ function isActive(href: string): boolean {
 ---
 
 <header
-  class="sticky top-0 z-10 border-b border-zinc-200 bg-white/80 backdrop-blur-lg"
+  class="sticky top-0 z-10 border-b border-zinc-300 bg-white/80 backdrop-blur-lg"
 >
   <div class="mx-auto flex h-14 max-w-3xl items-center gap-6 px-5">
     <a
@@ -44,10 +44,10 @@ function isActive(href: string): boolean {
           <a
             href={item.href}
             class:list={[
-              'whitespace-nowrap rounded-md px-2.5 py-1 text-sm text-zinc-500 transition-colors hover:no-underline',
+              'whitespace-nowrap rounded-md px-2.5 py-1 text-sm text-zinc-600 transition-colors hover:no-underline',
               isActive(item.href)
                 ? 'font-semibold text-accent'
-                : 'hover:bg-zinc-100 hover:text-zinc-900',
+                : 'hover:bg-zinc-300 hover:text-zinc-900',
             ]}
           >
             {t(locale, item.key)}

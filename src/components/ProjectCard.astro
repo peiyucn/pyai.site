@@ -18,7 +18,7 @@ const status = statusText[project.data.status];
 
 <article
   class:list={[
-    'group flex flex-col gap-2.5 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-accent hover:shadow-md',
+    'group flex flex-col gap-2.5 rounded-xl border border-zinc-300 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-accent hover:shadow-md',
     project.data.status === 'archived' && 'project-archived',
   ]}
 >
@@ -32,7 +32,7 @@ const status = statusText[project.data.status];
       {status.label}
     </span>
   </div>
-  <p class="flex-1 text-sm leading-relaxed text-zinc-500">
+  <p class="flex-1 text-sm leading-relaxed text-zinc-600">
     {project.data.description}
   </p>
   <div class="flex gap-4 text-sm font-medium">

@@ -13,7 +13,6 @@ const { locale } = Astro.params as { locale: Locale };
 const pathname = Astro.url.pathname;
 const records = await getRecords(locale);
 
-// 收集所有标签（按使用频率排序）
 const tagCounts = new Map<string, number>();
 for (const r of records) {
   for (const tag of r.data.tags) {
@@ -31,7 +30,6 @@ const allTags = [...tagCounts.entries()]
   title={t(locale, 'records.title')}
   description={t(locale, 'records.description')}
 >
-  {/* 标签过滤栏（客户端 JS 即时过滤） */}
   {allTags.length > 0 && (
     <nav class="mb-8 flex flex-wrap items-center gap-1.5" aria-label="tags">
       <button
@@ -51,7 +49,7 @@ const allTags = [...tagCounts.entries()]
             data-records-tag={tag}
             class:list={[
               'record-tag rounded-full border px-2.5 py-1 text-xs transition-colors',
-              'border-zinc-200 text-zinc-500 hover:border-zinc-400 hover:text-zinc-900',
+              'border-zinc-300 text-zinc-600 hover:bg-zinc-300 hover:text-zinc-900',
             ]}
           >
             {tag}
@@ -65,15 +63,12 @@ const allTags = [...tagCounts.entries()]
     {
       records.length > 0 ? (
         records.map((record) => (
-          <div
-            class="record-item"
-            data-record-tags={record.data.tags.join(',')}
-          >
+          <div class="record-item" data-record-tags={record.data.tags.join(',')}>
             <RecordCard record={record} locale={locale} />
           </div>
         ))
       ) : (
-        <p class="text-sm text-zinc-500">{t(locale, 'common.noContent')}</p>
+        <p class="text-sm text-zinc-600">{t(locale, 'common.noContent')}</p>
       )
     }
   </div>
@@ -87,20 +82,17 @@ const allTags = [...tagCounts.entries()]
     const tagBtns = Array.from(document.querySelectorAll('[data-records-tag]'));
     if (!tagBtns.length) return;
 
-    let active = '';
-
     const setActive = (tag) => {
       tagBtns.forEach((b) => {
         const isActive = (b.dataset.recordsTag ?? '') === tag;
         b.className = 'record-tag rounded-full border px-2.5 py-1 text-xs transition-colors' +
           (isActive
             ? ' border-zinc-900 bg-zinc-900 text-white'
-            : ' border-zinc-200 text-zinc-500 hover:border-zinc-400 hover:text-zinc-900');
+            : ' border-zinc-300 text-zinc-600 hover:bg-zinc-300 hover:text-zinc-900');
       });
     };
 
     const filter = (tag) => {
-      active = tag;
       items.forEach((el) => {
         const tags = (el.dataset.recordTags ?? '').split(',').filter(Boolean);
         el.style.display = !tag || tags.includes(tag) ? '' : 'none';

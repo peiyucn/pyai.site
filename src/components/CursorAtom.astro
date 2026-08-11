@@ -1,0 +1,156 @@
+---
+// 原子风格自定义鼠标光标：中心核 + 轨道 + 绕转电子
+// 全局跟随鼠标；悬停在链接/按钮/输入框等交互元素上时自动恢复系统指针
+---
+
+<div class="cursor-atom" id="cursor-atom" aria-hidden="true">
+  <span class="cursor-orbit"><span class="cursor-electron"></span></span>
+  <span class="cursor-nucleus"></span>
+</div>
+
+<script is:inline>
+  (() => {
+    const cursor = document.getElementById('cursor-atom');
+    if (!cursor) return;
+    // 仅精细指针设备启用（触屏/触控板手势不显示）
+    if (!window.matchMedia('(pointer: fine)').matches) return;
+
+    // 交互元素：悬停时隐藏原子光标（不显示系统指针，靠 mouseover/out 判断）
+    const INTERACTIVE =
+      'a, button, input, textarea, select, [contenteditable], [role="button"], label, summary';
+
+    let shown = false;
+
+    function show() {
+      if (shown) return;
+      shown = true;
+      cursor.classList.remove('cursor-hidden');
+    }
+    function hide() {
+      if (!shown) return;
+      shown = false;
+      cursor.classList.add('cursor-hidden');
+    }
+
+    // 移动时只更新 CSS 变量（零 DOM 查询，保证跟手）
+    function onMove(e) {
+      cursor.style.setProperty('--mx', e.clientX + 'px');
+      cursor.style.setProperty('--my', e.clientY + 'px');
+    }
+
+    // 进入/离开元素时判断一次是否交互区域，避免 mousemove 高频 DOM 遍历
+    function onOver(e) {
+      const el = e.target instanceof Element ? e.target : null;
+      const onInteractive = el ? !!el.closest(INTERACTIVE) : false;
+      if (onInteractive) hide();
+      else show();
+    }
+
+    function onDown() {
+      cursor.classList.add('cursor-down');
+    }
+    function onUp() {
+      cursor.classList.remove('cursor-down');
+    }
+    function onLeave() {
+      cursor.style.opacity = '0';
+    }
+    function onEnter() {
+      cursor.style.opacity = '1';
+    }
+
+    window.addEventListener('mousemove', onMove, { passive: true });
+    window.addEventListener('mouseover', onOver, { passive: true });
+    window.addEventListener('mousedown', onDown);
+    window.addEventListener('mouseup', onUp);
+    document.documentElement.addEventListener('mouseleave', onLeave);
+    document.documentElement.addEventListener('mouseenter', onEnter);
+    // 标记启用：CSS 据此隐藏系统光标
+    document.documentElement.classList.add('has-cursor-atom');
+    show();
+  })();
+</script>
+
+<style>
+  /* 启用原子光标后隐藏系统光标：所有元素包括交互元素都用 none，
+     原子光标自身负责“交互状态隐藏”，不依赖系统指针 */
+  :global(html.has-cursor-atom),
+  :global(html.has-cursor-atom body),
+  :global(html.has-cursor-atom *),
+  :global(html.has-cursor-atom a),
+  :global(html.has-cursor-atom button),
+  :global(html.has-cursor-atom input),
+  :global(html.has-cursor-atom textarea),
+  :global(html.has-cursor-atom select),
+  :global(html.has-cursor-atom [contenteditable]),
+  :global(html.has-cursor-atom [role="button"]) {
+    cursor: none !important;
+  }
+
+  .cursor-atom {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    z-index: 99999;
+    pointer-events: none;
+    opacity: 1;
+    /* 仅 opacity 过渡；位置由 --mx/--my 变量控制 */
+    transition: opacity 0.2s ease;
+    /* 初始移出视口，避免页面加载时闪现 */
+    transform: translate3d(var(--mx, -100px), var(--my, -100px), 0);
+  }
+  .cursor-atom.cursor-hidden {
+    opacity: 0;
+  }
+  /* 按下反馈：scale 与 translate 在同一 transform 中，围绕鼠标点缩放（不漂移） */
+  .cursor-atom.cursor-down {
+    transform: translate3d(var(--mx, -100px), var(--my, -100px), 0) scale(0.85);
+  }
+
+  /* 中心核：黑色实心圆点，比电子略大（原子核 > 电子） */
+  .cursor-nucleus {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    left: -4px;
+    top: -4px;
+    background: #18181b;
+    border-radius: 50%;
+    box-shadow: 0 0 5px rgba(24, 24, 27, 0.5);
+  }
+
+  /* 轨道：黑色细圆圈，整体匀速旋转；电子作为子元素随其公转 */
+  .cursor-orbit {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    left: -16px;
+    top: -16px;
+    border: 1.5px solid rgba(24, 24, 27, 0.55);
+    border-radius: 50%;
+    animation: cursor-orbit-spin 2.4s linear infinite;
+  }
+
+  /* 电子：黑色小圆点，钉在轨道线上（中心到圆心距离 = 轨道中心线半径 15.25px），随轨道旋转公转 */
+  .cursor-electron {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    left: 50%;
+    top: 50%;
+    margin: -2px 0 0 -2px;
+    /* 从圆心沿 -Y 移到轨道中心线上：轨道 32px(border-box) → 半径 16px，中心线 16 - 0.75 = 15.25px */
+    transform: translateY(-15.25px);
+    background: #18181b;
+    border-radius: 50%;
+    box-shadow: 0 0 4px rgba(24, 24, 27, 0.55);
+  }
+
+  @keyframes cursor-orbit-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+</style>
