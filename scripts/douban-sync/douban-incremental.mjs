@@ -22,6 +22,8 @@ const BASE_DIR = process.env.DOUBAN_OUTPUT_DIR || path.join(os.homedir(), 'douba
 const OUTPUT_DIR = path.join(BASE_DIR, USER);
 const JSON_PATH = path.join(OUTPUT_DIR, 'movies.json');
 const META_PATH = path.join(OUTPUT_DIR, 'meta.json');
+// 增量待补列表：本次新增条目的 URL，enrich 脚本只处理这些
+const PENDING_PATH = path.join(OUTPUT_DIR, 'pending-enrich.json');
 
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
@@ -89,6 +91,8 @@ async function main() {
   const fresh = items.filter((it) => !existingUrls.has(it.url));
   if (fresh.length === 0) {
     console.log('No new items. Nothing to do.');
+    // 输出计数 0：工作流据此跳过 enrich（无增量不跑豆瓣补充）
+    writeOutput('new_count', 0);
     return;
   }
 
@@ -114,7 +118,17 @@ async function main() {
 
   fs.writeFileSync(JSON_PATH, JSON.stringify(movies, null, 2), 'utf8');
   fs.writeFileSync(META_PATH, JSON.stringify({ updatedAt: new Date().toISOString(), type: 'douban-sync' }, null, 2), 'utf8');
+  // 待补列表：本次新增条目的 URL（enrich 只处理这些）
+  fs.writeFileSync(PENDING_PATH, JSON.stringify(fresh.map((it) => it.url), null, 2), 'utf8');
+  writeOutput('new_count', fresh.length);
   console.log(`Saved. Total now: ${movies.length}`);
+}
+
+/** 向 GITHUB_OUTPUT 写步骤输出（供工作流 if 条件判断） */
+function writeOutput(name, value) {
+  if (process.env.GITHUB_OUTPUT) {
+    fs.appendFileSync(process.env.GITHUB_OUTPUT, `${name}=${value}\n`);
+  }
 }
 
 main().catch((err) => {

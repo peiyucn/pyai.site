@@ -27,20 +27,21 @@ jobs:
           node-version: 22
 
       # 增量同步：只抓列表页第 1 页（最近 30 条），与现有数据按 URL 去重追加
-      # 秒级完成；新标记的电影必然在最近 30 条内
+      # 秒级完成；新标记的电影必然在最近 30 条内；输出 new_count 供后续判断
       - name: Sync Douban (incremental)
+        id: sync
         env:
           DOUBAN_USER: pei830
           DOUBAN_OUTPUT_DIR: ${{ github.workspace }}/data
         run: node scripts/douban-sync/douban-incremental.mjs
 
-      # 补充豆瓣评分/导演/地区（subject_abstract 接口，只处理缺数据的条目）
-      # 单次限 500 条，分批补全；首次初始化用 douban-full-export 全量导出
-      - name: Enrich Douban ratings (batch)
+      # 仅当本次同步有新条目时，补充这些新条目的豆瓣数据（isTv/评分/地区）
+      # 无新条目则跳过，不产生任何豆瓣请求
+      - name: Enrich Douban ratings (new items)
+        if: steps.sync.outputs.new_count != '' && steps.sync.outputs.new_count != '0'
         env:
           DOUBAN_USER: pei830
           DOUBAN_OUTPUT_DIR: ${{ github.workspace }}/data
-          MAX_PER_RUN: '500'
         run: node scripts/douban-sync/douban-enrich.mjs
 
       - name: Commit changes
