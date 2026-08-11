@@ -1,16 +1,16 @@
 ---
 import type { Locale } from '../i18n/ui';
 import { t } from '../i18n/utils';
-import type { Post } from '../utils/content';
+import type { Record } from '../utils/content';
 import { formatDate, stripLocale } from '../utils/content';
 
 interface Props {
-  post: Post;
+  record: Record;
   locale: Locale;
 }
 
-const { post, locale } = Astro.props;
-const url = `/${locale}/blog/${stripLocale(post.id)}/`;
+const { record, locale } = Astro.props;
+const url = `/${locale}/records/${stripLocale(record.id)}/`;
 ---
 
 <article
@@ -20,25 +20,33 @@ const url = `/${locale}/blog/${stripLocale(post.id)}/`;
     <h2
       class="text-xl font-bold leading-snug text-zinc-900 transition-colors group-hover:text-accent"
     >
-      {post.data.title}
+      {record.data.title}
     </h2>
     {
-      post.data.description && (
+      record.data.description && (
         <p class="mt-1.5 text-sm leading-relaxed text-zinc-500">
-          {post.data.description}
+          {record.data.description}
         </p>
       )
     }
   </a>
   <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-zinc-400">
-    <time datetime={post.data.date.toISOString()}>
-      {formatDate(post.data.date, locale)}
+    <time datetime={record.data.date.toISOString()}>
+      {formatDate(record.data.date, locale)}
     </time>
     {
-      post.data.tags.length > 0 && (
+      record.data.tags.length > 0 && (
         <div class="flex flex-wrap gap-1">
           {
-            post.data.tags.slice(0, 3).map((tag) => <span class="tag">{tag}</span>)
+            record.data.tags.slice(0, 3).map((tag) => (
+              <button
+                type="button"
+                data-records-tag={tag}
+                class="tag cursor-pointer hover:no-underline hover:opacity-80"
+              >
+                {tag}
+              </button>
+            ))
           }
         </div>
       )

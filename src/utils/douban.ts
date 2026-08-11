@@ -1,9 +1,9 @@
 import type { CollectionEntry } from 'astro:content';
 import { getCollection } from 'astro:content';
+import fs from 'node:fs';
+import path from 'node:path';
 
 /** 豆瓣影视标记状态 */
-export const MOVIE_STATUS = ['看过', '在看', '想看'] as const;
-export type MovieStatus = (typeof MOVIE_STATUS)[number];
 
 /** 影视.csv 的一行（原始 CSV 字段） */
 export interface MovieCsvRow {
@@ -16,6 +16,21 @@ export interface MovieCsvRow {
 }
 
 export type Movie = CollectionEntry<'movies'>;
+
+/**
+ * 轻量读取豆瓣数据条数（直接读 JSON，不经过 getCollection）。
+ * 用于 getStaticPaths 生成分页路径，避免在构建时递归加载集合。
+ */
+export function getMoviesCount(): number {
+  try {
+    const file = path.resolve(process.cwd(), 'data', 'pei830', 'movies.json');
+    if (!fs.existsSync(file)) return 0;
+    const raw = fs.readFileSync(file, 'utf8');
+    return (JSON.parse(raw) as unknown[]).length;
+  } catch {
+    return 0;
+  }
+}
 
 /**
  * 解析标准 CSV（支持引号包裹的字段、内嵌逗号/引号/换行）。
@@ -95,20 +110,11 @@ export function subjectIdFromUrl(url: string): string {
 }
 
 /** 判断状态是否为「看过」（已看完的才进观影统计） */
-export function isWatched(status: string): boolean {
-  return status === '看过';
-}
 
 /** 取全部观影记录，按标记日期倒序 */
 export async function getMovies(): Promise<Movie[]> {
   const movies = await getCollection('movies');
   return movies.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
-}
-
-/** 只看过的电影 */
-export async function getWatchedMovies(): Promise<Movie[]> {
-  const all = await getMovies();
-  return all.filter((m) => m.data.status === '看过');
 }
 
 /** 统计：按年份分布（只看过） */
@@ -136,13 +142,7 @@ export function statsByRating(movies: Movie[]): { rating: number; count: number 
     .sort((a, b) => b.rating - a.rating);
 }
 
-/** 统计：按状态分布 */
-export function statsByStatus(movies: Movie[]): { status: string; count: number }[] {
-  return MOVIE_STATUS.map((status) => ({
-    status,
-    count: movies.filter((m) => m.data.status === status).length,
-  }));
-}
+/** 统计：按状态分布（已弃用，2026-08 起不再展示状态统计） */
 
 /** 统计：按导演分布（只看过且导演非空的），取 Top N */
 export function statsByDirector(movies: Movie[], limit = 15): { director: string; count: number }[] {

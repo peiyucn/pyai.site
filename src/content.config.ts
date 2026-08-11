@@ -15,8 +15,10 @@ type MovieJson = {
   status: string;
   comment: string;
   director?: string;
+  country?: string;
   year?: string;
   genre?: string;
+  doubanRating?: number;
 };
 
 function loadMoviesJson(): MovieJson[] {
@@ -32,33 +34,19 @@ function loadMoviesJson(): MovieJson[] {
 // 语言集合
 const localeEnum = z.enum(['zh', 'en']);
 
-// 文章（博客）
-const posts = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/posts' }),
+// 记录（博客 + 笔记统一，用 tags 区分内容类型）
+const records = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/records' }),
   schema: z.object({
     title: z.string(),
     description: z.string().default(''),
     date: z.coerce.date(),
     updated: z.coerce.date().optional(),
+    // 标签区分内容类型（随笔 / 技术 / 读书 / 建站……无限扩展）
     tags: z.array(z.string()).default([]),
     locale: localeEnum,
     draft: z.boolean().default(false),
     // 关联的翻译版本 slug（不含 locale 前缀），用于语言切换
-    translationOf: z.string().optional(),
-  }),
-});
-
-// 知识库笔记
-const notes = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/notes' }),
-  schema: z.object({
-    title: z.string(),
-    description: z.string().default(''),
-    date: z.coerce.date(),
-    updated: z.coerce.date().optional(),
-    tags: z.array(z.string()).default([]),
-    locale: localeEnum,
-    draft: z.boolean().default(false),
     translationOf: z.string().optional(),
   }),
 });
@@ -95,23 +83,28 @@ const movies = defineCollection({
       status: row.status ?? '看过',
       comment: row.comment ?? '',
       director: row.director ?? '',
+      country: row.country ?? '',
       year: row.year ?? '',
       genre: row.genre ?? '',
+      doubanRating: row.doubanRating ?? 0,
     }));
   },
   schema: z.object({
     title: z.string(),
     url: z.string(),
     date: z.date(),
-    // 0-5 星
+    // 0-5 星（我的评分）
     rating: z.number().default(0),
     status: z.string(),
     comment: z.string().default(''),
-    // 导演 / 上映年份 / 类型（来自列表页 intro，可能缺失）
+    // 导演 / 制片地区 / 上映年份 / 类型（来自 rexxar 权威数据）
     director: z.string().default(''),
+    country: z.string().default(''),
     year: z.string().default(''),
     genre: z.string().default(''),
+    // 豆瓣当前评分（0-10 分）
+    doubanRating: z.number().default(0),
   }),
 });
 
-export const collections = { posts, notes, projects, movies };
+export const collections = { records, projects, movies };

@@ -12,7 +12,7 @@ export function t(locale: Locale, key: UIKey): string {
 
 /**
  * 将某个路径切换到另一语言。
- * 例：/zh/blog/hello → 切到 en → /en/blog/hello
+ * 例：/zh/records/welcome → 切到 en → /en/records/welcome
  */
 export function localizePath(pathname: string, target: Locale): string {
   const segments = pathname.split('/').filter(Boolean);

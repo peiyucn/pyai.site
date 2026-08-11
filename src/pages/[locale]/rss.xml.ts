@@ -2,6 +2,7 @@ import rss from '@astrojs/rss';
 import { getCollection } from 'astro:content';
 import type { Locale } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
+import { stripLocale } from '../../utils/content';
 
 // 生成 /zh/rss.xml 与 /en/rss.xml
 export function getStaticPaths() {
@@ -10,20 +11,20 @@ export function getStaticPaths() {
 
 export async function GET(context: { site: any; params: any }) {
   const { locale } = context.params as { locale: Locale };
-  const posts = await getCollection('posts', (post) => {
-    return post.data.locale === locale && !post.data.draft;
+  const records = await getCollection('records', (record) => {
+    return record.data.locale === locale && !record.data.draft;
   });
-  const sorted = posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+  const sorted = records.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
   return rss({
-    title: `pyai.site · ${t(locale, 'blog.title')}`,
-    description: t(locale, 'blog.description'),
+    title: `pyai.site · ${t(locale, 'records.title')}`,
+    description: t(locale, 'records.description'),
     site: context.site,
-    items: sorted.map((post) => ({
-      title: post.data.title,
-      description: post.data.description,
-      pubDate: post.data.date,
-      link: `/${locale}/blog/${post.id.split('/')[1]}/`,
+    items: sorted.map((record) => ({
+      title: record.data.title,
+      description: record.data.description,
+      pubDate: record.data.date,
+      link: `/${locale}/records/${stripLocale(record.id)}/`,
     })),
     customData: `<language>${locale}</language>`,
   });

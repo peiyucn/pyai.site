@@ -93,6 +93,22 @@
     @apply border-accent text-accent;
   }
 
+  /* 项目状态徽章（颜色区分：维护中绿 / 开发中蓝 / 已归档暖灰） */
+  .status-active {
+    @apply bg-emerald-50 text-emerald-700;
+  }
+  .status-wip {
+    @apply bg-sky-50 text-sky-700;
+  }
+  .status-archived {
+    @apply bg-zinc-100 text-zinc-500;
+  }
+
+  /* 已归档项目卡片：整体压暗，降低视觉权重 */
+  .project-archived {
+    @apply border-dashed opacity-70 hover:opacity-100;
+  }
+
   /* 进入动画 */
   .animate-in {
     animation: var(--animate-fade-in-up);

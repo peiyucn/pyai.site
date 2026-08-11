@@ -1,38 +1,38 @@
 ---
 import { getCollection, render } from 'astro:content';
 import PostLayout from '../../../layouts/PostLayout.astro';
-import { type Locale } from '../../../i18n/ui';
+import type { Locale } from '../../../i18n/ui';
 import { findTranslation, stripLocale } from '../../../utils/content';
 
 export async function getStaticPaths() {
-  const notes = await getCollection('notes');
-  return notes
-    .filter((note) => !note.data.draft)
-    .map((note) => ({
-      params: { locale: note.data.locale, slug: stripLocale(note.id) },
-      props: { note },
+  const records = await getCollection('records');
+  return records
+    .filter((record) => !record.data.draft)
+    .map((record) => ({
+      params: { locale: record.data.locale, slug: stripLocale(record.id) },
+      props: { record },
     }));
 }
 
-const { note } = Astro.props as { note: any };
+const { record } = Astro.props as { record: any };
 const { locale } = Astro.params as { locale: Locale };
 const pathname = Astro.url.pathname;
 
 const otherLocale: Locale = locale === 'zh' ? 'en' : 'zh';
-const translation = await findTranslation(note, otherLocale);
+const translation = await findTranslation(record, otherLocale);
 const translationUrl = translation
-  ? `/${otherLocale}/notes/${stripLocale(translation.id)}/`
+  ? `/${otherLocale}/records/${stripLocale(translation.id)}/`
   : undefined;
 
-const { Content } = await render(note);
+const { Content } = await render(record);
 ---
 
 <PostLayout
-  entry={note}
+  entry={record}
   locale={locale}
   pathname={pathname}
   translationUrl={translationUrl}
-  backHref={`/${locale}/notes/`}
+  backHref={`/${locale}/records/`}
 >
   <Content />
 </PostLayout>

@@ -1,0 +1,116 @@
+---
+import ListLayout from '../../../layouts/ListLayout.astro';
+import RecordCard from '../../../components/RecordCard.astro';
+import type { Locale } from '../../../i18n/ui';
+import { t } from '../../../i18n/utils';
+import { getRecords } from '../../../utils/content';
+
+export function getStaticPaths() {
+  return [{ params: { locale: 'zh' } }, { params: { locale: 'en' } }];
+}
+
+const { locale } = Astro.params as { locale: Locale };
+const pathname = Astro.url.pathname;
+const records = await getRecords(locale);
+
+// 收集所有标签（按使用频率排序）
+const tagCounts = new Map<string, number>();
+for (const r of records) {
+  for (const tag of r.data.tags) {
+    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+  }
+}
+const allTags = [...tagCounts.entries()]
+  .sort((a, b) => b[1] - a[1])
+  .map(([tag]) => tag);
+---
+
+<ListLayout
+  locale={locale}
+  pathname={pathname}
+  title={t(locale, 'records.title')}
+  description={t(locale, 'records.description')}
+>
+  {/* 标签过滤栏（客户端 JS 即时过滤） */}
+  {allTags.length > 0 && (
+    <nav class="mb-8 flex flex-wrap items-center gap-1.5" aria-label="tags">
+      <button
+        type="button"
+        data-records-tag=""
+        class:list={[
+          'record-tag rounded-full border px-2.5 py-1 text-xs transition-colors',
+          'border-zinc-900 bg-zinc-900 text-white',
+        ]}
+      >
+        {t(locale, 'common.allTags')}
+      </button>
+      {
+        allTags.map((tag) => (
+          <button
+            type="button"
+            data-records-tag={tag}
+            class:list={[
+              'record-tag rounded-full border px-2.5 py-1 text-xs transition-colors',
+              'border-zinc-200 text-zinc-500 hover:border-zinc-400 hover:text-zinc-900',
+            ]}
+          >
+            {tag}
+          </button>
+        ))
+      }
+    </nav>
+  )}
+
+  <div id="records-list">
+    {
+      records.length > 0 ? (
+        records.map((record) => (
+          <div
+            class="record-item"
+            data-record-tags={record.data.tags.join(',')}
+          >
+            <RecordCard record={record} locale={locale} />
+          </div>
+        ))
+      ) : (
+        <p class="text-sm text-zinc-500">{t(locale, 'common.noContent')}</p>
+      )
+    }
+  </div>
+</ListLayout>
+
+<script is:inline>
+  (() => {
+    const list = document.getElementById('records-list');
+    if (!list) return;
+    const items = Array.from(list.querySelectorAll('.record-item'));
+    const tagBtns = Array.from(document.querySelectorAll('[data-records-tag]'));
+    if (!tagBtns.length) return;
+
+    let active = '';
+
+    const setActive = (tag) => {
+      tagBtns.forEach((b) => {
+        const isActive = (b.dataset.recordsTag ?? '') === tag;
+        b.className = 'record-tag rounded-full border px-2.5 py-1 text-xs transition-colors' +
+          (isActive
+            ? ' border-zinc-900 bg-zinc-900 text-white'
+            : ' border-zinc-200 text-zinc-500 hover:border-zinc-400 hover:text-zinc-900');
+      });
+    };
+
+    const filter = (tag) => {
+      active = tag;
+      items.forEach((el) => {
+        const tags = (el.dataset.recordTags ?? '').split(',').filter(Boolean);
+        el.style.display = !tag || tags.includes(tag) ? '' : 'none';
+      });
+      setActive(tag);
+    };
+
+    tagBtns.forEach((b) =>
+      b.addEventListener('click', () => filter(b.dataset.recordsTag ?? '')),
+    );
+    filter('');
+  })();
+</script>

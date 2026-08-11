@@ -10,8 +10,7 @@ export type Locale = keyof typeof languages;
 export type UIKey =
   // 导航
   | 'nav.home'
-  | 'nav.blog'
-  | 'nav.notes'
+  | 'nav.records'
   | 'nav.projects'
   | 'nav.movies'
   | 'nav.about'
@@ -21,11 +20,10 @@ export type UIKey =
   | 'common.updatedAt'
   | 'common.tags'
   | 'common.noContent'
-  // 博客 / 笔记
-  | 'blog.title'
-  | 'blog.description'
-  | 'notes.title'
-  | 'notes.description'
+  | 'common.allTags'
+  // 记录
+  | 'records.title'
+  | 'records.description'
   | 'projects.title'
   | 'projects.description'
   | 'movies.title'
@@ -46,6 +44,14 @@ export type UIKey =
   | 'movies.byGenre'
   | 'movies.byReleaseYear'
   | 'movies.total'
+  | 'movies.doubanRating'
+  | 'movies.myRating'
+  | 'movies.country'
+  | 'movies.prevPage'
+  | 'movies.nextPage'
+  | 'movies.cardNav'
+  | 'movies.mine'
+  | 'movies.douban'
   | 'movies.viewStats'
   | 'movies.backToList'
   // 关于
@@ -59,8 +65,7 @@ export type UIKey =
 export const ui: Record<Locale, Record<UIKey, string>> = {
   zh: {
     'nav.home': '首页',
-    'nav.blog': '博客',
-    'nav.notes': '笔记',
+    'nav.records': '记录',
     'nav.projects': '项目',
     'nav.movies': '观影',
     'nav.about': '关于',
@@ -69,14 +74,13 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'common.updatedAt': '更新于',
     'common.tags': '标签',
     'common.noContent': '暂无内容',
-    'blog.title': '博客',
-    'blog.description': '技术、生活与思考。',
-    'notes.title': '笔记',
-    'notes.description': '学习过程中的知识沉淀。',
+    'common.allTags': '全部',
+    'records.title': '记录',
+    'records.description': '博客、笔记与思考，用标签区分内容类型。',
     'projects.title': '项目',
-    'projects.description': '我的一些开源作品。',
+    'projects.description': 'pyai 的一些开源作品。',
     'movies.title': '观影',
-    'movies.description': '我的豆瓣观影记录，由 douban-sync 自动同步。',
+    'movies.description': 'pyai 的观影记录，每日自动同步。',
     'movies.stats': '统计',
     'movies.watched': '看过',
     'movies.watching': '在看',
@@ -93,17 +97,24 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'movies.byGenre': '类型 Top',
     'movies.byReleaseYear': '按上映年份',
     'movies.total': '共',
+    'movies.doubanRating': '豆瓣评分',
+    'movies.myRating': '我的评分',
+    'movies.country': '制片地区',
+    'movies.prevPage': '上一页',
+    'movies.nextPage': '下一页',
+    'movies.cardNav': '统计卡片',
+    'movies.mine': '我的',
+    'movies.douban': '豆瓣',
     'movies.viewStats': '查看统计',
     'movies.backToList': '返回明细',
     'about.title': '关于',
-    'about.description': '关于我。',
+    'about.description': '关于 pyai。',
     'footer.tagline': '记录 · 沉淀 · 创造',
     'footer.rights': '保留所有权利',
   },
   en: {
     'nav.home': 'Home',
-    'nav.blog': 'Blog',
-    'nav.notes': 'Notes',
+    'nav.records': 'Records',
     'nav.projects': 'Projects',
     'nav.movies': 'Movies',
     'nav.about': 'About',
@@ -112,14 +123,13 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'common.updatedAt': 'Updated',
     'common.tags': 'Tags',
     'common.noContent': 'No content yet',
-    'blog.title': 'Blog',
-    'blog.description': 'Technology, life and thoughts.',
-    'notes.title': 'Notes',
-    'notes.description': 'Knowledge distilled from learning.',
+    'common.allTags': 'All',
+    'records.title': 'Records',
+    'records.description': 'Blog, notes and thoughts, tagged by content type.',
     'projects.title': 'Projects',
-    'projects.description': 'Some of my open-source work.',
+    'projects.description': 'Some open-source work of pyai.',
     'movies.title': 'Movies',
-    'movies.description': 'My Douban watchlist, auto-synced by douban-sync.',
+    'movies.description': "pyai's movie diary, auto-synced daily.",
     'movies.stats': 'Stats',
     'movies.watched': 'Watched',
     'movies.watching': 'Watching',
@@ -136,10 +146,18 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'movies.byGenre': 'Top genres',
     'movies.byReleaseYear': 'By release year',
     'movies.total': 'Total',
+    'movies.doubanRating': 'Douban rating',
+    'movies.myRating': 'My rating',
+    'movies.country': 'Country',
+    'movies.prevPage': 'Prev',
+    'movies.nextPage': 'Next',
+    'movies.cardNav': 'Stat cards',
+    'movies.mine': 'Mine',
+    'movies.douban': 'Douban',
     'movies.viewStats': 'View stats',
     'movies.backToList': 'Back to list',
     'about.title': 'About',
-    'about.description': 'About me.',
+    'about.description': 'About pyai.',
     'footer.tagline': 'Record · Distill · Create',
     'footer.rights': 'All rights reserved',
   },

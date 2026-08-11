@@ -3,12 +3,12 @@ import Base from './Base.astro';
 import type { Locale } from '../i18n/ui';
 import { t } from '../i18n/utils';
 import { languages } from '../i18n/ui';
-import type { Post, Note } from '../utils/content';
+import type { Record } from '../utils/content';
 import { formatDate } from '../utils/content';
 
 interface Props {
-  /** 文章或笔记条目 */
-  entry: Post | Note;
+  /** 记录条目（博客 + 笔记统一） */
+  entry: Record;
   locale: Locale;
   pathname: string;
   /** 翻译版本的 URL（若有） */

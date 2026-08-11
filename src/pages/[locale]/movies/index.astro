@@ -1,9 +1,9 @@
 ---
 import ListLayout from '../../../layouts/ListLayout.astro';
+import MovieList from '../../../components/MovieList.astro';
 import type { Locale } from '../../../i18n/ui';
 import { t } from '../../../i18n/utils';
 import { getMovies } from '../../../utils/douban';
-import { formatDate } from '../../../utils/content';
 
 export function getStaticPaths() {
   return [{ params: { locale: 'zh' } }, { params: { locale: 'en' } }];
@@ -13,12 +13,10 @@ const { locale } = Astro.params as { locale: Locale };
 const pathname = Astro.url.pathname;
 const movies = await getMovies();
 
-// 状态文案映射
-const statusLabel: Record<string, string> = {
-  看过: t(locale, 'movies.watched'),
-  在看: t(locale, 'movies.watching'),
-  想看: t(locale, 'movies.wishlist'),
-};
+const PER_PAGE = 50;
+const currentPage = 1;
+const totalPages = Math.max(1, Math.ceil(movies.length / PER_PAGE));
+const pageMovies = movies.slice(0, PER_PAGE);
 ---
 
 <ListLayout
@@ -27,71 +25,11 @@ const statusLabel: Record<string, string> = {
   title={t(locale, 'movies.title')}
   description={t(locale, 'movies.description')}
 >
-  <div class="mb-6 flex items-center justify-between">
-    <p class="text-sm text-zinc-500">
-      {t(locale, 'movies.total')} {movies.length}
-    </p>
-    <a
-      href={`/${locale}/movies/stats/`}
-      class="rounded-md px-2.5 py-1 text-sm text-accent transition-colors hover:bg-zinc-100"
-    >
-      {t(locale, 'movies.viewStats')} →
-    </a>
-  </div>
-
-  {
-    movies.length > 0 ? (
-      <ul class="divide-y divide-zinc-200">
-        {movies.map((movie) => (
-          <li class="flex items-start gap-4 py-3">
-            <div class="min-w-0 flex-1">
-              <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <a
-                  href={movie.data.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="font-medium text-zinc-900 transition-colors hover:text-accent"
-                >
-                  {movie.data.title}
-                </a>
-                <span
-                  class:list={[
-                    'rounded-full px-2 py-0.5 text-xs',
-                    movie.data.status === '看过'
-                      ? 'bg-zinc-900 text-white'
-                      : movie.data.status === '在看'
-                        ? 'bg-accent/10 text-accent'
-                        : 'bg-zinc-100 text-zinc-500',
-                  ]}
-                >
-                  {statusLabel[movie.data.status] ?? movie.data.status}
-                </span>
-              </div>
-              {(movie.data.director || movie.data.year || movie.data.genre) && (
-                <p class="mt-1 text-xs text-zinc-400">
-                  {[movie.data.year, movie.data.director, movie.data.genre]
-                    .filter(Boolean)
-                    .join(' · ')}
-                </p>
-              )}
-              {movie.data.comment && (
-                <p class="mt-1 text-sm text-zinc-600">“{movie.data.comment}”</p>
-              )}
-            </div>
-            <div class="shrink-0 text-right">
-              <p class="text-sm tracking-tighter text-amber-500" aria-label={movie.data.rating + '/5'}>
-                {'★'.repeat(movie.data.rating)}
-                <span class="text-zinc-300">{'★'.repeat(5 - movie.data.rating)}</span>
-              </p>
-              <p class="mt-0.5 text-xs text-zinc-400">
-                {formatDate(movie.data.date, locale)}
-              </p>
-            </div>
-          </li>
-        ))}
-      </ul>
-    ) : (
-      <p class="text-sm text-zinc-500">{t(locale, 'common.noContent')}</p>
-    )
-  }
+  <MovieList
+    movies={pageMovies}
+    locale={locale}
+    total={movies.length}
+    currentPage={currentPage}
+    totalPages={totalPages}
+  />
 </ListLayout>

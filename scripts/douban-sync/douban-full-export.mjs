@@ -78,6 +78,71 @@ export function extractGenre(intro) {
   return m ? m[1].trim() : '';
 }
 
+/** 从 subject URL 提取 ID */
+function subjectId(url) {
+  const m = url.match(/subject\/(\d+)\//);
+  return m ? m[1] : '';
+}
+
+/**
+ * 用 rexxar API 补充权威数据（导演/国籍/类型/豆瓣评分/年份）。
+ * 单线程顺序请求 + 间隔，避免触发豆瓣限流。
+ * 已带 doubanRating 的条目直接跳过（断点续跑安全）。
+ */
+export async function enrichWithRexxar(items) {
+  const results = new Array(items.length);
+  const DELAY_MS = 500;
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    // 已有权威数据则跳过（用于断点续跑）
+    if (item.doubanRating && item.country) {
+      results[i] = item;
+      continue;
+    }
+    const id = subjectId(item.url);
+    try {
+      const resp = await fetch(`https://m.douban.com/rexxar/api/v2/movie/${id}?ck=`, {
+        headers: { 'User-Agent': UA, Referer: 'https://m.douban.com/' },
+      });
+      if (resp.ok) {
+        const j = await resp.json();
+        results[i] = {
+          ...item,
+          // 权威字段（覆盖 intro 解析）
+          director: (j.directors || []).map((d) => d.name).join(' / '),
+          country: (j.countries || []).join(' / '),
+          genre: (j.genres || []).join(' / '),
+          year: j.year ? String(j.year) : extractYear(item.intro),
+          doubanRating: typeof j.rating?.value === 'number' ? j.rating.value : 0,
+        };
+      } else {
+        // 条目可能已下架：保留 intro fallback
+        results[i] = {
+          ...item,
+          director: extractDirector(item.intro),
+          country: '',
+          genre: extractGenre(item.intro),
+          year: extractYear(item.intro),
+          doubanRating: 0,
+        };
+      }
+    } catch {
+      results[i] = {
+        ...item,
+        director: extractDirector(item.intro),
+        country: '',
+        genre: extractGenre(item.intro),
+        year: extractYear(item.intro),
+        doubanRating: 0,
+      };
+    }
+    await sleep(DELAY_MS); // 限速保护
+  }
+
+  return results;
+}
+
 async function fetchPage(start) {
   const url = `${BASE}?start=${start}&sort=time&rating=all&filter=all&mode=list`;
   const resp = await fetch(url, { headers: { 'User-Agent': UA } });
@@ -126,9 +191,20 @@ async function main() {
 
   console.log(`\nFetched ${all.length} items.`);
 
+  // 用 rexxar API 补充权威数据（导演/国籍/类型/豆瓣评分）
+  console.log('Enriching with rexxar API ...');
+  const enriched = await enrichWithRexxar(all);
+  const withData = enriched.filter(Boolean);
+  const withRating = withData.filter((m) => m.doubanRating > 0).length;
+  const withDirector = withData.filter((m) => m.director).length;
+  const withCountry = withData.filter((m) => m.country).length;
+  console.log(
+    `Enriched: ${withData.length} items | rating ${withRating} | director ${withDirector} | country ${withCountry}`,
+  );
+
   // 写入 CSV（兼容 douban-sync：title,url,date,rating,status,comment）
   const csvLines = ['title,url,date,rating,status,comment'];
-  for (const it of all) {
+  for (const it of withData) {
     const stars = '★'.repeat(parseInt(it.rating) || 0);
     const line = [
       csvEscape(it.title),
@@ -144,21 +220,23 @@ async function main() {
   fs.writeFileSync(csvPath, csvLines.join('\n') + '\n', 'utf8');
   console.log(`Written ${csvLines.length - 1} rows to ${csvPath}`);
 
-  // 写入完整 JSON（含导演/年份/类型）
+  // 写入完整 JSON（含导演/年份/类型/国籍/豆瓣评分）
   const jsonPath = path.join(OUTPUT_DIR, 'movies.json');
-  const enriched = all.map((it) => ({
+  const output = withData.map((it) => ({
     title: it.title,
     url: it.url,
     date: it.date,
     rating: parseInt(it.rating) || 0,
     status: '看过',
     comment: it.comment,
-    director: extractDirector(it.intro),
-    year: extractYear(it.intro),
-    genre: extractGenre(it.intro),
+    director: it.director ?? '',
+    country: it.country ?? '',
+    year: it.year ?? '',
+    genre: it.genre ?? '',
+    doubanRating: it.doubanRating ?? 0,
   }));
-  fs.writeFileSync(jsonPath, JSON.stringify(enriched, null, 2), 'utf8');
-  console.log(`Written ${enriched.length} records to ${jsonPath}`);
+  fs.writeFileSync(jsonPath, JSON.stringify(output, null, 2), 'utf8');
+  console.log(`Written ${output.length} records to ${jsonPath}`);
 }
 
 function csvEscape(str) {

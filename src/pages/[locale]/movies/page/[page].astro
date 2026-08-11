@@ -1,0 +1,48 @@
+﻿---
+import ListLayout from '../../../../layouts/ListLayout.astro';
+import MovieList from '../../../../components/MovieList.astro';
+import type { Locale } from '../../../../i18n/ui';
+import { t } from '../../../../i18n/utils';
+import { getMovies, getMoviesCount } from '../../../../utils/douban';
+
+// 注意：PER_PAGE 不要用顶层 const（Astro 编译会把它移进组件作用域，
+// getStaticPaths 将拿不到），直接内联或用模块级函数常量。
+const PER_PAGE = 50;
+
+export function getStaticPaths() {
+  // 轻量读条数（不经过 getCollection，避免构建时重复加载大 JSON）
+  const count = getMoviesCount();
+  const totalPages = Math.max(1, Math.ceil(count / 50));
+  const paths: { params: { locale: Locale; page: string } }[] = [];
+  for (const locale of ['zh', 'en'] as Locale[]) {
+    for (let p = 2; p <= totalPages; p++) {
+      paths.push({ params: { locale, page: String(p) } });
+    }
+  }
+  return paths;
+}
+
+const { locale, page } = Astro.params as { locale: Locale; page: string };
+const pathname = Astro.url.pathname;
+const movies = await getMovies();
+
+const totalPages = Math.max(1, Math.ceil(movies.length / PER_PAGE));
+const currentPage = Math.min(Math.max(1, parseInt(page) || 1), totalPages);
+const start = (currentPage - 1) * PER_PAGE;
+const pageMovies = movies.slice(start, start + PER_PAGE);
+---
+
+<ListLayout
+  locale={locale}
+  pathname={pathname}
+  title={`${t(locale, 'movies.title')} · ${currentPage}`}
+  description={t(locale, 'movies.description')}
+>
+  <MovieList
+    movies={pageMovies}
+    locale={locale}
+    total={movies.length}
+    currentPage={currentPage}
+    totalPages={totalPages}
+  />
+</ListLayout>

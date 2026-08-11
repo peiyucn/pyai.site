@@ -1,0 +1,170 @@
+﻿---
+import type { Locale } from '../i18n/ui';
+import { t } from '../i18n/utils';
+import type { Movie } from '../utils/douban';
+import { formatDate } from '../utils/content';
+
+interface Props {
+  movies: Movie[];
+  locale: Locale;
+  total: number;
+  currentPage: number;
+  totalPages: number;
+}
+
+const { movies, locale, total, currentPage, totalPages } = Astro.props;
+
+const statusLabel: Record<string, string> = {
+  看过: t(locale, 'movies.watched'),
+  在看: t(locale, 'movies.watching'),
+  想看: t(locale, 'movies.wishlist'),
+};
+
+/** 生成分页导航（显示当前页前后若干页 + 首尾） */
+function pageLinks(current: number, total: number): (number | 'gap')[] {
+  const links: (number | 'gap')[] = [];
+  for (let p = 1; p <= total; p++) {
+    if (p === 1 || p === total || Math.abs(p - current) <= 2) {
+      links.push(p);
+    } else if (links[links.length - 1] !== 'gap') {
+      links.push('gap');
+    }
+  }
+  return links;
+}
+
+const pages = pageLinks(currentPage, totalPages);
+---
+
+<div class="mb-6 flex items-center justify-between">
+  <p class="text-sm text-zinc-500">
+    {t(locale, 'movies.total')} {total}
+  </p>
+  <a
+    href={`/${locale}/movies/stats/`}
+    class="rounded-md px-2.5 py-1 text-sm text-accent transition-colors hover:bg-zinc-100"
+  >
+    {t(locale, 'movies.viewStats')} →
+  </a>
+</div>
+
+{
+  movies.length > 0 ? (
+    <>
+      <ul class="divide-y divide-zinc-200">
+        {movies.map((movie) => (
+          <li class="flex items-start gap-4 py-3">
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <a
+                  href={movie.data.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="font-medium text-zinc-900 transition-colors hover:text-accent"
+                >
+                  {movie.data.title}
+                </a>
+                <span
+                  class:list={[
+                    'rounded-full px-2 py-0.5 text-xs',
+                    movie.data.status === '看过'
+                      ? 'bg-zinc-900 text-white'
+                      : movie.data.status === '在看'
+                        ? 'bg-accent/10 text-accent'
+                        : 'bg-zinc-100 text-zinc-500',
+                  ]}
+                >
+                  {statusLabel[movie.data.status] ?? movie.data.status}
+                </span>
+              </div>
+              {(movie.data.year ||
+                movie.data.country ||
+                movie.data.director ||
+                movie.data.genre) && (
+                <p class="mt-1 text-xs text-zinc-400">
+                  {[
+                    movie.data.year,
+                    movie.data.country,
+                    movie.data.director,
+                    movie.data.genre,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+              )}
+              {movie.data.comment && (
+                <p class="mt-1 text-sm text-zinc-600">“{movie.data.comment}”</p>
+              )}
+            </div>
+            <div class="shrink-0 text-right">
+              <p
+                class="text-sm tracking-tighter text-amber-500"
+                aria-label={movie.data.rating + '/5'}
+              >
+                {'★'.repeat(movie.data.rating)}
+                <span class="text-zinc-300">{'★'.repeat(5 - movie.data.rating)}</span>
+              </p>
+              {movie.data.doubanRating > 0 && (
+                <p class="mt-0.5 text-xs text-zinc-400">
+                  {t(locale, 'movies.douban')}{' '}
+                  <span class="font-medium text-zinc-600">
+                    {movie.data.doubanRating.toFixed(1)}
+                  </span>
+                </p>
+              )}
+              <p class="mt-0.5 text-xs text-zinc-400">
+                {formatDate(movie.data.date, locale)}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      {/* 分页导航 */}
+      {totalPages > 1 && (
+        <nav class="mt-8 flex flex-wrap items-center justify-center gap-1.5" aria-label="pagination">
+          {currentPage > 1 && (
+            <a
+              href={
+                currentPage === 2
+                  ? `/${locale}/movies/`
+                  : `/${locale}/movies/page/${currentPage - 1}/`
+              }
+              class="rounded-md px-2.5 py-1 text-sm text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+            >
+              ← {t(locale, 'movies.prevPage')}
+            </a>
+          )}
+          {pages.map((p) =>
+            p === 'gap' ? (
+              <span class="px-1 text-sm text-zinc-400">…</span>
+            ) : (
+              <a
+                href={p === 1 ? `/${locale}/movies/` : `/${locale}/movies/page/${p}/`}
+                aria-current={p === currentPage ? 'page' : undefined}
+                class:list={[
+                  'rounded-md px-2.5 py-1 text-sm transition-colors',
+                  p === currentPage
+                    ? 'bg-zinc-900 font-semibold text-white'
+                    : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900',
+                ]}
+              >
+                {p}
+              </a>
+            ),
+          )}
+          {currentPage < totalPages && (
+            <a
+              href={`/${locale}/movies/page/${currentPage + 1}/`}
+              class="rounded-md px-2.5 py-1 text-sm text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+            >
+              {t(locale, 'movies.nextPage')} →
+            </a>
+          )}
+        </nav>
+      )}
+    </>
+  ) : (
+    <p class="text-sm text-zinc-500">{t(locale, 'common.noContent')}</p>
+  )
+}
