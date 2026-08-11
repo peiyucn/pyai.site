@@ -60,14 +60,28 @@ async function main() {
   const existingUrls = new Set(movies.map((m) => m.url));
   console.log(`Existing: ${movies.length} movies`);
 
-  // 抓列表页第 1 页（最近 30 条）
+  // 抓列表页第 1 页（最近 30 条）；403/失败时重试，仍失败则容忍跳过（不 fail）
+  // GitHub Actions 机房 IP 访问豆瓣不稳定（时好时坏），跳过等下次 cron 即可
   const url = `https://movie.douban.com/people/${USER}/collect?start=0&sort=time&rating=all&filter=all&mode=list`;
-  const resp = await fetch(url, { headers: { 'User-Agent': UA } });
-  if (!resp.ok) {
-    console.error(`Failed to fetch list page: HTTP ${resp.status}`);
-    process.exit(1);
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  let html = '';
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const resp = await fetch(url, { headers: { 'User-Agent': UA } });
+      if (resp.ok) {
+        html = await resp.text();
+        break;
+      }
+      console.error(`Failed to fetch list page: HTTP ${resp.status} (attempt ${attempt + 1}/3)`);
+    } catch (e) {
+      console.error(`Fetch error: ${e.message} (attempt ${attempt + 1}/3)`);
+    }
+    if (attempt < 2) await sleep(30000);
   }
-  const html = await resp.text();
+  if (!html) {
+    console.error('Douban list page unavailable after 3 attempts. Skipping this run (will retry next cron).');
+    return; // 容忍失败：不 exit(1)，避免 CI 告警
+  }
   const items = parseListPage(html);
   console.log(`Fetched ${items.length} recent items`);
 
