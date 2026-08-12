@@ -28,7 +28,7 @@ function isActive(href: string): boolean {
 ---
 
 <header
-  class="sticky top-0 z-10 border-b border-zinc-300 bg-white/80 backdrop-blur-lg"
+  class="sticky top-0 z-10 border-b border-purple-200/70 backdrop-blur-lg bg-[linear-gradient(115deg,rgba(237,233,254,0.75)_0%,rgba(224,231,255,0.55)_40%,rgba(243,232,255,0.75)_75%,rgba(224,231,255,0.6)_100%)]"
 >
   <div class="mx-auto flex h-14 max-w-3xl items-center gap-6 px-5">
     <a
@@ -47,7 +47,7 @@ function isActive(href: string): boolean {
               'whitespace-nowrap rounded-md px-2.5 py-1 text-sm text-zinc-600 transition-colors hover:no-underline',
               isActive(item.href)
                 ? 'font-semibold text-accent'
-                : 'hover:bg-zinc-300 hover:text-zinc-900',
+                : 'hover:bg-purple-100/80 hover:text-purple-900',
             ]}
           >
             {t(locale, item.key)}
