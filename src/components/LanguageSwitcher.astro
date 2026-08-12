@@ -5,13 +5,19 @@ import { localizePath } from '../i18n/utils';
 interface Props {
   locale: Locale;
   pathname: string;
+  /** 深色背景（深色紫毛玻璃标题栏）下使用，文字与边框切换为浅色 */
+  dark?: boolean;
 }
 
-const { locale, pathname } = Astro.props;
+const { locale, pathname, dark = false } = Astro.props;
 const other: Locale = locale === 'zh' ? 'en' : 'zh';
 ---
 
-<a href={localizePath(pathname, other)} class="lang-switch" aria-label={`Switch to ${languages[other]}`}>
+<a
+  href={localizePath(pathname, other)}
+  class:list={['lang-switch', dark && 'lang-switch-dark']}
+  aria-label={`Switch to ${languages[other]}`}
+>
   <svg
     class="lang-switch-icon"
     aria-hidden="true"
@@ -52,5 +58,15 @@ const other: Locale = locale === 'zh' ? 'en' : 'zh';
     width: 0.95em;
     height: 0.95em;
     flex-shrink: 0;
+  }
+
+  /* 深色标题栏变体：浅色文字 + 半透明白边框 */
+  .lang-switch-dark {
+    color: rgba(255, 255, 255, 0.92);
+    border-color: rgba(255, 255, 255, 0.28);
+  }
+  .lang-switch-dark:hover {
+    color: #c4b5fd;
+    border-color: #a78bfa;
   }
 </style>

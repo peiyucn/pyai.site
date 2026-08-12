@@ -1,11 +1,14 @@
 ---
 // 原子风格自定义鼠标光标：中心核 + 轨道 + 绕转电子
-// 全局跟随鼠标；悬停在链接/按钮/输入框等交互元素上时自动恢复系统指针
+// 原子核跟手（即时跟随）；轨道+电子有延迟拖尾（弹性弹簧跟随）
+// 仅首页启用；悬停在链接/按钮/输入框等交互元素上时自动恢复系统指针
 ---
 
 <div class="cursor-atom" id="cursor-atom" aria-hidden="true">
-  <span class="cursor-orbit"><span class="cursor-electron"></span></span>
   <span class="cursor-nucleus"></span>
+  <span class="cursor-trail">
+    <span class="cursor-orbit"><span class="cursor-electron"></span></span>
+  </span>
 </div>
 
 <script is:inline>
@@ -32,10 +35,53 @@
       cursor.classList.add('cursor-hidden');
     }
 
-    // 移动时只更新 CSS 变量（零 DOM 查询，保证跟手）
+    // ===== 分层跟随 =====
+    // 原子核：直接跟鼠标（无延迟，即时到位）
+    let mx = -100, my = -100;
+    // 外圈（轨道+电子）：延迟插值跟随，向鼠标位置缓慢靠近（拖尾）
+    let ox = -100, oy = -100;
+    // 插值系数：越小拖尾越长。0.18 ≈ 每帧追 18%，明显滞后如弹簧
+    const LERP = 0.18;
+    let raf = 0;
+    // rAF 兜底：某些环境（无头浏览器/后台标签）不驱动 rAF 时降级 setTimeout
+    const rafFn = window.requestAnimationFrame
+      ? (cb) => window.requestAnimationFrame(cb)
+      : (cb) => setTimeout(() => cb(performance.now()), 16);
+
+    function update() {
+      ox += (mx - ox) * LERP;
+      oy += (my - oy) * LERP;
+      cursor.style.setProperty('--ox', ox + 'px');
+      cursor.style.setProperty('--oy', oy + 'px');
+      // 距离足够近则暂停 rAF，避免空转（鼠标不动时零开销）
+      if (Math.abs(mx - ox) < 0.4 && Math.abs(my - oy) < 0.4) {
+        ox = mx; oy = my;
+        raf = 0;
+        return;
+      }
+      raf = rafFn(update);
+    }
+
     function onMove(e) {
-      cursor.style.setProperty('--mx', e.clientX + 'px');
-      cursor.style.setProperty('--my', e.clientY + 'px');
+      // 自愈（双向）：View Transitions 切换页面时 html 上的 has-cursor-atom 类可能残留。
+      // 1) 原子光标元素已不在文档（进入内容页等）→ 移除类，恢复系统光标，避免鼠标消失。
+      // 2) 元素还在但类丢失（abort 返回首页）→ 补上类，恢复原子光标。
+      if (!document.contains(cursor)) {
+        document.documentElement.classList.remove('has-cursor-atom');
+        return;
+      }
+      if (!document.documentElement.classList.contains('has-cursor-atom')) {
+        document.documentElement.classList.add('has-cursor-atom');
+        shown = false;      // 重置隐藏状态，强制恢复显示
+        show();
+      }
+      // 原子核即时跟手
+      mx = e.clientX;
+      my = e.clientY;
+      cursor.style.setProperty('--mx', mx + 'px');
+      cursor.style.setProperty('--my', my + 'px');
+      // 外圈延迟追
+      if (!raf) raf = rafFn(update);
     }
 
     // 进入/离开元素时判断一次是否交互区域，避免 mousemove 高频 DOM 遍历
@@ -69,6 +115,20 @@
     document.documentElement.classList.add('has-cursor-atom');
     show();
   })();
+
+  // Astro View Transitions：每次页面切换后同步原子光标状态。
+  // - 当前页无原子光标元素（内容页）→ 移除 has-cursor-atom，恢复系统光标
+  // - 当前页有元素但类缺失（首页）→ 补上，确保原子光标显示
+  document.addEventListener('astro:page-load', () => {
+    const el = document.getElementById('cursor-atom');
+    if (!el) {
+      document.documentElement.classList.remove('has-cursor-atom');
+      return;
+    }
+    if (!window.matchMedia('(pointer: fine)').matches) return;
+    document.documentElement.classList.add('has-cursor-atom');
+    el.classList.remove('cursor-hidden');
+  });
 </script>
 
 <style>
@@ -96,38 +156,41 @@
     z-index: 99999;
     pointer-events: none;
     opacity: 1;
-    /* 仅 opacity 过渡；位置由 --mx/--my 变量控制 */
+    /* 仅 opacity 过渡；位置由 --mx/--my（核）与 --ox/--oy（外圈）变量控制 */
     transition: opacity 0.2s ease;
-    /* 初始移出视口，避免页面加载时闪现 */
-    transform: translate3d(var(--mx, -100px), var(--my, -100px), 0);
   }
   .cursor-atom.cursor-hidden {
     opacity: 0;
   }
-  /* 按下反馈：scale 与 translate 在同一 transform 中，围绕鼠标点缩放（不漂移） */
-  .cursor-atom.cursor-down {
-    transform: translate3d(var(--mx, -100px), var(--my, -100px), 0) scale(0.85);
-  }
 
-  /* 中心核：黑色实心圆点，比电子略大（原子核 > 电子） */
+  /* 中心核：黑色实心圆点，直接跟手（--mx/--my 即时更新） */
   .cursor-nucleus {
     position: absolute;
     width: 8px;
     height: 8px;
-    left: -4px;
-    top: -4px;
+    left: 0;
+    top: 0;
+    /* 中心对准鼠标：-4px 偏移 + 变量定位 */
+    transform: translate3d(calc(var(--mx, -100px) - 4px), calc(var(--my, -100px) - 4px), 0);
     background: #18181b;
     border-radius: 50%;
     box-shadow: 0 0 5px rgba(24, 24, 27, 0.5);
   }
 
+  /* 外圈（轨道+电子）：延迟拖尾，向鼠标缓慢靠近（--ox/--oy 插值更新） */
+  .cursor-trail {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translate3d(calc(var(--ox, -100px) - 16px), calc(var(--oy, -100px) - 16px), 0);
+  }
+
   /* 轨道：黑色细圆圈，整体匀速旋转；电子作为子元素随其公转 */
   .cursor-orbit {
-    position: absolute;
+    /* span 默认 inline，宽高不生效会塌成竖线 → 必须 display: block */
+    display: block;
     width: 32px;
     height: 32px;
-    left: -16px;
-    top: -16px;
     border: 1.5px solid rgba(24, 24, 27, 0.55);
     border-radius: 50%;
     animation: cursor-orbit-spin 2.4s linear infinite;

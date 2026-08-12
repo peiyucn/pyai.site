@@ -1,6 +1,7 @@
 ---
 import type { Locale } from '../i18n/ui';
 import { t } from '../i18n/utils';
+import DeepSeekLogo from './DeepSeekLogo.astro';
 
 interface Props {
   locale: Locale;
@@ -10,13 +11,41 @@ const { locale } = Astro.props;
 const year = new Date().getFullYear();
 ---
 
-<footer class="mt-20 border-t border-zinc-300 py-10">
+<footer class="mt-8 border-t border-zinc-300 py-3">
   <div class="mx-auto max-w-3xl px-5 text-center">
     <p class="text-sm text-zinc-600">
       {t(locale, 'footer.tagline')}
     </p>
-    <p class="mt-1 text-xs text-zinc-500">
-      © {year} pyai.site · {t(locale, 'footer.rights')}
+    {/* Powered by Astro & DeepSeek + © 版权（合并为一行，Footer 共两行） */}
+    <p class="mt-1 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 text-xs text-zinc-500">
+      <span>{t(locale, 'footer.poweredBy')}</span>
+      <a
+        href="https://astro.build"
+        target="_blank"
+        rel="noopener"
+        class="font-medium text-zinc-600 hover:underline"
+      >
+        Astro
+      </a>
+      <span aria-hidden="true">&amp;</span>
+      <a
+        href="https://www.deepseek.com"
+        target="_blank"
+        rel="noopener"
+        class="ds-link inline-flex items-center gap-0.5 text-zinc-600 hover:underline"
+      >
+        <DeepSeekLogo icon />
+        <DeepSeekLogo text />
+      </a>
+      <span aria-hidden="true">·</span>
+      <span>© {year} pyai.site · {t(locale, 'footer.rights')}</span>
     </p>
   </div>
 </footer>
+
+<style>
+  /* DeepSeek 官方品牌蓝，仅作用于 logo */
+  .ds-link :global(svg) {
+    color: #4d6bfe;
+  }
+</style>

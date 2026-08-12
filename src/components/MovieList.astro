@@ -43,17 +43,17 @@ const filterTabs: { key: 'all' | 'films' | 'series'; label: string; href: string
   </a>
 </div>
 
-{/* 影/剧筛选标签 */}
-<div class="mb-4 flex items-center gap-1.5">
+{/* 影/剧筛选标签：与记录页标签筛选同风格（小胶囊 + 选中黑底白字 + hover 灰底） */}
+<div class="mb-4 flex flex-wrap items-center gap-1.5">
   {
     filterTabs.map((tab) => (
       <a
         href={tab.href}
         class:list={[
-          'rounded-full border px-3 py-1 text-sm transition-colors',
+          'rounded-full border px-2.5 py-1 text-xs transition-colors hover:no-underline',
           filter === tab.key
-            ? 'border-accent bg-accent/10 font-medium text-accent'
-            : 'border-zinc-300 text-zinc-600 hover:border-accent hover:text-accent',
+            ? 'border-zinc-900 bg-zinc-900 font-semibold text-white'
+            : 'border-zinc-300 text-zinc-600 hover:bg-zinc-300 hover:text-zinc-900',
         ]}
       >
         {tab.label}

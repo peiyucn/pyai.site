@@ -14,7 +14,7 @@ const url = `/${locale}/records/${stripLocale(record.id)}/`;
 ---
 
 <article
-  class="group border-b border-zinc-300 py-6 last:border-b-0"
+  class="group py-6"
 >
   <a href={url} class="block hover:no-underline">
     <h2
@@ -39,23 +39,11 @@ const url = `/${locale}/records/${stripLocale(record.id)}/`;
         <div class="flex flex-wrap gap-1">
           {
             record.data.tags.slice(0, 3).map((tag) => (
-              <button
-                type="button"
-                data-records-tag={tag}
-                class="tag cursor-pointer hover:no-underline hover:opacity-80"
-              >
-                {tag}
-              </button>
+              <span class="tag" aria-hidden="true">{tag}</span>
             ))
           }
         </div>
       )
     }
-    <a
-      href={url}
-      class="ml-auto font-medium text-accent hover:underline"
-    >
-      {t(locale, 'common.readMore')} →
-    </a>
   </div>
 </article>

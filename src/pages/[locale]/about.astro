@@ -104,14 +104,21 @@ const pathname = Astro.url.pathname;
       64, // @
       111, 117, 116, 108, 111, 111, 107, 46, 99, 111, 109, // outlook.com
     );
-    const link = document.querySelector('[data-email-link]');
-    const display = document.querySelector('[data-email-display]');
-    if (link && display) {
+    function initEmail() {
+      const link = document.querySelector('[data-email-link]');
+      const display = document.querySelector('[data-email-display]');
+      if (!link || !display) return;
       link.setAttribute('href', 'mailto:' + email);
+      link.setAttribute('aria-label', email);
+      // 幂等：已替换过 [at] 就不再重复处理（VT 切换会多次触发）
+      if (display.dataset.emailInited) return;
       const at = display.querySelector('[aria-hidden]');
       if (at) at.remove();
       display.textContent = email;
-      link.setAttribute('aria-label', email);
+      display.dataset.emailInited = '1';
     }
+    // 立即执行一次；VT 导航后 astro:page-load 兜底（监听器挂 document，跨导航持久）
+    initEmail();
+    document.addEventListener('astro:page-load', initEmail);
   })();
 </script>

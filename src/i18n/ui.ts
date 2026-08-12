@@ -28,6 +28,7 @@ export type UIKey =
   | 'projects.description'
   | 'movies.title'
   | 'movies.description'
+  | 'movies.syncedAt'
   | 'movies.stats'
   | 'movies.watched'
   | 'movies.watching'
@@ -66,6 +67,7 @@ export type UIKey =
   // 页脚
   | 'footer.tagline'
   | 'footer.rights'
+  | 'footer.poweredBy'
   // 首页
   | 'hero.workingWith';
 
@@ -84,11 +86,12 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'common.noContent': '暂无内容',
     'common.allTags': '全部',
     'records.title': '记录',
-    'records.description': '博客、笔记与思考，用标签区分内容类型。',
+    'records.description': '博客、笔记与思考',
     'projects.title': '项目',
     'projects.description': 'pyai 的一些开源作品。',
     'movies.title': '观影',
-    'movies.description': 'pyai 的观影记录，每日自动同步。',
+    'movies.description': 'pyai 的观影记录',
+    'movies.syncedAt': '{date} updated',
     'movies.stats': '统计',
     'movies.watched': '看过',
     'movies.watching': '在看',
@@ -125,6 +128,7 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'about.description': '关于 pyai。',
     'footer.tagline': '记录 · 沉淀 · 创造',
     'footer.rights': '保留所有权利',
+    'footer.poweredBy': 'Powered by',
     'hero.workingWith': 'working with',
   },
   en: {
@@ -140,11 +144,12 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'common.noContent': 'No content yet',
     'common.allTags': 'All',
     'records.title': 'Records',
-    'records.description': 'Blog, notes and thoughts, tagged by content type.',
+    'records.description': 'Blog, notes and thoughts',
     'projects.title': 'Projects',
     'projects.description': 'Some open-source work of pyai.',
     'movies.title': 'Movies',
-    'movies.description': "pyai's movie diary, auto-synced daily.",
+    'movies.description': "pyai's movie diary",
+    'movies.syncedAt': '{date} updated',
     'movies.stats': 'Stats',
     'movies.watched': 'Watched',
     'movies.watching': 'Watching',
@@ -181,6 +186,7 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'about.description': 'About pyai.',
     'footer.tagline': 'Record · Distill · Create',
     'footer.rights': 'All rights reserved',
+    'footer.poweredBy': 'Powered by',
     'hero.workingWith': 'working with',
   },
 };

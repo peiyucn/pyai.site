@@ -37,7 +37,7 @@ const allTags = [...tagCounts.entries()]
         data-records-tag=""
         class:list={[
           'record-tag rounded-full border px-2.5 py-1 text-xs transition-colors',
-          'border-zinc-900 bg-zinc-900 text-white',
+          'border-zinc-900 bg-zinc-900 font-semibold text-white',
         ]}
       >
         {t(locale, 'common.allTags')}
@@ -62,8 +62,11 @@ const allTags = [...tagCounts.entries()]
   <div id="records-list">
     {
       records.length > 0 ? (
-        records.map((record) => (
-          <div class="record-item" data-record-tags={record.data.tags.join(',')}>
+        records.map((record, i) => (
+          <div
+            class:list={['record-item', i > 0 ? 'border-t border-zinc-300' : '']}
+            data-record-tags={record.data.tags.join(',')}
+          >
             <RecordCard record={record} locale={locale} />
           </div>
         ))
@@ -75,11 +78,14 @@ const allTags = [...tagCounts.entries()]
 </ListLayout>
 
 <script is:inline>
-  (() => {
+  // 记录页标签筛选：仅顶部标签栏（nav[aria-label="tags"]）参与。
+  // 卡片内标签是纯展示（无 data-records-tag），不参与筛选。
+  // 立即执行一次（首次加载），并在 astro:page-load 时重新执行（VT 导航后）。
+  function initRecordsFilter() {
     const list = document.getElementById('records-list');
     if (!list) return;
     const items = Array.from(list.querySelectorAll('.record-item'));
-    const tagBtns = Array.from(document.querySelectorAll('[data-records-tag]'));
+    const tagBtns = Array.from(document.querySelectorAll('nav[aria-label="tags"] [data-records-tag]'));
     if (!tagBtns.length) return;
 
     const setActive = (tag) => {
@@ -87,7 +93,7 @@ const allTags = [...tagCounts.entries()]
         const isActive = (b.dataset.recordsTag ?? '') === tag;
         b.className = 'record-tag rounded-full border px-2.5 py-1 text-xs transition-colors' +
           (isActive
-            ? ' border-zinc-900 bg-zinc-900 text-white'
+            ? ' border-zinc-900 bg-zinc-900 font-semibold text-white'
             : ' border-zinc-300 text-zinc-600 hover:bg-zinc-300 hover:text-zinc-900');
       });
     };
@@ -100,9 +106,47 @@ const allTags = [...tagCounts.entries()]
       setActive(tag);
     };
 
-    tagBtns.forEach((b) =>
-      b.addEventListener('click', () => filter(b.dataset.recordsTag ?? '')),
-    );
+    // 事件委托绑定在 window 上（VT 导航不销毁 window，监听永不丢失），
+    // 点击时检查目标是否在当前 document 的 tags 栏内。每次 init 都绑（重复无害，filter 幂等）。
+    window.addEventListener('click', (e) => {
+      const target = e.target;
+      if (!target || !target.closest) return;
+      const nav = target.closest('nav[aria-label="tags"]');
+      if (!nav) return;
+      const btn = target.closest('[data-records-tag]');
+      if (!btn) return;
+      // 用最新的列表数据过滤（每次点击都重新抓，DOM 重建后也正确）
+      const listEl = document.getElementById('records-list');
+      if (!listEl) return;
+      const itemsEl = Array.from(listEl.querySelectorAll('.record-item'));
+      const tag = btn.dataset.recordsTag ?? '';
+      itemsEl.forEach((el) => {
+        const tags = (el.dataset.recordTags ?? '').split(',').filter(Boolean);
+        el.style.display = !tag || tags.includes(tag) ? '' : 'none';
+      });
+      const btns = Array.from(document.querySelectorAll('nav[aria-label="tags"] [data-records-tag]'));
+      btns.forEach((b) => {
+        const isActive = (b.dataset.recordsTag ?? '') === tag;
+        b.className = 'record-tag rounded-full border px-2.5 py-1 text-xs transition-colors' +
+          (isActive
+            ? ' border-zinc-900 bg-zinc-900 font-semibold text-white'
+            : ' border-zinc-300 text-zinc-600 hover:bg-zinc-300 hover:text-zinc-900');
+      });
+    });
+    // 初始状态：显示全部
     filter('');
-  })();
+  }
+
+  // 多时机执行：直接调用 + DOMContentLoaded + load + VT 导航后。
+  // 某些环境（dev HMR / 脚本注入时机）下直接调用可能不生效，轮询兜底。
+  function safeInit() {
+    try { initRecordsFilter(); } catch (e) { /* 忽略 */ }
+  }
+  safeInit();
+  document.addEventListener('DOMContentLoaded', safeInit);
+  window.addEventListener('load', safeInit);
+  document.addEventListener('astro:page-load', safeInit);
+  // 轮询兜底：确保 2 秒内必然执行一次（脚本注入延迟场景）
+  setTimeout(safeInit, 500);
+  setTimeout(safeInit, 1500);
 </script>
