@@ -146,7 +146,8 @@
       window.addEventListener('mousemove', onMouseMove);
       window.addEventListener('mouseleave', onMouseLeave);
 
-      document.addEventListener('astro:before-swap', () => {
+      // 把本次动画的清理逻辑登记到模块级数组，由唯一的 before-swap 监听器统一执行
+      cleanupFns.push(() => {
         cancelAnimationFrame(rafId);
         if (fallbackTimer) clearInterval(fallbackTimer);
         window.removeEventListener('resize', resize);
@@ -158,6 +159,13 @@
     start();
   }
 
+  // 模块级清理登记表 + 唯一的 before-swap 监听器（跨导航持久，避免切换多次后监听器堆积）
+  const cleanupFns = [];
+  document.addEventListener('astro:before-swap', () => {
+    for (const fn of cleanupFns) fn();
+    cleanupFns.length = 0;
+  });
+
   // 立即尝试 + DOMContentLoaded 兜底 + 延迟兜底（兼容各种加载时机）
   startParticleBg();
   if (document.readyState === 'loading') {
@@ -166,6 +174,9 @@
     setTimeout(startParticleBg, 0);
   }
   setTimeout(startParticleBg, 200);
+  // View Transitions：切换页面（如中英文）时 body 被替换、模块脚本不重跑，
+  // 新页面的 canvas 需要在此重启（监听器挂 document，跨导航持久）
+  document.addEventListener('astro:page-load', startParticleBg);
 </script>
 
 <style>

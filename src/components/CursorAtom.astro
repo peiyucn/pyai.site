@@ -1,7 +1,7 @@
 ---
 // 原子风格自定义鼠标光标：中心核 + 轨道 + 绕转电子
 // 原子核跟手（即时跟随）；轨道+电子有延迟拖尾（弹性弹簧跟随）
-// 仅首页启用；悬停在链接/按钮/输入框等交互元素上时自动恢复系统指针
+// 仅首页启用；始终显示原子光标（系统指针全隐藏），hover 交互元素时视觉反馈
 ---
 
 <div class="cursor-atom" id="cursor-atom" aria-hidden="true">
@@ -13,27 +13,18 @@
 
 <script is:inline>
   (() => {
-    const cursor = document.getElementById('cursor-atom');
-    if (!cursor) return;
+    // 动态获取当前页的原子光标元素。
+    // View Transitions 切换后 body 被替换，旧引用失效——每次操作都重新查询，
+    // 避免闭包持有旧元素导致"元素不在文档"误判（鼠标样式丢失的根因）。
+    function getCursor() {
+      return document.getElementById('cursor-atom');
+    }
     // 仅精细指针设备启用（触屏/触控板手势不显示）
     if (!window.matchMedia('(pointer: fine)').matches) return;
 
-    // 交互元素：悬停时隐藏原子光标（不显示系统指针，靠 mouseover/out 判断）
+    // 交互元素：hover 时原子光标进入"可点击"状态（视觉反馈，不隐藏）
     const INTERACTIVE =
       'a, button, input, textarea, select, [contenteditable], [role="button"], label, summary';
-
-    let shown = false;
-
-    function show() {
-      if (shown) return;
-      shown = true;
-      cursor.classList.remove('cursor-hidden');
-    }
-    function hide() {
-      if (!shown) return;
-      shown = false;
-      cursor.classList.add('cursor-hidden');
-    }
 
     // ===== 分层跟随 =====
     // 原子核：直接跟鼠标（无延迟，即时到位）
@@ -49,6 +40,8 @@
       : (cb) => setTimeout(() => cb(performance.now()), 16);
 
     function update() {
+      const cursor = getCursor();
+      if (!cursor) { raf = 0; return; }
       ox += (mx - ox) * LERP;
       oy += (my - oy) * LERP;
       cursor.style.setProperty('--ox', ox + 'px');
@@ -62,18 +55,36 @@
       raf = rafFn(update);
     }
 
+    // 当前鼠标坐标处是否悬停在交互元素上（用 elementFromPoint 探测，
+    // 不依赖 mouseover 事件 —— VT 切换后元素重建、mouseover 不重触发）
+    function isInteractiveAt(x, y) {
+      const el = document.elementFromPoint(x, y);
+      return !!(el && el instanceof Element && el.closest(INTERACTIVE));
+    }
+
+    // 同步 hover 状态：交互元素上 → .cursor-hovering（核放大/轨道变色），
+    // 非交互区域 → 移除。原子光标始终显示，永不切换系统指针。
+    let lastSync = 0;
+    function syncHover(force) {
+      const cursor = getCursor();
+      if (!cursor) return;
+      const now = Date.now();
+      if (!force && now - lastSync < 100) return; // 节流：mousemove 高频，100ms 兜底足够
+      lastSync = now;
+      cursor.classList.toggle('cursor-hovering', isInteractiveAt(mx, my));
+    }
+
     function onMove(e) {
-      // 自愈（双向）：View Transitions 切换页面时 html 上的 has-cursor-atom 类可能残留。
-      // 1) 原子光标元素已不在文档（进入内容页等）→ 移除类，恢复系统光标，避免鼠标消失。
-      // 2) 元素还在但类丢失（abort 返回首页）→ 补上类，恢复原子光标。
-      if (!document.contains(cursor)) {
+      const cursor = getCursor();
+      // 自愈：View Transitions 切换页面时 html 上的 has-cursor-atom 类可能残留。
+      // 1) 当前页无原子光标元素（进入内容页等）→ 移除类，恢复系统光标，避免鼠标消失。
+      // 2) 元素存在但类缺失（abort 返回首页）→ 补上类，恢复原子光标。
+      if (!cursor) {
         document.documentElement.classList.remove('has-cursor-atom');
         return;
       }
       if (!document.documentElement.classList.contains('has-cursor-atom')) {
         document.documentElement.classList.add('has-cursor-atom');
-        shown = false;      // 重置隐藏状态，强制恢复显示
-        show();
       }
       // 原子核即时跟手
       mx = e.clientX;
@@ -82,27 +93,37 @@
       cursor.style.setProperty('--my', my + 'px');
       // 外圈延迟追
       if (!raf) raf = rafFn(update);
+      // 节流同步 hover 状态（VT 后 mouseover 不重触发的兜底）
+      syncHover(false);
     }
 
     // 进入/离开元素时判断一次是否交互区域，避免 mousemove 高频 DOM 遍历
     function onOver(e) {
       const el = e.target instanceof Element ? e.target : null;
       const onInteractive = el ? !!el.closest(INTERACTIVE) : false;
-      if (onInteractive) hide();
-      else show();
+      const cursor = getCursor();
+      if (cursor) cursor.classList.toggle('cursor-hovering', onInteractive);
     }
 
     function onDown() {
-      cursor.classList.add('cursor-down');
+      const cursor = getCursor();
+      if (cursor) cursor.classList.add('cursor-down');
     }
     function onUp() {
-      cursor.classList.remove('cursor-down');
+      const cursor = getCursor();
+      if (cursor) cursor.classList.remove('cursor-down');
     }
     function onLeave() {
-      cursor.style.opacity = '0';
+      const cursor = getCursor();
+      if (cursor) cursor.style.opacity = '0';
     }
     function onEnter() {
-      cursor.style.opacity = '1';
+      // 移除 inline opacity（不覆盖任何 class），并按当前鼠标位置收敛 hover 状态
+      const cursor = getCursor();
+      if (cursor) {
+        cursor.style.removeProperty('opacity');
+        syncHover(true);
+      }
     }
 
     window.addEventListener('mousemove', onMove, { passive: true });
@@ -113,27 +134,27 @@
     document.documentElement.addEventListener('mouseenter', onEnter);
     // 标记启用：CSS 据此隐藏系统光标
     document.documentElement.classList.add('has-cursor-atom');
-    show();
-  })();
 
-  // Astro View Transitions：每次页面切换后同步原子光标状态。
-  // - 当前页无原子光标元素（内容页）→ 移除 has-cursor-atom，恢复系统光标
-  // - 当前页有元素但类缺失（首页）→ 补上，确保原子光标显示
-  document.addEventListener('astro:page-load', () => {
-    const el = document.getElementById('cursor-atom');
-    if (!el) {
-      document.documentElement.classList.remove('has-cursor-atom');
-      return;
-    }
-    if (!window.matchMedia('(pointer: fine)').matches) return;
-    document.documentElement.classList.add('has-cursor-atom');
-    el.classList.remove('cursor-hidden');
-  });
+    // Astro View Transitions：每次页面切换后同步原子光标状态。
+    // - 当前页无原子光标元素（内容页）→ 移除 has-cursor-atom，恢复系统光标
+    // - 当前页有元素（首页）→ 补上类并恢复 hover 状态，原子光标继续显示
+    document.addEventListener('astro:page-load', () => {
+      const el = getCursor();
+      if (!el) {
+        document.documentElement.classList.remove('has-cursor-atom');
+        return;
+      }
+      if (!window.matchMedia('(pointer: fine)').matches) return;
+      document.documentElement.classList.add('has-cursor-atom');
+      el.classList.remove('cursor-down');
+      syncHover(true);
+    });
+  })();
 </script>
 
 <style>
-  /* 启用原子光标后隐藏系统光标：所有元素包括交互元素都用 none，
-     原子光标自身负责“交互状态隐藏”，不依赖系统指针 */
+  /* 原子光标始终显示：所有元素（含交互元素）都隐藏系统指针。
+     交互反馈由 .cursor-hovering 状态提供（核放大/轨道变色），不切换系统指针。 */
   :global(html.has-cursor-atom),
   :global(html.has-cursor-atom body),
   :global(html.has-cursor-atom *),
@@ -157,10 +178,7 @@
     pointer-events: none;
     opacity: 1;
     /* 仅 opacity 过渡；位置由 --mx/--my（核）与 --ox/--oy（外圈）变量控制 */
-    transition: opacity 0.2s ease;
-  }
-  .cursor-atom.cursor-hidden {
-    opacity: 0;
+    transition: opacity 0.15s ease;
   }
 
   /* 中心核：黑色实心圆点，直接跟手（--mx/--my 即时更新） */
@@ -175,6 +193,8 @@
     background: #18181b;
     border-radius: 50%;
     box-shadow: 0 0 5px rgba(24, 24, 27, 0.5);
+    transition: width 0.15s ease, height 0.15s ease,
+      background-color 0.15s ease, box-shadow 0.15s ease;
   }
 
   /* 外圈（轨道+电子）：延迟拖尾，向鼠标缓慢靠近（--ox/--oy 插值更新） */
@@ -194,6 +214,7 @@
     border: 1.5px solid rgba(24, 24, 27, 0.55);
     border-radius: 50%;
     animation: cursor-orbit-spin 2.4s linear infinite;
+    transition: border-color 0.15s ease, width 0.15s ease, height 0.15s ease;
   }
 
   /* 电子：黑色小圆点，钉在轨道线上（中心到圆心距离 = 轨道中心线半径 15.25px），随轨道旋转公转 */
@@ -209,6 +230,46 @@
     background: #18181b;
     border-radius: 50%;
     box-shadow: 0 0 4px rgba(24, 24, 27, 0.55);
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  /* ===== hover 交互元素：视觉反馈（原子光标保持显示，仅形态变化）===== */
+  /* 核：放大 + 品牌紫 */
+  .cursor-atom.cursor-hovering .cursor-nucleus {
+    width: 12px;
+    height: 12px;
+    /* 中心仍对准鼠标：12/2 = 6px 偏移 */
+    transform: translate3d(calc(var(--mx, -100px) - 6px), calc(var(--my, -100px) - 6px), 0);
+    background: #4c3a8a;
+    box-shadow: 0 0 8px rgba(76, 58, 138, 0.6);
+  }
+  /* 轨道：收窄 + 品牌紫 */
+  .cursor-atom.cursor-hovering .cursor-orbit {
+    width: 26px;
+    height: 26px;
+    border-color: rgba(76, 58, 138, 0.7);
+  }
+  /* 电子：品牌紫 */
+  .cursor-atom.cursor-hovering .cursor-electron {
+    background: #4c3a8a;
+    box-shadow: 0 0 5px rgba(76, 58, 138, 0.7);
+  }
+  /* 外圈容器：轨道缩小时整体位置跟随（26/2 = 13px 偏移） */
+  .cursor-atom.cursor-hovering .cursor-trail {
+    transform: translate3d(calc(var(--ox, -100px) - 13px), calc(var(--oy, -100px) - 13px), 0);
+  }
+
+  /* ===== 按下：核缩小回弹 ===== */
+  .cursor-atom.cursor-down .cursor-nucleus {
+    width: 6px;
+    height: 6px;
+    transform: translate3d(calc(var(--mx, -100px) - 3px), calc(var(--my, -100px) - 3px), 0);
+    background: #18181b;
+  }
+  .cursor-atom.cursor-down.cursor-hovering .cursor-nucleus {
+    width: 10px;
+    height: 10px;
+    transform: translate3d(calc(var(--mx, -100px) - 5px), calc(var(--my, -100px) - 5px), 0);
   }
 
   @keyframes cursor-orbit-spin {
