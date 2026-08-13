@@ -16,64 +16,36 @@ const { variant = 'light' } = Astro.props;
   // 顶层执行（Astro 脚本在 body 末尾，DOM 已就绪）+ DOMContentLoaded 兜底
 
   // ===== 模块级星云噪点纹理缓存（跨 VT 导航持久）=====
-  // ⚠️ 关键：768×768 的 fBm 噪点纹理生成极耗 CPU（~59万像素 × 多层 octave）。
-  //    之前 nebulaTex 是 startParticleBg() 的局部变量，每次中英切换（astro:page-load
-  //    触发 startParticleBg）都重新生成两张纹理 → 页面卡住一下。
-  //    提升到模块级：纹理只生成一次，跨导航复用。
-  const NEBULA_SIZE = 768;
+  // ⚠️ 性能：fBm（768×768 × 多层 octave sin 哈希）生成极耗 CPU（~2300 万次 sin）。
+  //    改为纯随机小噪声（128×128，Math.random）+ 绘制时 GPU 双线性放大柔化，
+  //    计算量降 ~1000 倍（1.6 万次 random vs 2300 万次 sin），视觉上放大后
+  //    依然是柔和的斑驳明暗。纹理仍模块级缓存，只生成一次。
+  const NOISE_SIZE = 128;  // 生成尺寸（小，纯随机）
+  const TILE_SIZE = 768;   // 放大后的平铺块尺寸
   let __nebulaTex1 = null;
   let __nebulaTex2 = null;
-  function makeNoiseTex(size, seed) {
+  function makeNoiseTex(size) {
     const c = document.createElement('canvas');
     c.width = c.height = size;
     const g = c.getContext('2d');
     const img = g.createImageData(size, size);
     const d = img.data;
-    const P = size; // 周期 = 纹理尺寸（无缝平铺关键）
-    // 哈希伪随机：seed 区分不同纹理；同 (x,y) 永远同值，纹理稳定不闪烁
-    const h = (x, y) => {
-      const s = Math.sin((x + seed * 13.7) * 127.1 + (y + seed * 7.3) * 311.7) * 43758.5453123;
-      return s - Math.floor(s);
-    };
-    // value noise（单 octave，双线性平滑插值，lattice 模 P 周期化）
-    const vnoise = (x, y) => {
-      const xi = Math.floor(x), yi = Math.floor(y);
-      const x0 = ((xi % P) + P) % P, y0 = ((yi % P) + P) % P;
-      const xf = x - xi, yf = y - yi;
-      const u = xf * xf * (3 - 2 * xf);
-      const v = yf * yf * (3 - 2 * yf);
-      const a = h(x0, y0), b = h((x0 + 1) % P, y0);
-      const c2 = h(x0, (y0 + 1) % P), d2 = h((x0 + 1) % P, (y0 + 1) % P);
-      return a + (b - a) * u + (c2 - a) * v + (a - b - c2 + d2) * u * v;
-    };
-    const fbm = (x, y, freqs) => {
-      let sum = 0, amp = 0.5, norm = 0;
-      for (let i = 0; i < freqs.length; i++) {
-        sum += amp * vnoise(x * freqs[i], y * freqs[i]);
-        norm += amp;
-        amp *= 0.5;
-      }
-      return sum / norm;
-    };
-    for (let y = 0; y < size; y++) {
-      for (let x = 0; x < size; x++) {
-        // 柔云（低频大云块）+ 细尘埃（高频颗粒）
-        const cloud = fbm(x, y, [2, 4, 8]);
-        const grain = fbm(x + 40.7, y + 89.3, [96, 192]);
-        let v = cloud * 0.78 + grain * 0.22;
-        v = Math.pow(Math.max(0, Math.min(1, v)), 1.7);
-        const i = (y * size + x) * 4;
-        // 冷白偏灰蓝（呼应星点，避免纯白刺眼）
-        d[i] = 238; d[i + 1] = 240; d[i + 2] = 246;
-        d[i + 3] = Math.round(v * 255); // 明暗强度进 alpha，绘制时再统一压低
-      }
+    for (let i = 0; i < size * size; i++) {
+      // 纯随机噪声（无需 sin 哈希/octave，两次调用 Math.random 天然不同）
+      const v = Math.random();
+      // 非对称映射：大部分区域暗、少量亮斑凸出（星云"深浅不一"）
+      const a = Math.round(Math.pow(v, 1.7) * 255);
+      const o = i * 4;
+      // 冷白偏灰蓝（呼应星点，避免纯白刺眼）
+      d[o] = 238; d[o + 1] = 240; d[o + 2] = 246;
+      d[o + 3] = a;
     }
     g.putImageData(img, 0, 0);
     return c;
   }
   function ensureNebula() {
-    if (!__nebulaTex1) __nebulaTex1 = makeNoiseTex(NEBULA_SIZE, 0);
-    if (!__nebulaTex2) __nebulaTex2 = makeNoiseTex(NEBULA_SIZE, 100);
+    if (!__nebulaTex1) __nebulaTex1 = makeNoiseTex(NOISE_SIZE);
+    if (!__nebulaTex2) __nebulaTex2 = makeNoiseTex(NOISE_SIZE);
   }
 
   function startParticleBg() {
@@ -127,7 +99,7 @@ const { variant = 'light' } = Astro.props;
     // A=0.14 整体极淡，只是纯黑背景上的微弱氛围，不抢主体。
     function drawNebula() {
       if (variant !== 'dark' || !__nebulaTex1) return;
-      const S = NEBULA_SIZE;
+      const S = TILE_SIZE;
       const t = performance.now() / 1000;
       const breathe = Math.sin(t * 0.06);
       const A = 0.07; // 极淡：只是纯黑背景上的微弱氛围（继续减淡）
@@ -136,7 +108,9 @@ const { variant = 'light' } = Astro.props;
       const cols = Math.ceil(width / S) + 1;
       const rows = Math.ceil(height / S) + 1;
       ctx.save();
-      ctx.imageSmoothingEnabled = false; // 1:1 绘制无需平滑
+      // 放大柔化：128→768 由 GPU 双线性插值，纯随机噪声自然变成柔和斑驳明暗
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       ctx.globalAlpha = a1;
       for (let dx = 0; dx < cols; dx++) {
         for (let dy = 0; dy < rows; dy++) {
