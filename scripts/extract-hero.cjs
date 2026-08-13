@@ -92,7 +92,7 @@ sceneJson = sceneJson
   //    强度 4.0：× uBeamStrength(0.62) 后 ≈2.5，tanh ≈0.987 —— 接近圆光弧峰值但略柔
   .replace(
     'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);',
-    'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);\\nfloat dx = uv.x - pos.x;\\nfloat flick = 0.85 + 0.15 * (sin(uTime * 7.3) + sin(uTime * 13.7 + 1.7) + sin(uTime * 31.1 + 4.2)) * 0.3333;\\nfloat horizon = exp(-dx * dx * 25.0) * exp(-abs(uv.y - pos.y) * 90.0) * 4.0;\\nbeam += horizon;\\nbeam *= flick;',
+    'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);\\nfloat dx = uv.x - pos.x;\\nfloat flick = 0.92 + 0.08 * (sin(uTime * 7.3) + sin(uTime * 13.7 + 1.7) + sin(uTime * 31.1 + 4.2)) * 0.3333;\\nfloat horizon = exp(-dx * dx * 25.0) * exp(-abs(uv.y - pos.y) * 90.0) * 4.0;\\nbeam += horizon;\\nbeam *= flick;',
   )
   // 日食中心：y 0.4 → 0.5（垂直居中，对齐 pyai.site 文字）
   .replace('vec2 pos = vec2(0.5, 0.4)', 'vec2 pos = vec2(0.5, 0.5)')
