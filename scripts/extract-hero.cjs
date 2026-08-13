@@ -85,23 +85,14 @@ sceneJson = sceneJson
     'getBeam(uv, pos, 0.6000, 0.6345, 0.5000, 0.3000, uTime, 0.7300, uResolution)',
     'getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution)',
   )
-  // ⚠️ 过渡光弧函数：二次贝塞尔光带（横线 → 上半圆平滑过渡用）。
-  //    采样 12 段求最近距离，距曲线 < halfThick 发光（光带）。
-  //    插入位置：beam 的 getBeam 定义之后、void main() 之前（这段 JSON 紧凑无换行）。
-  .replace(
-    'return drawRing(uv, pos, radius, angleVal, resolution, skewVal, angleVal, thickness, time, phaseVal);\\n}void main() {',
-    'return drawRing(uv, pos, radius, angleVal, resolution, skewVal, angleVal, thickness, time, phaseVal);\\n}float bezierBand(vec2 uv, vec2 p0, vec2 p1, vec2 p2, float halfThick) {float best = 1e9;for (int i = 0; i < 12; i++) {float t = float(i) / 11.0;float it = 1.0 - t;vec2 bp = it * it * p0 + 2.0 * it * t * p1 + t * t * p2;float d = distance(uv, bp);best = min(best, d);}return 1.0 - smoothstep(0.0, halfThick, best);}\\nvoid main() {',
-  )
   // ⚠️ 吸积盘：贯穿黑洞中央的强光横线（短线段 + 两边渐隐）
   //    - y 固定在黑洞圆心 pos.y（跟随黑洞移动）
   //    - x 方向高斯衰减 exp(-dx²·k)：中心最亮、左右逐渐消失（不贯穿屏幕）
   //    - k=25 → 半宽约 ±0.14 UV，约黑洞环半径量级
   //    强度 4.0：× uBeamStrength(0.62) 后 ≈2.5，tanh ≈0.987 —— 接近圆光弧峰值但略柔
-  // ⚠️ 横线与上半圆交接处加过渡光弧：横线左右两端各一条贝塞尔光带，
-  //    从横线端点平滑上扬连接到上半圆弧（20° 处），填补"平线→弯弧"的硬切换。
   .replace(
     'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);',
-    'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);\\nfloat dx = uv.x - pos.x;\\nfloat horizon = exp(-dx * dx * 25.0) * exp(-abs(uv.y - pos.y) * 90.0) * 4.0;\\nbeam += horizon;\\nfloat hw = uBeamThickness * 0.4;\\nfloat R0 = 0.30;\\nvec2 tr0 = vec2(pos.x + 0.16, pos.y);\\nvec2 tr1 = vec2(pos.x + 0.28, pos.y + 0.05);\\nvec2 tr2 = vec2(pos.x + R0 * cos(0.35), pos.y + R0 * sin(0.35));\\nbeam += bezierBand(uv, tr0, tr1, tr2, hw) * 3.0;\\nvec2 tl0 = vec2(pos.x - 0.16, pos.y);\\nvec2 tl1 = vec2(pos.x - 0.28, pos.y + 0.05);\\nvec2 tl2 = vec2(pos.x - R0 * cos(0.35), pos.y + R0 * sin(0.35));\\nbeam += bezierBand(uv, tl0, tl1, tl2, hw) * 3.0;',
+    'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);\\nfloat dx = uv.x - pos.x;\\nfloat horizon = exp(-dx * dx * 25.0) * exp(-abs(uv.y - pos.y) * 90.0) * 4.0;\\nbeam += horizon;',
   )
   // 日食中心：y 0.4 → 0.5（垂直居中，对齐 pyai.site 文字）
   .replace('vec2 pos = vec2(0.5, 0.4)', 'vec2 pos = vec2(0.5, 0.5)')
