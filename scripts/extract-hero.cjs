@@ -90,20 +90,14 @@ sceneJson = sceneJson
   //    - x 方向高斯衰减 exp(-dx²·k)：中心最亮、左右逐渐消失（不贯穿屏幕）
   //    - k=25 → 半宽约 ±0.14 UV，约黑洞环半径量级
   //    强度 4.0：× uBeamStrength(0.62) 后 ≈2.5，tanh ≈0.987 —— 接近圆光弧峰值但略柔
-  // ⚠️ 硬接处过渡（用户方法：隐形小圆 + 1/4弧）。
-  //    实测几何（读像素）：环半径=0.30（aspect 空间，正圆），横线在圆心高度水平。
-  //    正确结构：
-  //    1) 横线外延：横线两端伸出环外（|aDx| 0→0.36 全亮，0.36→0.46 渐隐），
-  //       不是收敛到环内（之前 smoothstep 到 0.30 砍掉了外延）
-  //    2) 环端点折角：左端点 L 处横线向左 + 环弧向上(竖直切线)，折角开口朝左上；
-  //       右端点 R 处横线向右 + 环弧向上，折角开口朝右上
-  //    3) 过渡小圆：圆心在折角外角 = 左端点左上(L-rr, L-rr)、右端点右上(R+rr, R-rr)，
-  //       同时相切横线(水平)与环在端点处的竖直切线
-  //    4) 1/4 弧：左端点弧从环切点(0°)到横线切点(270°)，中心315°(5.4978)；
-  //       右端点弧从环切点(180°)到横线切点(270°)，中心225°(3.9269)
+  // ⚠️ 硬接处过渡（用户方法：隐形小圆 + 1/4弧，环端点上方外侧）。
+  //    实测：之前弧连接的是横线"渐隐区"（横线切点 aDx=-0.39 在 smoothstep
+  //    0.36→0.46 段内）→ 弧很暗几乎不可见。修复：横线全亮区延长到 0.42，
+  //    渐隐段 0.42→0.50，使弧的横线切点（aDx≈-0.39）落在全亮区，弧清晰可见。
+  //    弧：fillet 小圆，圆心在环端点外上方，同时相切横线与环弧。
   .replace(
     'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);',
-    'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);\\nfloat AR = uResolution.x / uResolution.y;\\nvec2 aUV = vec2(uv.x * AR, uv.y);\\nvec2 aP = vec2(pos.x * AR, pos.y);\\nfloat aDx = aUV.x - aP.x;\\nfloat lineX = 1.0 - smoothstep(0.36, 0.46, abs(aDx));\\nfloat lineY = exp(-abs(aUV.y - aP.y) * 90.0);\\nfloat horizon = lineX * lineY * 4.0;\\nbeam += horizon;\\nfloat hw2 = uBeamThickness * 0.4;\\nfloat rr = 0.09;\\nvec2 acr = vec2(aP.x + 0.30 + rr, aP.y - rr);\\nfloat dcr = length(aUV - acr);\\nfloat angR = calculateAngle(aUV, acr);\\nbeam += (1.0 - smoothstep(0.0, hw2, abs(dcr - rr))) * (1.0 - smoothstep(0.0, 0.8, angularDifference(angR, 3.9269))) * 3.0;\\nvec2 acl = vec2(aP.x - 0.30 - rr, aP.y - rr);\\nfloat dcl = length(aUV - acl);\\nfloat angL = calculateAngle(aUV, acl);\\nbeam += (1.0 - smoothstep(0.0, hw2, abs(dcl - rr))) * (1.0 - smoothstep(0.0, 0.8, angularDifference(angL, 5.4978))) * 3.0;',
+    'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);\\nfloat AR = uResolution.x / uResolution.y;\\nvec2 aUV = vec2(uv.x * AR, uv.y);\\nvec2 aP = vec2(pos.x * AR, pos.y);\\nfloat aDx = aUV.x - aP.x;\\nfloat lineX = 1.0 - smoothstep(0.42, 0.50, abs(aDx));\\nfloat lineY = exp(-abs(aUV.y - aP.y) * 90.0);\\nfloat horizon = lineX * lineY * 4.0;\\nbeam += horizon;\\nfloat hw2 = uBeamThickness * 0.5;\\nfloat rr = 0.09;\\nvec2 acr = vec2(aP.x + 0.30 + rr, aP.y - rr);\\nfloat dcr = length(aUV - acr);\\nfloat angR = calculateAngle(aUV, acr);\\nbeam += (1.0 - smoothstep(0.0, hw2, abs(dcr - rr))) * (1.0 - smoothstep(0.0, 0.8, angularDifference(angR, 3.9269))) * 4.5;\\nvec2 acl = vec2(aP.x - 0.30 - rr, aP.y - rr);\\nfloat dcl = length(aUV - acl);\\nfloat angL = calculateAngle(aUV, acl);\\nbeam += (1.0 - smoothstep(0.0, hw2, abs(dcl - rr))) * (1.0 - smoothstep(0.0, 0.8, angularDifference(angL, 5.4978))) * 4.5;',
   )
   // 日食中心：y 0.4 → 0.5（垂直居中，对齐 pyai.site 文字）
   .replace('vec2 pos = vec2(0.5, 0.4)', 'vec2 pos = vec2(0.5, 0.5)')
