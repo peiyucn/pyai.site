@@ -14,6 +14,68 @@ const { variant = 'light' } = Astro.props;
 <script>
   // 粒子网络动画：光点 + 连线 + 鼠标吸引
   // 顶层执行（Astro 脚本在 body 末尾，DOM 已就绪）+ DOMContentLoaded 兜底
+
+  // ===== 模块级星云噪点纹理缓存（跨 VT 导航持久）=====
+  // ⚠️ 关键：768×768 的 fBm 噪点纹理生成极耗 CPU（~59万像素 × 多层 octave）。
+  //    之前 nebulaTex 是 startParticleBg() 的局部变量，每次中英切换（astro:page-load
+  //    触发 startParticleBg）都重新生成两张纹理 → 页面卡住一下。
+  //    提升到模块级：纹理只生成一次，跨导航复用。
+  const NEBULA_SIZE = 768;
+  let __nebulaTex1 = null;
+  let __nebulaTex2 = null;
+  function makeNoiseTex(size, seed) {
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const g = c.getContext('2d');
+    const img = g.createImageData(size, size);
+    const d = img.data;
+    const P = size; // 周期 = 纹理尺寸（无缝平铺关键）
+    // 哈希伪随机：seed 区分不同纹理；同 (x,y) 永远同值，纹理稳定不闪烁
+    const h = (x, y) => {
+      const s = Math.sin((x + seed * 13.7) * 127.1 + (y + seed * 7.3) * 311.7) * 43758.5453123;
+      return s - Math.floor(s);
+    };
+    // value noise（单 octave，双线性平滑插值，lattice 模 P 周期化）
+    const vnoise = (x, y) => {
+      const xi = Math.floor(x), yi = Math.floor(y);
+      const x0 = ((xi % P) + P) % P, y0 = ((yi % P) + P) % P;
+      const xf = x - xi, yf = y - yi;
+      const u = xf * xf * (3 - 2 * xf);
+      const v = yf * yf * (3 - 2 * yf);
+      const a = h(x0, y0), b = h((x0 + 1) % P, y0);
+      const c2 = h(x0, (y0 + 1) % P), d2 = h((x0 + 1) % P, (y0 + 1) % P);
+      return a + (b - a) * u + (c2 - a) * v + (a - b - c2 + d2) * u * v;
+    };
+    const fbm = (x, y, freqs) => {
+      let sum = 0, amp = 0.5, norm = 0;
+      for (let i = 0; i < freqs.length; i++) {
+        sum += amp * vnoise(x * freqs[i], y * freqs[i]);
+        norm += amp;
+        amp *= 0.5;
+      }
+      return sum / norm;
+    };
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        // 柔云（低频大云块）+ 细尘埃（高频颗粒）
+        const cloud = fbm(x, y, [2, 4, 8]);
+        const grain = fbm(x + 40.7, y + 89.3, [96, 192]);
+        let v = cloud * 0.78 + grain * 0.22;
+        v = Math.pow(Math.max(0, Math.min(1, v)), 1.7);
+        const i = (y * size + x) * 4;
+        // 冷白偏灰蓝（呼应星点，避免纯白刺眼）
+        d[i] = 238; d[i + 1] = 240; d[i + 2] = 246;
+        d[i + 3] = Math.round(v * 255); // 明暗强度进 alpha，绘制时再统一压低
+      }
+    }
+    g.putImageData(img, 0, 0);
+    return c;
+  }
+  function ensureNebula() {
+    if (!__nebulaTex1) __nebulaTex1 = makeNoiseTex(NEBULA_SIZE, 0);
+    if (!__nebulaTex2) __nebulaTex2 = makeNoiseTex(NEBULA_SIZE, 100);
+  }
+
   function startParticleBg() {
     const canvas = document.getElementById('particle-canvas');
     if (!canvas || canvas.dataset.started) return;
@@ -60,73 +122,11 @@ const { variant = 'light' } = Astro.props;
       }));
     }
 
-    // ===== 星云噪点纹理（预生成一次）=====
-    // 微弱星云氛围：深浅不一的斑驳明暗 + 细尘埃颗粒，但整体极淡（不抢黑洞/文字）。
-    // 变化方式 = 原地"此起彼伏"（两张不同 seed 的纹理交叉呼吸：一层亮时另一层暗），
-    // 不是整体平移（用户明确反馈平移太"像图片在动"）。
-    // 无缝平铺关键：lattice 周期 P = 纹理尺寸，每个 octave 频率整除 P → 平铺无接缝。
-    const NEBULA_SIZE = 768;
-    let nebulaTex1 = null;
-    let nebulaTex2 = null;
-    function makeNoiseTex(size, seed) {
-      const c = document.createElement('canvas');
-      c.width = c.height = size;
-      const g = c.getContext('2d');
-      const img = g.createImageData(size, size);
-      const d = img.data;
-      const P = size; // 周期 = 纹理尺寸（无缝平铺关键）
-      // 哈希伪随机：seed 区分不同纹理；同 (x,y) 永远同值，纹理稳定不闪烁
-      const h = (x, y) => {
-        const s = Math.sin((x + seed * 13.7) * 127.1 + (y + seed * 7.3) * 311.7) * 43758.5453123;
-        return s - Math.floor(s);
-      };
-      // value noise（单 octave，双线性平滑插值，lattice 模 P 周期化）
-      const vnoise = (x, y) => {
-        const xi = Math.floor(x), yi = Math.floor(y);
-        const x0 = ((xi % P) + P) % P, y0 = ((yi % P) + P) % P;
-        const xf = x - xi, yf = y - yi;
-        const u = xf * xf * (3 - 2 * xf);
-        const v = yf * yf * (3 - 2 * yf);
-        const a = h(x0, y0), b = h((x0 + 1) % P, y0);
-        const c2 = h(x0, (y0 + 1) % P), d2 = h((x0 + 1) % P, (y0 + 1) % P);
-        return a + (b - a) * u + (c2 - a) * v + (a - b - c2 + d2) * u * v;
-      };
-      const fbm = (x, y, freqs) => {
-        let sum = 0, amp = 0.5, norm = 0;
-        for (let i = 0; i < freqs.length; i++) {
-          sum += amp * vnoise(x * freqs[i], y * freqs[i]);
-          norm += amp;
-          amp *= 0.5;
-        }
-        return sum / norm;
-      };
-      for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-          // 柔云（低频大云块）+ 细尘埃（高频颗粒）
-          const cloud = fbm(x, y, [2, 4, 8]);
-          const grain = fbm(x + 40.7, y + 89.3, [96, 192]);
-          let v = cloud * 0.78 + grain * 0.22;
-          v = Math.pow(Math.max(0, Math.min(1, v)), 1.7);
-          const i = (y * size + x) * 4;
-          // 冷白偏灰蓝（呼应星点，避免纯白刺眼）
-          d[i] = 238; d[i + 1] = 240; d[i + 2] = 246;
-          d[i + 3] = Math.round(v * 255); // 明暗强度进 alpha，绘制时再统一压低
-        }
-      }
-      g.putImageData(img, 0, 0);
-      return c;
-    }
-    function initNebula() {
-      if (variant !== 'dark') return;
-      if (!nebulaTex1) nebulaTex1 = makeNoiseTex(NEBULA_SIZE, 0);
-      if (!nebulaTex2) nebulaTex2 = makeNoiseTex(NEBULA_SIZE, 100);
-    }
-
     // 绘制星云噪点底：固定 1:1 平铺（无位移）+ 两张纹理交叉呼吸。
     // alpha1/alpha2 反相：A·(0.72+0.28·sin) 与 A·(0.72-0.28·sin) → 云块"此起彼伏"。
     // A=0.14 整体极淡，只是纯黑背景上的微弱氛围，不抢主体。
     function drawNebula() {
-      if (variant !== 'dark' || !nebulaTex1) return;
+      if (variant !== 'dark' || !__nebulaTex1) return;
       const S = NEBULA_SIZE;
       const t = performance.now() / 1000;
       const breathe = Math.sin(t * 0.06);
@@ -140,13 +140,13 @@ const { variant = 'light' } = Astro.props;
       ctx.globalAlpha = a1;
       for (let dx = 0; dx < cols; dx++) {
         for (let dy = 0; dy < rows; dy++) {
-          ctx.drawImage(nebulaTex1, dx * S, dy * S, S, S);
+          ctx.drawImage(__nebulaTex1, dx * S, dy * S, S, S);
         }
       }
       ctx.globalAlpha = a2;
       for (let dx = 0; dx < cols; dx++) {
         for (let dy = 0; dy < rows; dy++) {
-          ctx.drawImage(nebulaTex2, dx * S, dy * S, S, S);
+          ctx.drawImage(__nebulaTex2, dx * S, dy * S, S, S);
         }
       }
       ctx.restore();
@@ -218,7 +218,7 @@ const { variant = 'light' } = Astro.props;
       canvas.style.width = width + 'px';
       canvas.style.height = height + 'px';
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      initNebula();
+      ensureNebula();
       initBlobs();
       initParticles();
     }
