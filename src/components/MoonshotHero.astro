@@ -32,12 +32,38 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
 <!-- 场景数据：引擎原生从 <script id="hero-scene-data"> 读取 innerText -->
 <script id="hero-scene-data" type="application/json" is:inline set:html={sceneJson}></script>
 
-<!-- UnicornStudio 引擎（vendor UMD，同步加载后立即定义 window.UnicornStudio） -->
-<script is:inline src="/vendor/unicornstudio.js"></script>
+<!-- UnicornStudio 引擎（vendor UMD）：用动态注入 + 全局标志，确保整个会话只加载一次。
+     若用 <script src> 直挂 body，VT 后 script 重跑会重新执行 UMD → window.UnicornStudio
+     被重置为新对象（scenes 清空、旧 WebGL context 泄漏），多次切换后 context 超限黑屏。 -->
+<script is:inline>
+  (function () {
+    if (window.UnicornStudio || window.__pyaiEngineLoading) return;
+    window.__pyaiEngineLoading = true;
+    var s = document.createElement('script');
+    s.src = '/vendor/unicornstudio.js';
+    s.onload = function () { window.__pyaiEngineLoading = false; };
+    s.onerror = function () { window.__pyaiEngineLoading = false; };
+    document.head.appendChild(s);
+  })();
+</script>
 
 <script is:inline>
   (function () {
-    if (!window.UnicornStudio) return;
+    // 引擎现在动态注入（全局唯一加载），主逻辑需等待引擎就绪。
+    // 轮询等待 window.UnicornStudio 出现后再初始化。
+    var engineWaits = 0;
+    function waitEngine() {
+      if (window.UnicornStudio) { initHero(); return; }
+      if (engineWaits++ < 200) setTimeout(waitEngine, 50);
+    }
+    setTimeout(waitEngine, 0);
+
+    function initHero() {
+    // VT 后 inline script 会重新执行（新 body 的新 script 标签）。
+    // 引擎 UMD 若也重跑会重置 window.UnicornStudio（新对象、scenes 清空、旧 context 泄漏）。
+    // 用全局标志：首次执行时接管；后续重跑只补 boot/事件监听，不再重复初始化逻辑。
+    var firstRun = !window.__pyaiHeroBooted;
+    window.__pyaiHeroBooted = true;
     var TWO_PI = Math.PI * 2;
     var MIN_ARC = Math.PI * 0.5;
 
@@ -214,11 +240,14 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
 
     // 首次加载：先给引擎一个机会用 init() 正常创建（首屏优先），
     // 同时立刻启动 boot 兜底（boot 里 ensureScene 会检测场景是否真的创建）。
-    UnicornStudio.init().then(function () {
+    if (firstRun) {
+      UnicornStudio.init().then(function () {
+        setTimeout(boot, 60);
+      });
       setTimeout(boot, 60);
-    });
-    setTimeout(boot, 60);
-    // View Transitions：每次页面切换（含返回/中英切换）后重新 boot，恢复黑洞
+    }
+    // View Transitions：每次页面切换（含返回/中英切换）后重新 boot，恢复黑洞。
+    // 脚本每次 VT 重跑都会注册这个监听（首次 + 重跑），但 boot 幂等，无害。
     document.addEventListener('astro:page-load', function () {
       bootTries = 0;
       setTimeout(boot, 60);
@@ -329,6 +358,7 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
         resizeTimer = setTimeout(doResize, 50);
       });
     })();
+    } // end initHero
   })();
 </script>
 

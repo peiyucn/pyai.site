@@ -77,24 +77,27 @@ sceneJson = sceneJson
   )
   // 日食中心：y 0.4 → 0.5（垂直居中，对齐 pyai.site 文字）
   .replace('vec2 pos = vec2(0.5, 0.4)', 'vec2 pos = vec2(0.5, 0.5)')
-  // 增大 beam 环跟随鼠标：0.0600 → 0.5000（黑洞移动幅度加大，能把 pyai.site 含进去）
-  .replace('mix(vec2(0), (uMousePos-0.5), 0.0600)', 'mix(vec2(0), (uMousePos-0.5), 0.5000)')
+  // 增大 beam 环跟随鼠标：x 方向 0.35（左右稍大，能把 pyai.site 含进去）、y 方向 0.12（上下不变）
+  .replace(
+    'mix(vec2(0), (uMousePos-0.5), 0.0600)',
+    'vec2((uMousePos.x-0.5)*0.35, (uMousePos.y-0.5)*0.12)',
+  )
   // 限制光弧圆心不越界：鼠标移到底部时 pos.y 会 >0.5，圆环下移导致下边缘被裁掉
   // （"下半部分看不到，不是完整的圆"的根因）→ clamp 圆心到安全范围，圆环始终完整可见
   .replace(
-    'vec2 pos = vec2(0.5, 0.5) + mix(vec2(0), (uMousePos-0.5), 0.5000);',
-    'vec2 pos = vec2(0.5, 0.5) + mix(vec2(0), (uMousePos-0.5), 0.5000); pos = clamp(pos, vec2(0.15, 0.15), vec2(0.85, 0.85));',
+    'vec2 pos = vec2(0.5, 0.5) + vec2((uMousePos.x-0.5)*0.35, (uMousePos.y-0.5)*0.12);',
+    'vec2 pos = vec2(0.5, 0.5) + vec2((uMousePos.x-0.5)*0.35, (uMousePos.y-0.5)*0.12); pos = clamp(pos, vec2(0.12, 0.32), vec2(0.88, 0.68));',
   )
   // 色差（灼烧）随黑洞移动：chromab 的畸变中心 mPos 跟随系数与 beam 光弧圆心
-  // 完全一致（0.5），使灼烧色差精确绑定到黑洞圆心，而非固定屏幕中心或随鼠标过度偏移
-  .replace('mix(vec2(0), (uMousePos-0.5), 0.2500)', 'mix(vec2(0), (uMousePos-0.5), 0.5000)')
+  // 完全一致（x 0.35 / y 0.12），使灼烧色差精确绑定到黑洞圆心
+  .replace('mix(vec2(0), (uMousePos-0.5), 0.2500)', 'vec2((uMousePos.x-0.5)*0.35, (uMousePos.y-0.5)*0.12)')
   // 透镜畸变（voronoi）随黑洞移动：voronoi 是真正的"黑洞透镜"，把文字吸入中心扭曲。
   // 原中心写死 vec2(0.5, 0.4)（固定不跟随，这就是"畸变写死"的根因）。
   // 改为与 beam 光弧圆心完全一致（(0.5,0.5) + 0.12 跟随 + clamp），
   // 使"文字被吸入黑洞"的透镜精确跟随黑洞移动。
   .replace(
     'vec2 mPos = vec2(0.5, 0.4) + mix(vec2(0), (uMousePos-0.5), 0.8000);',
-    'vec2 mPos = vec2(0.5, 0.5) + mix(vec2(0), (uMousePos-0.5), 0.5000); mPos = clamp(mPos, vec2(0.15, 0.15), vec2(0.85, 0.85));',
+    'vec2 mPos = vec2(0.5, 0.5) + vec2((uMousePos.x-0.5)*0.35, (uMousePos.y-0.5)*0.12); mPos = clamp(mPos, vec2(0.12, 0.32), vec2(0.88, 0.68));',
   )
   .replace(
     'vec2 pos = mix(vec2(0.5, 0.4), mPos, floor(0.0000));',
@@ -105,10 +108,10 @@ sceneJson = sceneJson
   // （0.12 跟随 + clamp），使波纹透镜跟随黑洞移动。
   .replace(
     'vec2 pos = vec2(0.5, 0.5) + mix(vec2(0), uMousePos - 0.5, 0.0000);',
-    'vec2 pos = vec2(0.5, 0.5) + mix(vec2(0), uMousePos - 0.5, 0.5000); pos = clamp(pos, vec2(0.15, 0.15), vec2(0.85, 0.85));',
+    'vec2 pos = vec2(0.5, 0.5) + vec2((uMousePos.x-0.5)*0.35, (uMousePos.y-0.5)*0.12); pos = clamp(pos, vec2(0.12, 0.32), vec2(0.88, 0.68));',
   )
   // 色差方向原点 pos 也跟随黑洞圆心（原本固定屏幕中心，导致畸变方向不随黑洞移动）
-  .replace('vec2 pos = vec2(0.5, 0.5);', 'vec2 pos = vec2(0.5, 0.5) + mix(vec2(0), (uMousePos-0.5), 0.5000);');
+  .replace('vec2 pos = vec2(0.5, 0.5);', 'vec2 pos = vec2(0.5, 0.5) + vec2((uMousePos.x-0.5)*0.35, (uMousePos.y-0.5)*0.12);');
 JSON.parse(sceneJson); // 替换后再次校验
 
 // 2.2 删除几何畸变层（文字静止后不需要流动畸变）
