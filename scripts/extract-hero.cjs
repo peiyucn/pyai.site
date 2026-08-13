@@ -90,10 +90,10 @@ sceneJson = sceneJson
   //    - y 固定在黑洞圆心 pos.y（跟随黑洞移动）
   //    - x 方向高斯衰减 exp(-dx²·k)：中心最亮、左右逐渐消失（不贯穿屏幕）
   //    - k 控制线长：k=25 → 半宽约 ±0.14 UV（±0.07 屏幕宽），约黑洞环半径量级
-  //    强度较高（强光），金色与光弧一致
+  //    强度较高（强光 1.6），金色与光弧一致
   .replace(
     'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);',
-    'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);\\nfloat dx = uv.x - pos.x;\\nfloat horizon = exp(-dx * dx * 25.0) * exp(-abs(uv.y - pos.y) * 90.0) * 0.85;\\nbeam += horizon;',
+    'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);\\nfloat dx = uv.x - pos.x;\\nfloat horizon = exp(-dx * dx * 25.0) * exp(-abs(uv.y - pos.y) * 90.0) * 1.6;\\nbeam += horizon;',
   )
   // 日食中心：y 0.4 → 0.5（垂直居中，对齐 pyai.site 文字）
   .replace('vec2 pos = vec2(0.5, 0.4)', 'vec2 pos = vec2(0.5, 0.5)')
