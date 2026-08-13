@@ -29,10 +29,10 @@ const { variant = 'light' } = Astro.props;
     // 鼠标靠近黑洞吸入加速、远离减速；
     // 粒子进入黑洞视觉圆（光弧环半径）即渐隐，到中心附近被"吃掉"重生到边缘
     const BASE_PULL = 0.02;
-    // 黑洞环视觉半径 ≈ 光弧 scale 0.85 的环半径（UV 0.425 × 视口短边）
-    const BH_VISUAL_R = 0.32;
-    const BH_RADIUS = 0.09; // 重生半径（视口短边比例）
-    const FADE_RANGE = 0.41; // 渐隐起始半径（视口短边比例，提前淡，进入黑洞圆前已半透明）
+    // 黑洞环视觉半径 ≈ 光弧 scale 0.60 的环半径（UV 0.30 × 视口短边）
+    const BH_VISUAL_R = 0.27;
+    const BH_RADIUS = 0.08; // 重生半径（视口短边比例）
+    const FADE_RANGE = 0.35; // 渐隐起始半径（视口短边比例，提前淡，进入黑洞圆前已半透明）
 
     const variant = canvas.closest('.particle-bg')?.dataset.variant || 'light';
     const COLORS = {

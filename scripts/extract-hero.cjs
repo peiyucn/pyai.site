@@ -47,8 +47,8 @@ JSON.parse(sceneJson); // 校验合法性
 sceneJson = sceneJson
   // 文字：Record Distill Create → pyai.site
   .replace('"textContent":"Record Distill Create"', '"textContent":"pyai.site"')
-  // 字号放大：0.11 → 0.18（整体缩小 25%，pyai.site 约 670px@963 宽）
-  .replace('"fontSize":0.11', '"fontSize":0.18')
+  // 字号：0.11 → 0.15（整体缩小 15%，用户要求 pyai.site 再小一点）
+  .replace('"fontSize":0.11', '"fontSize":0.15')
   // 文字透明度：0.42（滚动背景氛围）→ 1.0（大标题主角）
   .replace('"opacity":0.42', '"opacity":1.0')
   // 配色：光弧保持金色，文字/光芒/格栅质感改灰白（冷暖对比，光弧成为唯一金色焦点）
@@ -76,14 +76,14 @@ sceneJson = sceneJson
     'float angleFactor = angularFading(pointAngle, peakAngle, PI * 0.5);',
     'float angleFactor = angularFading(pointAngle, peakAngle, uBeamArc);',
   )
-  // 光弧放大：scale 0.54 → 0.70（整体缩小 25% 后又放大回调，环半径 UV 0.35）
-  .replace('getBeam(uv, pos, 0.5400,', 'getBeam(uv, pos, 0.7000,')
+  // 光弧：scale 0.54 → 0.60（整体缩小 15%，环半径 UV 0.30）
+  .replace('getBeam(uv, pos, 0.5400,', 'getBeam(uv, pos, 0.6000,')
   // 取消角度空间旋转 angleVal 0.6345→0（≈228° 旋转让弧段围绕左上角收缩），
   // 改为 0 后角度空间=屏幕空间，uBeamAngle 直接对应屏幕方向（0=右，π/2=上）。
   // 粗细 0.3000 → uBeamThickness（JS 驱动）。
   .replace(
-    'getBeam(uv, pos, 0.7000, 0.6345, 0.5000, 0.3000, uTime, 0.7300, uResolution)',
-    'getBeam(uv, pos, 0.7000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution)',
+    'getBeam(uv, pos, 0.6000, 0.6345, 0.5000, 0.3000, uTime, 0.7300, uResolution)',
+    'getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution)',
   )
   // 日食中心：y 0.4 → 0.5（垂直居中，对齐 pyai.site 文字）
   .replace('vec2 pos = vec2(0.5, 0.4)', 'vec2 pos = vec2(0.5, 0.5)')
