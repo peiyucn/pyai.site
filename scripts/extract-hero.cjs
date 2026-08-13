@@ -49,6 +49,11 @@ sceneJson = sceneJson
   .replace('"opacity":0.42', '"opacity":1.0')
   // 配色：光弧保持金色，文字/光芒/格栅质感改灰白（冷暖对比，光弧成为唯一金色焦点）
   .replace('"fill":["#FFD48A"]', '"fill":["#EDEDED"]')
+  // ⚠️ text 加 trackMouse：引擎的 disablePlanes() 会把"静态层"（无动画/无 trackMouse）
+  //    在渲染数帧后 _canDraw=false 禁用 → 文字消失/鼠标效果永不生效。
+  //    trackMouse 非 0 让引擎判定 text 为动态层 → 持续渲染，且鼠标 uniform 持续驱动。
+  //    （值本身不参与计算，只用于动态判定；实际位移/倾斜由 VS/FS 里的 uMousePos 驱动）
+  .replace('"textContent":"pyai.site","fill":["#EDEDED"]', '"textContent":"pyai.site","trackMouse":0.3,"fill":["#EDEDED"]')
   .replace('vec3(1, 0.9333333333333333, 0.8509803921568627)', 'vec3(1, 1, 1)')
   .replace('vec3(1.10, 0.82, 0.55)', 'vec3(1.0, 1.0, 1.0)')
   // 移除文字两个子效果（replicate 滚动复制 + voronoi 透镜畸变）→ 固定不滚动
@@ -66,18 +71,18 @@ sceneJson = sceneJson
     'float angleFactor = angularFading(pointAngle, peakAngle, PI * 0.5);',
     'float angleFactor = angularFading(pointAngle, peakAngle, uBeamArc);',
   )
-  // 光弧放大：scale 0.54 → 0.64（整体缩小 25%，环半径 UV 0.32）
-  .replace('getBeam(uv, pos, 0.5400,', 'getBeam(uv, pos, 0.6400,')
+  // 光弧放大：scale 0.54 → 0.70（整体缩小 25% 后又放大回调，环半径 UV 0.35）
+  .replace('getBeam(uv, pos, 0.5400,', 'getBeam(uv, pos, 0.7000,')
   // 取消角度空间旋转 angleVal 0.6345→0（≈228° 旋转让弧段围绕左上角收缩），
   // 改为 0 后角度空间=屏幕空间，uBeamAngle 直接对应屏幕方向（0=右，π/2=上）。
   // 粗细 0.3000 → uBeamThickness（JS 驱动）。
   .replace(
-    'getBeam(uv, pos, 0.6400, 0.6345, 0.5000, 0.3000, uTime, 0.7300, uResolution)',
-    'getBeam(uv, pos, 0.6400, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution)',
+    'getBeam(uv, pos, 0.7000, 0.6345, 0.5000, 0.3000, uTime, 0.7300, uResolution)',
+    'getBeam(uv, pos, 0.7000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution)',
   )
   // 日食中心：y 0.4 → 0.5（垂直居中，对齐 pyai.site 文字）
   .replace('vec2 pos = vec2(0.5, 0.4)', 'vec2 pos = vec2(0.5, 0.5)')
-  // 增大 beam 环跟随鼠标：x 方向 0.35（左右稍大，能把 pyai.site 含进去）、y 方向 0.12（上下不变）
+  // 增大 beam 环跟随鼠标：x 方向 0.22（左右稍大，能把 pyai.site 含进去）、y 方向 0.12（上下不变）
   .replace(
     'mix(vec2(0), (uMousePos-0.5), 0.0600)',
     'vec2((uMousePos.x-0.5)*0.35, (uMousePos.y-0.5)*0.12)',
@@ -111,7 +116,27 @@ sceneJson = sceneJson
     'vec2 pos = vec2(0.5, 0.5) + vec2((uMousePos.x-0.5)*0.35, (uMousePos.y-0.5)*0.12); pos = clamp(pos, vec2(0.12, 0.32), vec2(0.88, 0.68));',
   )
   // 色差方向原点 pos 也跟随黑洞圆心（原本固定屏幕中心，导致畸变方向不随黑洞移动）
-  .replace('vec2 pos = vec2(0.5, 0.5);', 'vec2 pos = vec2(0.5, 0.5) + vec2((uMousePos.x-0.5)*0.35, (uMousePos.y-0.5)*0.12);');
+  .replace('vec2 pos = vec2(0.5, 0.5);', 'vec2 pos = vec2(0.5, 0.5) + vec2((uMousePos.x-0.5)*0.22, (uMousePos.y-0.5)*0.12);')
+  // 文字鼠标效果（原版 shader 的旋转从未生效——gl_Position 用的是未旋转的顶点，
+  // 旋转只写进 vVertexPosition 而 fragment shader 未使用）：把旋转真正应用到几何，
+  // 文字随鼠标 3D 微倾。
+  .replace(
+    'gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);\\nvVertexPosition = (rotationMatrix * vec4(aVertexPosition, 1.0)).xyz;',
+    'vec4 rotatedPos = rotationMatrix * vec4(aVertexPosition, 1.0);\\ngl_Position = uPMatrix * uMVMatrix * rotatedPos;\\nvVertexPosition = rotatedPos.xyz;',
+  )
+  // 鼠标 3D 倾斜幅度：±0.25 rad（原版）→ ±0.4 rad（×1.6）。
+  // ⚠️ 原版在 z=0 平面 + 正交投影下旋转几乎不可见（cos≈0.97 的缩放 + 微量剪切），
+  //    这是"鼠标搞乱文字"效果在复刻后消失的根因。加大角度后产生明显的
+  //    "文字随鼠标倾斜"效果（≈10% 水平压缩 + 15% 剪切），配合 FS 位移。
+  .replace('float angleX = uMousePos.y * 0.5 - 0.25;', 'float angleX = uMousePos.y * 0.8 - 0.4;')
+  .replace('float angleY = (1.-uMousePos.x) * 0.5 - 0.25;', 'float angleY = (1.-uMousePos.x) * 0.8 - 0.4;')
+  // 文字随鼠标位移：FS 里预留的鼠标位移系数 0.0000（完全无位移）→ 0.15
+  // （鼠标移动时文字带明显视差跟随，配合 vertex 3D 倾斜 = "鼠标搞乱文字"效果）
+  .replace('pos = mix(vec2(0), (uMousePos - 0.5), 0.0000);uv -= pos;', 'pos = mix(vec2(0), (uMousePos - 0.5), 0.1500);uv -= pos;');
+
+// 黑洞左右移动幅度：0.35 → 0.22（用户反馈 0.35 仍过大；y 保持 0.12 不变）。
+// 作用于所有跟随层（beam/godrays/voronoi/chromab/ripple/diffuse 等 6 处）。
+sceneJson = sceneJson.split('(uMousePos.x-0.5)*0.35').join('(uMousePos.x-0.5)*0.22');
 JSON.parse(sceneJson); // 替换后再次校验
 
 // 2.2 删除几何畸变层（文字静止后不需要流动畸变）
