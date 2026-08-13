@@ -190,9 +190,9 @@
     top: 0;
     /* 中心对准鼠标：-4px 偏移 + 变量定位 */
     transform: translate3d(calc(var(--mx, -100px) - 4px), calc(var(--my, -100px) - 4px), 0);
-    background: #18181b;
+    background: #e8a24a;
     border-radius: 50%;
-    box-shadow: 0 0 5px rgba(24, 24, 27, 0.5);
+    box-shadow: 0 0 5px rgba(232, 162, 74, 0.55);
     transition: width 0.15s ease, height 0.15s ease,
       background-color 0.15s ease, box-shadow 0.15s ease;
   }
@@ -211,7 +211,7 @@
     display: block;
     width: 32px;
     height: 32px;
-    border: 1.5px solid rgba(24, 24, 27, 0.55);
+    border: 1.5px solid rgba(232, 162, 74, 0.6);
     border-radius: 50%;
     animation: cursor-orbit-spin 2.4s linear infinite;
     transition: border-color 0.15s ease, width 0.15s ease, height 0.15s ease;
@@ -227,9 +227,9 @@
     margin: -2px 0 0 -2px;
     /* 从圆心沿 -Y 移到轨道中心线上：轨道 32px(border-box) → 半径 16px，中心线 16 - 0.75 = 15.25px */
     transform: translateY(-15.25px);
-    background: #18181b;
+    background: #e8a24a;
     border-radius: 50%;
-    box-shadow: 0 0 4px rgba(24, 24, 27, 0.55);
+    box-shadow: 0 0 4px rgba(232, 162, 74, 0.55);
     transition: background-color 0.15s ease, box-shadow 0.15s ease;
   }
 
@@ -240,19 +240,19 @@
     height: 12px;
     /* 中心仍对准鼠标：12/2 = 6px 偏移 */
     transform: translate3d(calc(var(--mx, -100px) - 6px), calc(var(--my, -100px) - 6px), 0);
-    background: #4c3a8a;
-    box-shadow: 0 0 8px rgba(76, 58, 138, 0.6);
+    background: #ffd48a;
+    box-shadow: 0 0 8px rgba(255, 212, 138, 0.7);
   }
   /* 轨道：收窄 + 品牌紫 */
   .cursor-atom.cursor-hovering .cursor-orbit {
     width: 26px;
     height: 26px;
-    border-color: rgba(76, 58, 138, 0.7);
+    border-color: rgba(255, 212, 138, 0.75);
   }
   /* 电子：品牌紫 */
   .cursor-atom.cursor-hovering .cursor-electron {
-    background: #4c3a8a;
-    box-shadow: 0 0 5px rgba(76, 58, 138, 0.7);
+    background: #ffd48a;
+    box-shadow: 0 0 5px rgba(255, 212, 138, 0.7);
   }
   /* 外圈容器：轨道缩小时整体位置跟随（26/2 = 13px 偏移） */
   .cursor-atom.cursor-hovering .cursor-trail {

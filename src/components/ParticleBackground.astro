@@ -1,9 +1,13 @@
 ---
 // 粒子网络背景组件（Canvas + 鼠标互动）
-// 纯原生实现，无第三方依赖，自动适配深色/浅色模式
+// 纯原生实现，无第三方依赖；variant: light(浅色 indigo) | dark(深色金星星点)
+interface Props {
+  variant?: 'light' | 'dark';
+}
+const { variant = 'light' } = Astro.props;
 ---
 
-<div class="particle-bg" aria-hidden="true">
+<div class="particle-bg" data-variant={variant} aria-hidden="true">
   <canvas id="particle-canvas"></canvas>
 </div>
 
@@ -18,12 +22,22 @@
 
     // 性能与数量配置（移动端减少粒子数）
     const isMobile = window.matchMedia('(max-width: 768px)').matches;
-    const PARTICLE_COUNT = isMobile ? 40 : 80;
-    const MAX_DISTANCE = 150;
-    const MOUSE_RADIUS = 180;
+    const PARTICLE_COUNT = isMobile ? 28 : 50;
+    const MAX_DISTANCE = 110;
+    const MOUSE_RADIUS = 140;
+    // 黑洞（吸积盘）参数：粒子默认被慢慢吸向中心；
+    // 鼠标靠近黑洞吸入加速、远离减速；
+    // 粒子进入黑洞视觉圆（光弧环半径）即渐隐，到中心附近被"吃掉"重生到边缘
+    const BASE_PULL = 0.02;
+    // 黑洞环视觉半径 ≈ 光弧 scale 0.85 的环半径（UV 0.425 × 视口短边）
+    const BH_VISUAL_R = 0.32;
+    const BH_RADIUS = 0.09; // 重生半径（视口短边比例）
+    const FADE_RANGE = 0.41; // 渐隐起始半径（视口短边比例，提前淡，进入黑洞圆前已半透明）
 
+    const variant = canvas.closest('.particle-bg')?.dataset.variant || 'light';
     const COLORS = {
       light: { particle: '99, 102, 241', line: '99, 102, 241' }, // indigo-500
+      dark: { particle: '237, 237, 237', line: '237, 237, 237' }, // 灰白 #EDEDED，星点氛围（光弧保持金色）
     };
 
     let particles = [];
@@ -49,55 +63,104 @@
       particles = Array.from({ length: PARTICLE_COUNT }, () => ({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: (Math.random() - 0.5) * 0.5,
-        size: Math.random() * 2 + 0.5,
+        vx: (Math.random() - 0.5) * 0.25,
+        vy: (Math.random() - 0.5) * 0.25,
+        size: Math.random() * 1.3 + 0.5,
       }));
+    }
+
+    // 粒子被黑洞吃掉后，重生到画布边缘（形成持续吸入流）
+    function respawnAtEdge(p) {
+      const edge = Math.floor(Math.random() * 4);
+      const m = 24;
+      if (edge === 0) { p.x = Math.random() * width; p.y = m; }
+      else if (edge === 1) { p.x = Math.random() * width; p.y = height - m; }
+      else if (edge === 2) { p.x = m; p.y = Math.random() * height; }
+      else { p.x = width - m; p.y = Math.random() * height; }
+      p.vx = (Math.random() - 0.5) * 0.4;
+      p.vy = (Math.random() - 0.5) * 0.4;
     }
 
     function draw() {
       if (width === 0 || height === 0) return;
       ctx.clearRect(0, 0, width, height);
-      const color = COLORS.light;
+      const color = COLORS[variant] || COLORS.light;
+      const bhx = width / 2, bhy = height / 2;
+      // 黑洞视觉半径（像素）：基于视口短边
+      const bhVisual = Math.min(width, height) * BH_VISUAL_R;
+      const bhCore = Math.min(width, height) * BH_RADIUS;
+      const fadeStart = Math.min(width, height) * FADE_RANGE;
+
+      // 鼠标离黑洞的归一化距离 → 吸入速度系数（近快、远慢）
+      let pullFactor = 1.0;
+      if (mouse.x !== null) {
+        const mdx = mouse.x - bhx, mdy = mouse.y - bhy;
+        const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
+        const maxD = Math.sqrt(bhx * bhx + bhy * bhy) || 1;
+        pullFactor = 0.4 + 1.4 * (1 - Math.min(1, mdist / maxD));
+      }
 
       for (const p of particles) {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${color.particle}, 0.7)`;
-        ctx.fill();
-
+        // 引力向黑洞（吸积盘吸入）
+        const dx = bhx - p.x, dy = bhy - p.y;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        p.vx += (dx / dist) * BASE_PULL * pullFactor;
+        p.vy += (dy / dist) * BASE_PULL * pullFactor;
+        p.vx *= 0.99;
+        p.vy *= 0.99;
         p.x += p.vx;
         p.y += p.vy;
 
-        if (p.x < 0 || p.x > width) p.vx *= -1;
-        if (p.y < 0 || p.y > height) p.vy *= -1;
-
+        // 鼠标扰动：鼠标附近粒子轻微绕开（保留原互动，力度降低避免抖动）
         if (mouse.x !== null) {
-          const dx = mouse.x - p.x;
-          const dy = mouse.y - p.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < MOUSE_RADIUS) {
-            const force = (MOUSE_RADIUS - dist) / MOUSE_RADIUS;
-            p.x += (dx / dist) * force * 1.2;
-            p.y += (dy / dist) * force * 1.2;
+          const mdx = mouse.x - p.x, mdy = mouse.y - p.y;
+          const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
+          if (mdist < MOUSE_RADIUS && mdist > 0.01) {
+            const force = (MOUSE_RADIUS - mdist) / MOUSE_RADIUS;
+            p.vx -= (mdx / mdist) * force * 0.25;
+            p.vy -= (mdy / mdist) * force * 0.25;
           }
         }
+
+        // 被黑洞吃掉（进入黑洞视觉圆边缘 0.9×fadeStart）→ 重生到边缘。
+        // 用视觉圆作为吞没线（而非中心核），粒子"进入黑洞"即消失，圆内几乎无粒子
+        if (dist < fadeStart * 0.9) {
+          respawnAtEdge(p);
+          continue;
+        }
+
+        // 靠近黑洞视觉圆渐隐：进入 fadeStart 内逐渐变淡，越靠近中心越透明
+        let alpha = 0.7;
+        if (dist < fadeStart) {
+          alpha = 0.7 * Math.max(0, (dist - bhCore) / (fadeStart - bhCore));
+        }
+        if (alpha <= 0.02) continue; // 完全透明就不画，避免"幽灵"粒子
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${color.particle}, ${alpha})`;
+        ctx.fill();
       }
 
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const a = particles[i];
-          const b = particles[j];
+      // 连线：黑洞内（被渐隐）的粒子不参与连线，避免"圆内还有线"的残留感
+      const visibleParticles = particles.filter((p) => {
+        const d = Math.sqrt((bhx - p.x) ** 2 + (bhy - p.y) ** 2);
+        return d >= fadeStart * 0.85; // 渐隐区内的粒子不连线
+      });
+      for (let i = 0; i < visibleParticles.length; i++) {
+        for (let j = i + 1; j < visibleParticles.length; j++) {
+          const a = visibleParticles[i];
+          const b = visibleParticles[j];
           const dx = a.x - b.x;
           const dy = a.y - b.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < MAX_DISTANCE) {
-            const opacity = (1 - dist / MAX_DISTANCE) * 0.25;
+            const opacity = (1 - dist / MAX_DISTANCE) * 0.10;
             ctx.beginPath();
             ctx.moveTo(a.x, a.y);
             ctx.lineTo(b.x, b.y);
             ctx.strokeStyle = `rgba(${color.line}, ${opacity})`;
-            ctx.lineWidth = 0.6;
+            ctx.lineWidth = 0.5;
             ctx.stroke();
           }
         }

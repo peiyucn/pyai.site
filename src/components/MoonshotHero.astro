@@ -1,0 +1,186 @@
+---
+// 月食 Hero 动画组件（黑底发光，源自 UnicornStudio 场景复刻）
+// 结构：全宽横条场景（文字带 Record Distill Create + 金色光弧跟随鼠标 + 透镜畸变）
+// 依赖（均由 scripts/extract-hero.cjs 从 pyai-site-hero.html 生成）：
+//   - public/vendor/unicornstudio.js  引擎 UMD
+//   - public/vendor/notosans-latin.css 文字带字体
+//   - src/data/hero-scene.json         场景数据（shader 内嵌）
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
+// 场景 JSON 在构建期读取并内联（process.cwd() 在 build/dev 均为项目根 pyai.site）
+const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-scene.json'), 'utf8');
+---
+
+<div class="moonshot-hero">
+  <div
+    class="moonshot-scene"
+    data-us-project-src="hero-scene-data"
+    data-us-scale="0.5"
+    data-us-dpi="1.5"
+    data-us-fps="30"
+    data-us-lazyload="false"
+    data-us-alttext="Hero background animation"
+    aria-label="Hero background animation"
+  ></div>
+  <div class="moonshot-gradient" aria-hidden="true"></div>
+</div>
+
+<!-- 文字带字体 NotoSans-Latin（vendor 化，Astro 会自动提升到 <head>） -->
+<link rel="stylesheet" href="/vendor/notosans-latin.css" />
+
+<!-- 场景数据：引擎原生从 <script id="hero-scene-data"> 读取 innerText -->
+<script id="hero-scene-data" type="application/json" is:inline set:html={sceneJson}></script>
+
+<!-- UnicornStudio 引擎（vendor UMD，同步加载后立即定义 window.UnicornStudio） -->
+<script is:inline src="/vendor/unicornstudio.js"></script>
+
+<script is:inline>
+  (function () {
+    if (!window.UnicornStudio) return;
+    UnicornStudio.init().then(function () {
+      var scene = UnicornStudio.scenes && UnicornStudio.scenes[0];
+      if (!scene || scene.initialized) return;
+      // 兜底：引擎 init 可能早于 flex 布局完成（offsetWidth=0 → canvas 1px → isInView=false
+      // → lazyLoad 字符串 "false" 为 truthy，导致 initializePlanes 被跳过）。
+      // 用 setTimeout 轮询（不依赖 rAF，后台标签/无头环境更稳）：布局稳定后 resize + 初始化。
+      var ensure = function (n) {
+        if (scene.initialized) return;
+        if (!scene.initializing) {
+          try { scene.resize(); } catch (e) {}
+          try { scene.initializePlanes(); } catch (e) {}
+        }
+        if (n < 20) setTimeout(function () { ensure(n + 1); }, 150);
+      };
+      setTimeout(function () { ensure(0); }, 60);
+    });
+
+    // beam 动态参数：黑洞吸积盘"太阳在后面移动"效果
+    //   - 鼠标在中心 → uBeamArc=TWO_PI 满圈（完整日全食圆环）
+    //   - 鼠标偏移 → 弧长线性缩短（太阳被遮挡），弧变粗（吸积盘增亮）
+    //   - 光弧缺口方向跟随鼠标方向（uBeamAngle = 鼠标方向）
+    //   - 圆心轻微跟随鼠标位移（shader 内 0.12 系数，已内置，无需 JS）
+    //   同时修复 resize：引擎的 refresh 依赖 rAF 异步，窗口变化时手动 resize 兜底。
+    (function () {
+      var tries = 0;
+      var TWO_PI = Math.PI * 2;
+      var MIN_ARC = Math.PI * 0.5; // 最短弧长（鼠标到边缘）= 90°，太阳被遮挡最多
+      function install() {
+        var scene = UnicornStudio.scenes && UnicornStudio.scenes[0];
+        if (!scene || !scene.curtain || !scene.curtain.planes) {
+          if (tries++ < 200) setTimeout(install, 50);
+          return;
+        }
+        var beamPlane = null;
+        scene.curtain.planes.forEach(function (p) {
+          if (p.userData && p.userData.type === 'beam') beamPlane = p;
+        });
+        if (!beamPlane || !beamPlane.uniforms) {
+          if (tries++ < 200) setTimeout(install, 50);
+          return;
+        }
+        if (!beamPlane.uniforms.beamStrength) {
+          beamPlane.uniforms.beamStrength = { name: 'uBeamStrength', type: '1f', value: 1.0 };
+        }
+        if (!beamPlane.uniforms.beamAngle) {
+          beamPlane.uniforms.beamAngle = { name: 'uBeamAngle', type: '1f', value: 0.0 };
+        }
+        if (!beamPlane.uniforms.beamArc) {
+          beamPlane.uniforms.beamArc = { name: 'uBeamArc', type: '1f', value: TWO_PI };
+        }
+        if (!beamPlane.uniforms.beamThickness) {
+          beamPlane.uniforms.beamThickness = { name: 'uBeamThickness', type: '1f', value: 0.3 };
+        }
+        // 强度固定 1.0（GLSL 默认 0 会导致光弧消失）
+        beamPlane.uniforms.beamStrength.value = 1.0;
+        if (beamPlane._pyaiBeamHook) return;
+        beamPlane._pyaiBeamHook = true;
+        // 平滑角度/弧长/粗细：三者同 alpha 插值避免撕裂；角度走最短角差防跨 π 跳变
+        var smoothAngle = 0.0;
+        var smoothArc = TWO_PI;
+        var smoothThickness = 0.3;
+        var lastT = null;
+        beamPlane.onRender(function () {
+          try {
+            var mu = beamPlane.uniforms.mousePos && beamPlane.uniforms.mousePos.value;
+            if (!mu) return;
+            var mx = mu._x !== undefined ? mu._x : mu.x;
+            var my = mu._y !== undefined ? mu._y : mu.y;
+            // 鼠标离中心 (0.5, 0.5) 的偏移（上=+y，右=+x，与 shader 角度空间一致）
+            var dx = mx - 0.5;
+            var dy = my - 0.5;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            var offset = Math.min(1.0, dist * 2.0); // 灵敏度：边角 dist≈0.707 → offset≈1
+            // 目标弧长（中心满圈 → 偏移线性缩短）、粗细（略变粗）
+            var targetArc = TWO_PI - offset * (TWO_PI - MIN_ARC);
+            var targetThickness = 0.3 + offset * 0.35;
+            // 缺口方向 = 鼠标方向
+            var target = Math.atan2(dy, dx);
+            if (target < 0) target += TWO_PI;
+            // 同步平滑
+            var now = performance.now();
+            var dt = lastT !== null ? (now - lastT) / 1000 : 0.016;
+            if (dt > 0.1) dt = 0.1;
+            lastT = now;
+            var alpha = 1 - Math.exp(-12 * dt);
+            var diff = target - smoothAngle;
+            diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+            smoothAngle += diff * alpha;
+            smoothAngle = (smoothAngle + TWO_PI) % TWO_PI;
+            smoothArc += (targetArc - smoothArc) * alpha;
+            smoothThickness += (targetThickness - smoothThickness) * alpha;
+            beamPlane.uniforms.beamAngle.value = smoothAngle;
+            beamPlane.uniforms.beamArc.value = smoothArc;
+            beamPlane.uniforms.beamThickness.value = smoothThickness;
+          } catch (e) {}
+        });
+      }
+      install();
+
+      // resize 兜底：窗口尺寸变化时手动 resize 场景。
+      // 引擎的 refresh 依赖 rAF 异步、且会先把 initialized 置 false（导致跳过），
+      // 故这里不检查 initialized，用防抖 50ms 确保在引擎 debounce(16ms) 之后修正尺寸。
+      var resizeTimer = null;
+      window.addEventListener('resize', function () {
+        var scene = UnicornStudio.scenes && UnicornStudio.scenes[0];
+        if (!scene || !scene.resize) return;
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () {
+          try { scene.resize(); } catch (e) {}
+        }, 50);
+      });
+    })();
+  })();
+</script>
+
+<style>
+  .moonshot-hero {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+  }
+  .moonshot-scene {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+  }
+  .moonshot-scene :global(canvas) {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  /* 底部渐变：黑 → 透明，让动画底部自然融入 hero 黑底（原版 linear-gradient to top #000 37.366%） */
+  .moonshot-gradient {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 50%;
+    background: linear-gradient(to top, #000 37.366%, transparent);
+    pointer-events: none;
+  }
+</style>
