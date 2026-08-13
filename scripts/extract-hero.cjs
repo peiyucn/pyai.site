@@ -90,14 +90,9 @@ sceneJson = sceneJson
   //    - x 方向高斯衰减 exp(-dx²·k)：中心最亮、左右逐渐消失（不贯穿屏幕）
   //    - k=25 → 半宽约 ±0.14 UV，约黑洞环半径量级
   //    强度 4.0：× uBeamStrength(0.62) 后 ≈2.5，tanh ≈0.987 —— 接近圆光弧峰值但略柔
-  // ⚠️ 硬接处过渡（用户方法：隐形小圆 + 1/4弧，环端点上方外侧）。
-  //    实测：之前弧连接的是横线"渐隐区"（横线切点 aDx=-0.39 在 smoothstep
-  //    0.36→0.46 段内）→ 弧很暗几乎不可见。修复：横线全亮区延长到 0.42，
-  //    渐隐段 0.42→0.50，使弧的横线切点（aDx≈-0.39）落在全亮区，弧清晰可见。
-  //    弧：fillet 小圆，圆心在环端点外上方，同时相切横线与环弧。
   .replace(
     'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);',
-    'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);\\nfloat AR = uResolution.x / uResolution.y;\\nvec2 aUV = vec2(uv.x * AR, uv.y);\\nvec2 aP = vec2(pos.x * AR, pos.y);\\nfloat aDx = aUV.x - aP.x;\\nfloat lineX = 1.0 - smoothstep(0.42, 0.50, abs(aDx));\\nfloat lineY = exp(-abs(aUV.y - aP.y) * 90.0);\\nfloat horizon = lineX * lineY * 4.0;\\nbeam += horizon;\\nfloat hw2 = uBeamThickness * 0.5;\\nfloat rr = 0.09;\\nvec2 acr = vec2(aP.x + 0.30 + rr, aP.y - rr);\\nfloat dcr = length(aUV - acr);\\nfloat angR = calculateAngle(aUV, acr);\\nbeam += (1.0 - smoothstep(0.0, hw2, abs(dcr - rr))) * (1.0 - smoothstep(0.0, 0.8, angularDifference(angR, 3.9269))) * 4.5;\\nvec2 acl = vec2(aP.x - 0.30 - rr, aP.y - rr);\\nfloat dcl = length(aUV - acl);\\nfloat angL = calculateAngle(aUV, acl);\\nbeam += (1.0 - smoothstep(0.0, hw2, abs(dcl - rr))) * (1.0 - smoothstep(0.0, 0.8, angularDifference(angL, 5.4978))) * 4.5;',
+    'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);\\nfloat dx = uv.x - pos.x;\\nfloat horizon = exp(-dx * dx * 25.0) * exp(-abs(uv.y - pos.y) * 90.0) * 4.0;\\nbeam += horizon;',
   )
   // 日食中心：y 0.4 → 0.5（垂直居中，对齐 pyai.site 文字）
   .replace('vec2 pos = vec2(0.5, 0.4)', 'vec2 pos = vec2(0.5, 0.5)')
