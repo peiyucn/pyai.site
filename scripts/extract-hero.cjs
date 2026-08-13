@@ -85,6 +85,13 @@ sceneJson = sceneJson
     'getBeam(uv, pos, 0.6000, 0.6345, 0.5000, 0.3000, uTime, 0.7300, uResolution)',
     'getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution)',
   )
+  // ⚠️ 吸积盘第一步：贯穿黑洞的强光横线（用户需求）
+  //    在 main() 的 getBeam 行后追加一条水平强光直线：y 固定在黑洞圆心 pos.y，
+  //    从屏幕左端到右端横向贯穿。强度较高（强光），金色与光弧一致。
+  .replace(
+    'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);',
+    'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);\\nfloat horizon = exp(-abs(uv.y - pos.y) * 90.0) * 0.85;\\nbeam += horizon;',
+  )
   // 日食中心：y 0.4 → 0.5（垂直居中，对齐 pyai.site 文字）
   .replace('vec2 pos = vec2(0.5, 0.4)', 'vec2 pos = vec2(0.5, 0.5)')
   // ⚠️ 黑洞圆心由 JS 平滑驱动（uBHOffset 延迟跟随鼠标），不再直接读 uMousePos。
