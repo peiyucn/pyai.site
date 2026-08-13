@@ -101,13 +101,14 @@ sceneJson = sceneJson
   // 色差（灼烧）随黑洞移动：chromab 的畸变中心 mPos 跟随系数与 beam 光弧圆心
   // 完全一致（x 0.35 / y 0.12），使灼烧色差精确绑定到黑洞圆心
   .replace('mix(vec2(0), (uMousePos-0.5), 0.2500)', 'vec2((uMousePos.x-0.5)*0.35, (uMousePos.y-0.5)*0.12)')
-  // 透镜畸变（voronoi）随黑洞移动：voronoi 是真正的"黑洞透镜"，把文字吸入中心扭曲。
-  // 原中心写死 vec2(0.5, 0.4)（固定不跟随，这就是"畸变写死"的根因）。
-  // 改为与 beam 光弧圆心完全一致（(0.5,0.5) + 0.12 跟随 + clamp），
-  // 使"文字被吸入黑洞"的透镜精确跟随黑洞移动。
+  // ⚠️ voronoi"搞乱"中心跟随鼠标本身（原版 trackMouse 0.8 的大系数），
+  //    鼠标扫到哪、哪里的文字就被打散——这才是"鼠标搞乱文字"的正确跟随。
+  //    之前误改成跟随黑洞圆心（0.22/0.12 小系数）导致畸变只在很小的
+  //    范围内移动，鼠标移远后效果几乎不动（用户反馈"不完全跟着鼠标"）。
+  //    y 中心 0.4 → 0.5（垂直居中，对齐 pyai.site 文字）。
   .replace(
     'vec2 mPos = vec2(0.5, 0.4) + mix(vec2(0), (uMousePos-0.5), 0.8000);',
-    'vec2 mPos = vec2(0.5, 0.5) + vec2((uMousePos.x-0.5)*0.35, (uMousePos.y-0.5)*0.12); mPos = clamp(mPos, vec2(0.12, 0.32), vec2(0.88, 0.68));',
+    'vec2 mPos = vec2(0.5, 0.5) + mix(vec2(0), (uMousePos-0.5), 0.8000);',
   )
   .replace(
     'vec2 pos = mix(vec2(0.5, 0.4), mPos, floor(0.0000));',
