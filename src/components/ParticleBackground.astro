@@ -100,41 +100,68 @@ const { variant = 'light' } = Astro.props;
       for (let y = 0; y < size; y++) {
         for (let x = 0; x < size; x++) {
           // 大块云（低频）+ 尘埃颗粒（中高频）：深浅不一的星云明暗
-          const cloud = fbm(x / 7, y / 7, 4);
-          const grain = fbm(x / 1.6 + 40.7, y / 1.6 + 89.3, 2);
-          let v = cloud * 0.74 + grain * 0.26;
+          const cloud = fbm(x / 11, y / 11, 3);
+          const grain = fbm(x / 3.2 + 40.7, y / 3.2 + 89.3, 2);
+          let v = cloud * 0.82 + grain * 0.18;
           // 非对称映射：大部分区域暗、少量亮斑凸出（星云"深浅不一"）
-          v = Math.pow(Math.max(0, Math.min(1, v)), 1.9);
+          v = Math.pow(Math.max(0, Math.min(1, v)), 1.7);
           const i = (y * size + x) * 4;
           // 冷白偏灰蓝（呼应星点，避免纯白刺眼）
           d[i] = 238; d[i + 1] = 240; d[i + 2] = 246;
-          d[i + 3] = Math.round(v * 255 * 0.9);
+          d[i + 3] = Math.round(v * 255 * 0.85);
         }
       }
       g.putImageData(img, 0, 0);
       return c;
     }
     function initNebula() {
-      if (variant === 'dark' && !nebulaTex) nebulaTex = makeNoiseTex(512);
+      if (variant === 'dark' && !nebulaTex) nebulaTex = makeNoiseTex(768);
     }
 
-    // 绘制星云噪点底：平铺 + 极缓慢漂移（星云流动感），关闭平滑保持颗粒锐利
+    // 绘制星云噪点底：平铺 + 极缓慢漂移（星云流动感）
     function drawNebula() {
       if (variant !== 'dark' || !nebulaTex) return;
-      const S = 512;
+      const S = 768;
       const t = performance.now() / 1000;
       const ox = (t * 6) % S; // 6px/s 缓慢横向流动
       const oy = (t * 4) % S; // 4px/s 纵向
       const cols = Math.ceil(width / S) + 1;
       const rows = Math.ceil(height / S) + 1;
       ctx.save();
-      ctx.globalAlpha = 0.4; // 整体克制，不抢黑洞/文字主体
-      ctx.imageSmoothingEnabled = false; // 保持噪点颗粒锐利
+      ctx.globalAlpha = 0.38; // 整体克制，不抢黑洞/文字主体
+      ctx.imageSmoothingEnabled = true; // 平滑缩放，柔化颗粒边缘（细腻星云）
+      ctx.imageSmoothingQuality = 'high';
       for (let dx = 0; dx < cols; dx++) {
         for (let dy = 0; dy < rows; dy++) {
           ctx.drawImage(nebulaTex, dx * S - ox, dy * S - oy, S, S);
         }
       }
+      ctx.restore();
+    }
+
+    // 黑洞"吞没"星云：黑洞是透明的（下方 WebGL 的金色环 + pyai.site 文字要靠它透出来），
+    // 所以背景（星云+光晕）要往中心"汇聚消失"——以黑洞圆心为中心用 destination-out
+    // 挖一个径向渐变洞：中心完全挖空 → 边缘柔和过渡到完整星云。
+    // 这样视觉上：星云从四面八方流进黑洞被吞噬，黑洞区域干净露出金色环+文字。
+    // 挖洞圆心跟随 window.__pyaiBH（WebGL beam hook 每帧写入的黑洞归一化坐标）。
+    function drawBlackHoleMask() {
+      if (variant !== 'dark') return;
+      const bh = window.__pyaiBH;
+      const bhx = width * (bh ? bh.x : 0.5);
+      const bhy = height * (bh ? 1 - bh.y : 0.5);
+      // 挖洞半径略大于视觉环（BH_VISUAL_R），让星云在接近黑洞时柔和被吞
+      const bhR = Math.min(width, height) * BH_VISUAL_R * 1.3;
+      if (bhR <= 0) return;
+      ctx.save();
+      ctx.globalCompositeOperation = 'destination-out';
+      const g = ctx.createRadialGradient(bhx, bhy, 0, bhx, bhy, bhR);
+      g.addColorStop(0, 'rgba(0,0,0,1)');
+      g.addColorStop(0.55, 'rgba(0,0,0,0.85)');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(bhx, bhy, bhR, 0, Math.PI * 2);
+      ctx.fill();
       ctx.restore();
     }
 
@@ -208,9 +235,10 @@ const { variant = 'light' } = Astro.props;
     function draw() {
       if (width === 0 || height === 0) return;
       ctx.clearRect(0, 0, width, height);
-      // 星云噪点底（深浅不一的云状明暗 + 尘埃颗粒）→ 亮斑光晕 → 粒子
+      // 星云噪点底（深浅不一的云状明暗 + 尘埃颗粒）→ 亮斑光晕 → 黑洞挖洞 → 粒子
       drawNebula();
       drawBlobs();
+      drawBlackHoleMask(); // 星云/光晕在黑洞中心被吞没，露出下方 WebGL 黑洞环+文字
       const color = COLORS[variant] || COLORS.light;
       // 黑洞圆心（像素）：跟随 WebGL 黑洞（MoonshotHero beam hook 每帧写入的归一化 UV 坐标，
       // x 右=+、y 上=+）。粒子被吞/渐隐的"隐藏区域"必须与黑洞精确同步，
