@@ -38,21 +38,132 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
 <script is:inline>
   (function () {
     if (!window.UnicornStudio) return;
-    UnicornStudio.init().then(function () {
-      var scene = UnicornStudio.scenes && UnicornStudio.scenes[0];
-      if (!scene || scene.initialized) return;
-      // 兜底：引擎 init 可能早于 flex 布局完成（offsetWidth=0 → canvas 1px → isInView=false
-      // → lazyLoad 字符串 "false" 为 truthy，导致 initializePlanes 被跳过）。
-      // 用 setTimeout 轮询（不依赖 rAF，后台标签/无头环境更稳）：布局稳定后 resize + 初始化。
-      var ensure = function (n) {
-        if (scene.initialized) return;
-        if (!scene.initializing) {
-          try { scene.resize(); } catch (e) {}
-          try { scene.initializePlanes(); } catch (e) {}
+    var TWO_PI = Math.PI * 2;
+    var MIN_ARC = Math.PI * 0.5;
+
+    // 找到"活的"场景：优先当前 DOM 中、未销毁、元素在文档里的 scene。
+    // View Transitions 返回首页时 scenes 数组可能残留旧 scene（元素已被移除），
+    // 直接取 scenes[0] 会拿到死场景 → 黑洞消失的根因。
+    function findLiveScene() {
+      var scenes = UnicornStudio.scenes || [];
+      var els = document.querySelectorAll('[data-us-project-src]');
+      for (var i = 0; i < scenes.length; i++) {
+        var s = scenes[i];
+        if (!s || s.destroyed) continue;
+        if (s.element && document.body.contains(s.element)) return s;
+      }
+      // 有元素但无匹配 scene（首次或 VT 后引擎未重建）：取最后一个元素对应的新 scene
+      if (els.length && scenes.length) {
+        var last = scenes[scenes.length - 1];
+        if (last && !last.destroyed && last.element === els[els.length - 1]) return last;
+      }
+      return scenes.length ? scenes[0] : null;
+    }
+
+    // 清理引擎中已不在 DOM 的死场景（VT 后旧 body 已移除）。
+    // 仅当元素确实不在文档且非当前激活场景时才销毁，避免 VT 过渡瞬间误杀。
+    function disposeDeadScenes() {
+      var scenes = UnicornStudio.scenes || [];
+      var liveEls = [];
+      var els = document.querySelectorAll('[data-us-project-src]');
+      for (var k = 0; k < els.length; k++) liveEls.push(els[k]);
+      for (var i = scenes.length - 1; i >= 0; i--) {
+        var s = scenes[i];
+        if (!s || s.destroyed) continue;
+        var el = s.element;
+        // 元素在 DOM（含当前激活）→ 不销毁
+        if (el && document.body.contains(el)) continue;
+        // 元素已被移除（旧页面残留）→ 销毁释放
+        if (el) {
+          try { s.destroy(); } catch (e) {}
         }
-        if (n < 20) setTimeout(function () { ensure(n + 1); }, 150);
-      };
-      setTimeout(function () { ensure(0); }, 60);
+      }
+    }
+
+    // 初始化兜底：引擎 init 可能早于布局完成（offsetWidth=0 → canvas 1px → 卡 initializing）。
+    // 轮询等待元素有真实尺寸后再 resize + initializePlanes；并处理 initializing 卡死。
+    var bootTries = 0;
+    var MAX_TRIES = 100; // 10s 上限（100ms × 100）
+    function elSize() {
+      var el = document.querySelector('.moonshot-scene[data-us-project-src]');
+      if (!el) return null;
+      var r = el.getBoundingClientRect();
+      return { w: r.width || el.offsetWidth, h: r.height || el.offsetHeight };
+    }
+    // 强制完成初始化：引擎 checkIfReady 依赖 rAF 递归等 planes.isReady，
+    // 后台标签/某些环境下 rAF 不驱动 → initializing 永远卡 true。
+    // 手动完成 planes 创建 + 纹理绑定，并直接标记 isReady 跳过 rAF 等待。
+    function forceInit(scene) {
+      if (scene.initialized) return true;
+      try {
+        // 重置卡死状态
+        scene.initializing = false;
+        scene.initialized = false;
+        // 已建过 planes 则跳过创建（避免重复）
+        var hasPlanes = scene.curtain && scene.curtain.planes && scene.curtain.planes.length > 0;
+        if (!hasPlanes) {
+          if (scene.handleItemPlanes) {
+            scene.handleItemPlanes();
+          } else {
+            scene.createPlanes();
+            scene.createTextures();
+          }
+        } else if (scene.createTextures) {
+          try { scene.createTextures(); } catch (e) {}
+        }
+        // 标记所有 plane ready（跳过 rAF 等 isReady）
+        if (scene.curtain && scene.curtain.planes) {
+          scene.curtain.planes.forEach(function (p) {
+            if (p.userData) p.userData.isReady = true;
+          });
+        }
+        // 完成初始化收尾
+        if (scene.handlePlaneCreation) {
+          try { scene.handlePlaneCreation(); } catch (e) {}
+        }
+        scene.initializing = false;
+        scene.initialized = true;
+        try { scene.renderFrame(); } catch (e) {}
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+    function boot() {
+      disposeDeadScenes();
+      var el = document.querySelector('.moonshot-scene[data-us-project-src]');
+      if (!el) { if (bootTries++ < MAX_TRIES) setTimeout(boot, 100); return; }
+      var scene = findLiveScene();
+      if (!scene) {
+        // 场景不存在：清除可能残留的初始化标记后重新 init（VT 后引擎可能没为新元素创建 scene）
+        el.removeAttribute('data-us-initialized');
+        UnicornStudio.init().then(function () { setTimeout(boot, 50); });
+        return;
+      }
+      var sz = elSize();
+      if (!sz || sz.w < 10 || sz.h < 10) {
+        // 元素尺寸未就绪（VT 返回瞬间 / 后台标签），轮询等待
+        if (bootTries++ < MAX_TRIES) setTimeout(boot, 100);
+        return;
+      }
+      // 尺寸就绪：修正 canvas 尺寸并初始化
+      if (scene.initializing && !scene.initialized) {
+        // 卡死：强制重置 initializing（引擎可能因 canvas 1px 卡在 handleItemPlanes）
+        scene.initializing = false;
+      }
+      try { scene.resize(); } catch (e) {}
+      var ok = forceInit(scene);
+      if (!ok && bootTries++ < MAX_TRIES) setTimeout(boot, 100);
+    }
+
+    // 首次加载：直接 init 后 boot
+    UnicornStudio.init().then(function () {
+      setTimeout(boot, 60);
+    });
+    // View Transitions：每次页面切换（含返回/中英切换）后重新 boot，恢复黑洞
+    document.addEventListener('astro:page-load', function () {
+      bootTries = 0;
+      setTimeout(boot, 60);
     });
 
     // beam 动态参数：黑洞吸积盘"太阳在后面移动"效果
@@ -63,12 +174,10 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
     //   同时修复 resize：引擎的 refresh 依赖 rAF 异步，窗口变化时手动 resize 兜底。
     (function () {
       var tries = 0;
-      var TWO_PI = Math.PI * 2;
-      var MIN_ARC = Math.PI * 0.5; // 最短弧长（鼠标到边缘）= 90°，太阳被遮挡最多
       function install() {
-        var scene = UnicornStudio.scenes && UnicornStudio.scenes[0];
+        var scene = findLiveScene();
         if (!scene || !scene.curtain || !scene.curtain.planes) {
-          if (tries++ < 200) setTimeout(install, 50);
+          if (tries++ < 400) setTimeout(install, 50);
           return;
         }
         var beamPlane = null;
@@ -137,17 +246,29 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
       }
       install();
 
-      // resize 兜底：窗口尺寸变化时手动 resize 场景。
-      // 引擎的 refresh 依赖 rAF 异步、且会先把 initialized 置 false（导致跳过），
-      // 故这里不检查 initialized，用防抖 50ms 确保在引擎 debounce(16ms) 之后修正尺寸。
+      // resize 兜底：窗口尺寸变化时手动 resize 场景，并强制文字层重绘复位。
+      // 引擎的 resize 只更新 canvas 尺寸，text 层的 canvas 纹理需要额外刷新
+      //（否则 pyai.site 文字在窗口变化后停在旧尺寸/位置——"不能复位"的根因）。
+      // 用防抖 50ms 确保在引擎 debounce(16ms) 之后修正尺寸。
       var resizeTimer = null;
-      window.addEventListener('resize', function () {
-        var scene = UnicornStudio.scenes && UnicornStudio.scenes[0];
+      function doResize() {
+        var scene = findLiveScene();
         if (!scene || !scene.resize) return;
+        try { scene.resize(); } catch (e) {}
+        // 强制文字层纹理重绘：text 层本地 canvas 尺寸跟随 canvasWidth/Height，
+        // 标记 shouldUpdate 让引擎下一帧重传纹理 → pyai.site 复位
+        var layers = scene.layers || [];
+        for (var i = 0; i < layers.length; i++) {
+          var layer = layers[i];
+          if (layer && layer.layerType === 'text' && layer.preloadedCanvasTexture) {
+            layer.preloadedCanvasTexture.shouldUpdate = true;
+          }
+        }
+        try { scene.renderFrame(); } catch (e) {}
+      }
+      window.addEventListener('resize', function () {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(function () {
-          try { scene.resize(); } catch (e) {}
-        }, 50);
+        resizeTimer = setTimeout(doResize, 50);
       });
     })();
   })();
