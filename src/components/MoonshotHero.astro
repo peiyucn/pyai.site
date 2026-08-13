@@ -288,8 +288,18 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
       var scene = findLiveScene();
       if (!scene || !scene.curtain || !scene.curtain.planes) return;
       var beamPlane = null;
+      // 收集所有 shader 里声明/引用了 uBHOffset 的 plane（beam/ripple/chromab），
+      // 黑洞圆心由 JS 平滑后统一写入，保证这些层与光弧同步延迟跟随鼠标。
+      var bhPlanes = [];
       scene.curtain.planes.forEach(function (p) {
         if (p.userData && p.userData.type === 'beam') beamPlane = p;
+        if (p._fragmentShader && p._fragmentShader.indexOf('uBHOffset') !== -1) bhPlanes.push(p);
+      });
+      // 为每个引用 uBHOffset 的 plane 创建 uniform（引擎不会自动建，GLSL 默认 0 会导致圆心偏移丢失）
+      bhPlanes.forEach(function (p) {
+        if (!p.uniforms.uBHOffset) {
+          p.uniforms.uBHOffset = { name: 'uBHOffset', type: '2f', value: { x: 0, y: 0 } };
+        }
       });
       if (!beamPlane || !beamPlane.uniforms) return;
       if (!beamPlane.uniforms.beamStrength) {
@@ -312,6 +322,10 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
         var smoothAngle = 0.0;
         var smoothArc = TWO_PI;
         var smoothThickness = 0.2;
+        // 黑洞圆心延迟跟随：smoothBH 是平滑后的偏移（UV，中心为 0）。
+        // alpha=1-exp(-k·dt)，k=3.5 → 时间常数 ~0.29s，黑洞明显比鼠标慢半拍
+        //（之前直接读 uMousePos 即时跟随，用户反馈"移动有点快"）。
+        var smoothBH = { x: 0, y: 0 };
         var lastT = null;
         beamPlane.onRender(function () {
           try {
@@ -323,11 +337,28 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
             var dx = mx - 0.5;
             var dy = my - 0.5;
             var dist = Math.sqrt(dx * dx + dy * dy);
-            // 黑洞圆心（UV 坐标，右=+x、上=+y，与 shader 内公式 + clamp 完全一致）
-            // → 写入全局供 canvas 粒子（ParticleBackground）同步吸入中心，
-            //   使"粒子被吞掉/渐隐的隐藏区域"精确跟随黑洞移动。
-            var bhX = Math.min(0.88, Math.max(0.12, 0.5 + dx * 0.22));
-            var bhY = Math.min(0.68, Math.max(0.32, 0.5 + dy * 0.12));
+            // 黑洞圆心延迟跟随：目标偏移（x 0.22 / y 0.12，与 shader clamp 前一致），
+            // 指数平滑后写入所有 uBHOffset plane + 全局 __pyaiBH（粒子挖洞同步延迟）。
+            var targetBHX = Math.min(0.38, Math.max(-0.38, dx * 0.22));
+            var targetBHY = Math.min(0.18, Math.max(-0.18, dy * 0.12));
+            var now = performance.now();
+            var dt = lastT !== null ? (now - lastT) / 1000 : 0.016;
+            if (dt > 0.1) dt = 0.1;
+            var bhAlpha = 1 - Math.exp(-3.5 * dt); // 延迟强度：3.5 偏慢，调大更快
+            smoothBH.x += (targetBHX - smoothBH.x) * bhAlpha;
+            smoothBH.y += (targetBHY - smoothBH.y) * bhAlpha;
+            // 写入所有 uBHOffset plane（beam/ripple/chromab 同步延迟）
+            for (var pi = 0; pi < bhPlanes.length; pi++) {
+              var bp = bhPlanes[pi];
+              if (bp.uniforms && bp.uniforms.uBHOffset) {
+                var v = bp.uniforms.uBHOffset.value;
+                v.x = smoothBH.x;
+                v.y = smoothBH.y;
+              }
+            }
+            // 全局供 canvas 粒子（ParticleBackground）同步吸入中心（含 clamp 后 UV 坐标）
+            var bhX = Math.min(0.88, Math.max(0.12, 0.5 + smoothBH.x));
+            var bhY = Math.min(0.68, Math.max(0.32, 0.5 + smoothBH.y));
             window.__pyaiBH = { x: bhX, y: bhY };
             var offset = Math.min(1.0, dist * 2.0); // 灵敏度：边角 dist≈0.707 → offset≈1
             // 目标弧长（中心满圈 → 偏移线性缩短）、粗细（克制：0.2 → 0.36，原 0.3 → 0.65 太粗）
@@ -336,10 +367,7 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
             // 缺口方向 = 鼠标方向
             var target = Math.atan2(dy, dx);
             if (target < 0) target += TWO_PI;
-            // 同步平滑
-            var now = performance.now();
-            var dt = lastT !== null ? (now - lastT) / 1000 : 0.016;
-            if (dt > 0.1) dt = 0.1;
+            // 同步平滑（dt 统一计算，黑洞延迟 + 弧长/角度/粗细共用）
             lastT = now;
             var alpha = 1 - Math.exp(-12 * dt);
             var diff = target - smoothAngle;

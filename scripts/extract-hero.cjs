@@ -70,7 +70,7 @@ sceneJson = sceneJson
   //    只需把 fadeAmount 从固定 PI*0.5 改成动态 uBeamArc（弧长随鼠标伸缩）。
   .replace(
     'uniform float uBeamStrength;\\nuniform vec2 uResolution;',
-    'uniform float uBeamStrength;\\nuniform float uBeamArc;\\nuniform float uBeamThickness;\\nuniform vec2 uResolution;',
+    'uniform float uBeamStrength;\\nuniform float uBeamArc;\\nuniform float uBeamThickness;\\nuniform vec2 uBHOffset;\\nuniform vec2 uResolution;',
   )
   .replace(
     'float angleFactor = angularFading(pointAngle, peakAngle, PI * 0.5);',
@@ -87,20 +87,31 @@ sceneJson = sceneJson
   )
   // 日食中心：y 0.4 → 0.5（垂直居中，对齐 pyai.site 文字）
   .replace('vec2 pos = vec2(0.5, 0.4)', 'vec2 pos = vec2(0.5, 0.5)')
-  // 增大 beam 环跟随鼠标：x 方向 0.22（左右稍大，能把 pyai.site 含进去）、y 方向 0.12（上下不变）
+  // ⚠️ 黑洞圆心由 JS 平滑驱动（uBHOffset 延迟跟随鼠标），不再直接读 uMousePos。
+  //    用户反馈黑洞移动太快 → JS onRender 每帧对目标偏移做指数平滑（惯性延迟），
+  //    写入 uBHOffset；粒子挖洞同步读平滑后的 __pyaiBH。
+  //    x 幅度 0.22（左右稍大）、y 0.12（上下不变）——保留幅度，只加延迟。
   .replace(
     'mix(vec2(0), (uMousePos-0.5), 0.0600)',
-    'vec2((uMousePos.x-0.5)*0.35, (uMousePos.y-0.5)*0.12)',
+    'uBHOffset',
   )
   // 限制光弧圆心不越界：鼠标移到底部时 pos.y 会 >0.5，圆环下移导致下边缘被裁掉
   // （"下半部分看不到，不是完整的圆"的根因）→ clamp 圆心到安全范围，圆环始终完整可见
   .replace(
     'vec2 pos = vec2(0.5, 0.5) + vec2((uMousePos.x-0.5)*0.35, (uMousePos.y-0.5)*0.12);',
-    'vec2 pos = vec2(0.5, 0.5) + vec2((uMousePos.x-0.5)*0.35, (uMousePos.y-0.5)*0.12); pos = clamp(pos, vec2(0.12, 0.32), vec2(0.88, 0.68));',
+    'vec2 pos = vec2(0.5, 0.5) + uBHOffset; pos = clamp(pos, vec2(0.12, 0.32), vec2(0.88, 0.68));',
   )
-  // 色差（灼烧）随黑洞移动：chromab 的畸变中心 mPos 跟随系数与 beam 光弧圆心
-  // 完全一致（最终统一为 x 0.22 / y 0.12，见下方全局替换），使灼烧色差精确绑定到黑洞圆心
-  .replace('mix(vec2(0), (uMousePos-0.5), 0.2500)', 'vec2((uMousePos.x-0.5)*0.35, (uMousePos.y-0.5)*0.12)')
+  // 色差（灼烧）随黑洞移动：chromab 的畸变中心 mPos 与 beam 光弧圆心
+  // 完全一致（同用平滑的 uBHOffset），使灼烧色差精确绑定到黑洞圆心并同步延迟。
+  .replace('mix(vec2(0), (uMousePos-0.5), 0.2500)', 'uBHOffset')
+  // chromab 声明 uBHOffset。⚠️ 注意 chromab 的 uniform 区是
+  //    `uniform float uTime;uniform vec2 uMousePos;`（uTime 与 uMousePos 同行无换行），
+  //    与 shatter（uTime 后带换行）不同——用无换行的精确文本只匹配 chromab，
+  //    避免误给 shatter 加声明。
+  .replace(
+    'uniform float uTime;uniform vec2 uMousePos;\\nuniform vec2 uResolution;',
+    'uniform float uTime;uniform vec2 uMousePos;\\nuniform vec2 uBHOffset;\\nuniform vec2 uResolution;',
+  )
   // ⚠️ voronoi"搞乱"中心跟随鼠标本身（原版 trackMouse 0.8 的大系数），
   //    鼠标扫到哪、哪里的文字就被打散——这才是"鼠标搞乱文字"的正确跟随。
   //    之前误改成跟随黑洞圆心（0.22/0.12 小系数）导致畸变只在很小的
@@ -116,13 +127,17 @@ sceneJson = sceneJson
   )
   // ripple（涟漪）畸变随黑洞移动：ripple 也是几何位移层，原中心 vec2(0.5,0.5) + 0 跟随
   // （完全写死），导致"文字在黑洞中有一个写死的畸变"。改为与 beam 光弧圆心一致
-  // （0.12 跟随 + clamp），使波纹透镜跟随黑洞移动。
+  // （平滑的 uBHOffset + clamp），使波纹透镜跟随黑洞移动并同步延迟。
   .replace(
     'vec2 pos = vec2(0.5, 0.5) + mix(vec2(0), uMousePos - 0.5, 0.0000);',
-    'vec2 pos = vec2(0.5, 0.5) + vec2((uMousePos.x-0.5)*0.35, (uMousePos.y-0.5)*0.12); pos = clamp(pos, vec2(0.12, 0.32), vec2(0.88, 0.68));',
+    'vec2 pos = vec2(0.5, 0.5) + uBHOffset; pos = clamp(pos, vec2(0.12, 0.32), vec2(0.88, 0.68));',
+  )
+  .replace(
+    'uniform float uTime;\\nuniform vec2 uMousePos;\\nuniform vec2 uResolution;\\nfloat ease (int easingFunc, float t) {\\nreturn t;\\n}out vec4 fragColor;\\nconst float PI = 3.14159265359;vec2 distortUV(vec2 uv) {',
+    'uniform float uTime;\\nuniform vec2 uMousePos;\\nuniform vec2 uBHOffset;\\nuniform vec2 uResolution;\\nfloat ease (int easingFunc, float t) {\\nreturn t;\\n}out vec4 fragColor;\\nconst float PI = 3.14159265359;vec2 distortUV(vec2 uv) {',
   )
   // 色差方向原点 pos 也跟随黑洞圆心（原本固定屏幕中心，导致畸变方向不随黑洞移动）
-  .replace('vec2 pos = vec2(0.5, 0.5);', 'vec2 pos = vec2(0.5, 0.5) + vec2((uMousePos.x-0.5)*0.22, (uMousePos.y-0.5)*0.12);')
+  .replace('vec2 pos = vec2(0.5, 0.5);', 'vec2 pos = vec2(0.5, 0.5) + uBHOffset;')
   // ⚠️ 回退文字鼠标"平移/倾斜"（用户明确不要"文字跟着鼠标移动"）：
   //    原版 pyai-site-hero.html 的"搞乱"效果 = voronoi 透镜畸变（子效果已恢复），
   //    而非 vertex 旋转/FS 位移。恢复原版：gl_Position 用未旋转顶点（旋转写进
