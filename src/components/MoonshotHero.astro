@@ -323,7 +323,7 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
         var smoothArc = TWO_PI;
         var smoothThickness = 0.2;
         // 黑洞圆心延迟跟随：smoothBH 是平滑后的偏移（UV，中心为 0）。
-        // alpha=1-exp(-k·dt)，k=3.5 → 时间常数 ~0.29s，黑洞明显比鼠标慢半拍
+        // alpha=1-exp(-k·dt)，k=2 → 时间常数 ~0.5s，黑洞慵懒地追鼠标
         //（之前直接读 uMousePos 即时跟随，用户反馈"移动有点快"）。
         var smoothBH = { x: 0, y: 0 };
         var lastT = null;
@@ -344,7 +344,7 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
             var now = performance.now();
             var dt = lastT !== null ? (now - lastT) / 1000 : 0.016;
             if (dt > 0.1) dt = 0.1;
-            var bhAlpha = 1 - Math.exp(-3.5 * dt); // 延迟强度：3.5 偏慢，调大更快
+            var bhAlpha = 1 - Math.exp(-2 * dt); // 延迟强度：2 更慵懒（时间常数 ~0.5s），调大更快
             smoothBH.x += (targetBHX - smoothBH.x) * bhAlpha;
             smoothBH.y += (targetBHY - smoothBH.y) * bhAlpha;
             // 写入所有 uBHOffset plane（beam/ripple/chromab 同步延迟）
