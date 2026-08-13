@@ -60,6 +60,84 @@ const { variant = 'light' } = Astro.props;
       }));
     }
 
+    // ===== 星云噪点纹理（预生成一次）=====
+    // 真实星河的质感 = 深浅不一的斑驳明暗 + 高噪点的尘埃颗粒。
+    // 用 value noise 的 fBm：低频 octave 形成大块云状明暗，中高频 octave 叠加尘埃颗粒。
+    // 纹理固定 512×512，运行时按像素坐标哈希伪随机（GLSL 风格），确定性、无重复纹理感。
+    let nebulaTex = null;
+    function makeNoiseTex(size) {
+      const c = document.createElement('canvas');
+      c.width = c.height = size;
+      const g = c.getContext('2d');
+      const img = g.createImageData(size, size);
+      const d = img.data;
+      // 哈希伪随机：同 (x,y) 永远同值，保证纹理稳定（不闪烁）
+      const h = (x, y) => {
+        const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453123;
+        return s - Math.floor(s);
+      };
+      // value noise（单 octave，双线性平滑插值）
+      const vnoise = (x, y) => {
+        const xi = Math.floor(x), yi = Math.floor(y);
+        const xf = x - xi, yf = y - yi;
+        const u = xf * xf * (3 - 2 * xf);
+        const v = yf * yf * (3 - 2 * yf);
+        const a = h(xi, yi), b = h(xi + 1, yi);
+        const c2 = h(xi, yi + 1), d2 = h(xi + 1, yi + 1);
+        return a + (b - a) * u + (c2 - a) * v + (a - b - c2 + d2) * u * v;
+      };
+      // fBm：多 octave 叠加（低频大云 → 高频颗粒）
+      const fbm = (x, y, oct) => {
+        let sum = 0, amp = 0.5, freq = 1, norm = 0;
+        for (let i = 0; i < oct; i++) {
+          sum += amp * vnoise(x * freq, y * freq);
+          norm += amp;
+          amp *= 0.5;
+          freq *= 2;
+        }
+        return sum / norm;
+      };
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          // 大块云（低频）+ 尘埃颗粒（中高频）：深浅不一的星云明暗
+          const cloud = fbm(x / 7, y / 7, 4);
+          const grain = fbm(x / 1.6 + 40.7, y / 1.6 + 89.3, 2);
+          let v = cloud * 0.74 + grain * 0.26;
+          // 非对称映射：大部分区域暗、少量亮斑凸出（星云"深浅不一"）
+          v = Math.pow(Math.max(0, Math.min(1, v)), 1.9);
+          const i = (y * size + x) * 4;
+          // 冷白偏灰蓝（呼应星点，避免纯白刺眼）
+          d[i] = 238; d[i + 1] = 240; d[i + 2] = 246;
+          d[i + 3] = Math.round(v * 255 * 0.9);
+        }
+      }
+      g.putImageData(img, 0, 0);
+      return c;
+    }
+    function initNebula() {
+      if (variant === 'dark' && !nebulaTex) nebulaTex = makeNoiseTex(512);
+    }
+
+    // 绘制星云噪点底：平铺 + 极缓慢漂移（星云流动感），关闭平滑保持颗粒锐利
+    function drawNebula() {
+      if (variant !== 'dark' || !nebulaTex) return;
+      const S = 512;
+      const t = performance.now() / 1000;
+      const ox = (t * 6) % S; // 6px/s 缓慢横向流动
+      const oy = (t * 4) % S; // 4px/s 纵向
+      const cols = Math.ceil(width / S) + 1;
+      const rows = Math.ceil(height / S) + 1;
+      ctx.save();
+      ctx.globalAlpha = 0.4; // 整体克制，不抢黑洞/文字主体
+      ctx.imageSmoothingEnabled = false; // 保持噪点颗粒锐利
+      for (let dx = 0; dx < cols; dx++) {
+        for (let dy = 0; dy < rows; dy++) {
+          ctx.drawImage(nebulaTex, dx * S - ox, dy * S - oy, S, S);
+        }
+      }
+      ctx.restore();
+    }
+
     // 绘制星河光晕：径向渐变团，缓慢漂移（sin/cos 组合）+ 呼吸（alpha 脉动）
     function drawBlobs() {
       if (variant !== 'dark') return;
@@ -100,6 +178,7 @@ const { variant = 'light' } = Astro.props;
       canvas.style.width = width + 'px';
       canvas.style.height = height + 'px';
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      initNebula();
       initBlobs();
       initParticles();
     }
@@ -129,7 +208,8 @@ const { variant = 'light' } = Astro.props;
     function draw() {
       if (width === 0 || height === 0) return;
       ctx.clearRect(0, 0, width, height);
-      // 星河光晕：画在粒子下方（先画），作为纯黑背景上的柔和星云氛围
+      // 星云噪点底（深浅不一的云状明暗 + 尘埃颗粒）→ 亮斑光晕 → 粒子
+      drawNebula();
       drawBlobs();
       const color = COLORS[variant] || COLORS.light;
       // 黑洞圆心（像素）：跟随 WebGL 黑洞（MoonshotHero beam hook 每帧写入的归一化 UV 坐标，
