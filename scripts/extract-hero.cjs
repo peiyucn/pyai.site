@@ -99,7 +99,7 @@ sceneJson = sceneJson
     'vec2 pos = vec2(0.5, 0.5) + vec2((uMousePos.x-0.5)*0.35, (uMousePos.y-0.5)*0.12); pos = clamp(pos, vec2(0.12, 0.32), vec2(0.88, 0.68));',
   )
   // 色差（灼烧）随黑洞移动：chromab 的畸变中心 mPos 跟随系数与 beam 光弧圆心
-  // 完全一致（x 0.35 / y 0.12），使灼烧色差精确绑定到黑洞圆心
+  // 完全一致（最终统一为 x 0.22 / y 0.12，见下方全局替换），使灼烧色差精确绑定到黑洞圆心
   .replace('mix(vec2(0), (uMousePos-0.5), 0.2500)', 'vec2((uMousePos.x-0.5)*0.35, (uMousePos.y-0.5)*0.12)')
   // ⚠️ voronoi"搞乱"中心跟随鼠标本身（原版 trackMouse 0.8 的大系数），
   //    鼠标扫到哪、哪里的文字就被打散——这才是"鼠标搞乱文字"的正确跟随。

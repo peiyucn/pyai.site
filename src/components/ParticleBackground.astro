@@ -261,7 +261,6 @@ const { variant = 'light' } = Astro.props;
       const bhx = width * (bh ? bh.x : 0.5);
       const bhy = height * (bh ? 1 - bh.y : 0.5); // UV y 向上为正 → 画布 y 向下为正
       // 黑洞视觉半径（像素）：基于视口短边
-      const bhVisual = Math.min(width, height) * BH_VISUAL_R;
       const bhCore = Math.min(width, height) * BH_RADIUS;
       const fadeStart = Math.min(width, height) * FADE_RANGE;
 

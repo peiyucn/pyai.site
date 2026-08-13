@@ -218,16 +218,6 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
         return false;
       }
     }
-    // 查找"当前元素对应"的场景：元素必须与场景 element 完全一致
-    function sceneForElement(el) {
-      var scenes = UnicornStudio.scenes || [];
-      for (var i = 0; i < scenes.length; i++) {
-        var s = scenes[i];
-        if (!s || s.destroyed) continue;
-        if (s.element === el) return s;
-      }
-      return null;
-    }
     function boot() {
       // 用 bootTries 计数防止无限轮询；setTimeout 天然串行
       try {
