@@ -90,9 +90,14 @@ sceneJson = sceneJson
   //    - x 方向高斯衰减 exp(-dx²·k)：中心最亮、左右逐渐消失（不贯穿屏幕）
   //    - k=25 → 半宽约 ±0.14 UV，约黑洞环半径量级
   //    强度 4.0：× uBeamStrength(0.62) 后 ≈2.5，tanh ≈0.987 —— 接近圆光弧峰值但略柔
+  // ⚠️ 硬接处过渡（用户方法）：在圆与直线的硬接处左上方（右上方对称），
+  //    贴着直线和圆的边画一个隐形小圆，只让顶部 1/4 圆弧发光。
+  //    小圆圆心：硬接点(pos.x±0.145, pos.y) 沿 45° 右上/左上偏移 r，使小圆
+  //    内切于横线(y=pos.y)与上半圆(半径0.15)的外侧 → 顶部 1/4 弧平滑连接折角。
+  //    发光范围限制在小圆顶部 ±60°（约 1/3 圈），渐变衰减避免生硬。
   .replace(
     'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);',
-    'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);\\nfloat dx = uv.x - pos.x;\\nfloat horizon = exp(-dx * dx * 25.0) * exp(-abs(uv.y - pos.y) * 90.0) * 4.0;\\nbeam += horizon;',
+    'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);\\nfloat dx = uv.x - pos.x;\\nfloat horizon = exp(-dx * dx * 25.0) * exp(-abs(uv.y - pos.y) * 90.0) * 4.0;\\nbeam += horizon;\\nfloat rr = 0.045;\\nfloat a45 = 0.7854;\\nvec2 cr = vec2(pos.x + 0.145 + rr * cos(a45), pos.y + rr * sin(a45));\\nvec2 cl = vec2(pos.x - 0.145 - rr * cos(a45), pos.y + rr * sin(a45));\\nfloat arcR = abs(length(uv - cr) - rr);\\nfloat angR = calculateAngle(uv, cr);\\nfloat angL = calculateAngle(uv, cl);\\nbeam += (1.0 - smoothstep(0.0, uBeamThickness * 0.4, arcR)) * (1.0 - smoothstep(0.0, 1.0, abs(angR - 1.5708))) * 3.0;\\nbeam += (1.0 - smoothstep(0.0, uBeamThickness * 0.4, abs(length(uv - cl) - rr))) * (1.0 - smoothstep(0.0, 1.0, abs(angL - 1.5708))) * 3.0;',
   )
   // 日食中心：y 0.4 → 0.5（垂直居中，对齐 pyai.site 文字）
   .replace('vec2 pos = vec2(0.5, 0.4)', 'vec2 pos = vec2(0.5, 0.5)')
