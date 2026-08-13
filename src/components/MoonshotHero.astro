@@ -41,6 +41,48 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
     var TWO_PI = Math.PI * 2;
     var MIN_ARC = Math.PI * 0.5;
 
+    // 手动创建场景（替代 UnicornStudio.init() 的 Promise 机制）：
+    // init() 的 ye() 依赖 requestIdleCallback 且 Promise 在场景数组推入后才 resolve，
+    // VT 后/后台标签下可能永不 resolve → 黑洞无法恢复。addScene（ye）直接创建。
+    // 场景 JSON 已内联在 <script id="hero-scene-data">，引擎原生从该元素读取。
+    function ensureScene(el) {
+      if (typeof UnicornStudio.addScene !== 'function') return null;
+      var existing = sceneForElement(el);
+      if (existing && !existing.destroyed) return existing;
+      // 移除引擎的"已初始化"标记，否则引擎内部会跳过（虽然 addScene 不检查它，
+      // 但销毁残留场景时 destroy() 会清除它，这里保险起见）
+      el.removeAttribute('data-us-initialized');
+      var params = {
+        projectId: null,
+        filePath: el.getAttribute('data-us-project-src'),
+        element: el,
+        dpi: +el.getAttribute('data-us-dpi'),
+        scale: +el.getAttribute('data-us-scale'),
+        fps: +el.getAttribute('data-us-fps'),
+        lazyLoad: el.getAttribute('data-us-lazyload'),
+        altText: el.getAttribute('data-us-alttext'),
+        ariaLabel: el.getAttribute('data-us-arialabel'),
+        fixed: el.getAttribute('data-us-fixed'),
+      };
+      try {
+        UnicornStudio.addScene(params);
+        return null; // 异步创建，返回 null，调用方需轮询
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // 查找"当前元素对应"的场景：元素必须与场景 element 完全一致
+    function sceneForElement(el) {
+      var scenes = UnicornStudio.scenes || [];
+      for (var i = 0; i < scenes.length; i++) {
+        var s = scenes[i];
+        if (!s || s.destroyed) continue;
+        if (s.element === el) return s;
+      }
+      return null;
+    }
+
     // 找到"活的"场景：优先当前 DOM 中、未销毁、元素在文档里的 scene。
     // View Transitions 返回首页时 scenes 数组可能残留旧 scene（元素已被移除），
     // 直接取 scenes[0] 会拿到死场景 → 黑洞消失的根因。
@@ -64,8 +106,8 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
     // 仅当元素确实不在文档且非当前激活场景时才销毁，避免 VT 过渡瞬间误杀。
     function disposeDeadScenes() {
       var scenes = UnicornStudio.scenes || [];
-      var liveEls = [];
       var els = document.querySelectorAll('[data-us-project-src]');
+      var liveEls = [];
       for (var k = 0; k < els.length; k++) liveEls.push(els[k]);
       for (var i = scenes.length - 1; i >= 0; i--) {
         var s = scenes[i];
@@ -82,8 +124,9 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
 
     // 初始化兜底：引擎 init 可能早于布局完成（offsetWidth=0 → canvas 1px → 卡 initializing）。
     // 轮询等待元素有真实尺寸后再 resize + initializePlanes；并处理 initializing 卡死。
+    // 用 setTimeout 串行轮询（无互斥锁，靠 bootTries 计数防无限递归）。
     var bootTries = 0;
-    var MAX_TRIES = 100; // 10s 上限（100ms × 100）
+    var MAX_TRIES = 150;   // 15s 上限（100ms × 150）
     function elSize() {
       var el = document.querySelector('.moonshot-scene[data-us-project-src]');
       if (!el) return null;
@@ -129,37 +172,52 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
         return false;
       }
     }
+    // 查找"当前元素对应"的场景：元素必须与场景 element 完全一致
+    function sceneForElement(el) {
+      var scenes = UnicornStudio.scenes || [];
+      for (var i = 0; i < scenes.length; i++) {
+        var s = scenes[i];
+        if (!s || s.destroyed) continue;
+        if (s.element === el) return s;
+      }
+      return null;
+    }
     function boot() {
-      disposeDeadScenes();
-      var el = document.querySelector('.moonshot-scene[data-us-project-src]');
-      if (!el) { if (bootTries++ < MAX_TRIES) setTimeout(boot, 100); return; }
-      var scene = findLiveScene();
-      if (!scene) {
-        // 场景不存在：清除可能残留的初始化标记后重新 init（VT 后引擎可能没为新元素创建 scene）
-        el.removeAttribute('data-us-initialized');
-        UnicornStudio.init().then(function () { setTimeout(boot, 50); });
-        return;
-      }
-      var sz = elSize();
-      if (!sz || sz.w < 10 || sz.h < 10) {
-        // 元素尺寸未就绪（VT 返回瞬间 / 后台标签），轮询等待
-        if (bootTries++ < MAX_TRIES) setTimeout(boot, 100);
-        return;
-      }
-      // 尺寸就绪：修正 canvas 尺寸并初始化
-      if (scene.initializing && !scene.initialized) {
-        // 卡死：强制重置 initializing（引擎可能因 canvas 1px 卡在 handleItemPlanes）
-        scene.initializing = false;
-      }
-      try { scene.resize(); } catch (e) {}
-      var ok = forceInit(scene);
-      if (!ok && bootTries++ < MAX_TRIES) setTimeout(boot, 100);
+      // 用 bootTries 计数防止无限轮询；setTimeout 天然串行
+      try {
+        var el = document.querySelector('.moonshot-scene[data-us-project-src]');
+        if (!el) return; // 页面无 hero（内容页），无需初始化
+        // 清理所有"元素不在 DOM"的死场景（VT 后旧页面残留）
+        disposeDeadScenes();
+        var scene = sceneForElement(el);
+        if (!scene) {
+          // 场景不存在（VT 后新 DOM 元素 / 首次引擎未创建）：手动 addScene 创建
+          ensureScene(el);
+          if (bootTries++ < MAX_TRIES) setTimeout(boot, 150);
+          return;
+        }
+        var sz = elSize();
+        if (!sz || sz.w < 10 || sz.h < 10) {
+          // 元素尺寸未就绪（VT 返回瞬间 / 后台标签），轮询等待
+          if (bootTries++ < MAX_TRIES) setTimeout(boot, 100);
+          return;
+        }
+        // 尺寸就绪：修正 canvas 尺寸并初始化
+        if (scene.initializing && !scene.initialized) {
+          scene.initializing = false;
+        }
+        try { scene.resize(); } catch (e) {}
+        var ok = forceInit(scene);
+        if (!ok && bootTries++ < MAX_TRIES) setTimeout(boot, 100);
+      } catch (e) {}
     }
 
-    // 首次加载：直接 init 后 boot
+    // 首次加载：先给引擎一个机会用 init() 正常创建（首屏优先），
+    // 同时立刻启动 boot 兜底（boot 里 ensureScene 会检测场景是否真的创建）。
     UnicornStudio.init().then(function () {
       setTimeout(boot, 60);
     });
+    setTimeout(boot, 60);
     // View Transitions：每次页面切换（含返回/中英切换）后重新 boot，恢复黑洞
     document.addEventListener('astro:page-load', function () {
       bootTries = 0;
