@@ -130,7 +130,7 @@ const { variant = 'light' } = Astro.props;
       const S = NEBULA_SIZE;
       const t = performance.now() / 1000;
       const breathe = Math.sin(t * 0.06);
-      const A = 0.09; // 极淡：只是纯黑背景上的微弱氛围（用户反馈 0.14 仍抢眼）
+      const A = 0.07; // 极淡：只是纯黑背景上的微弱氛围（继续减淡）
       const a1 = A * (0.8 + 0.2 * breathe);
       const a2 = A * (0.8 - 0.2 * breathe);
       const cols = Math.ceil(width / S) + 1;
