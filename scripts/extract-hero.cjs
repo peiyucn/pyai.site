@@ -78,12 +78,28 @@ sceneJson = sceneJson
   )
   // 光弧：scale 0.54 → 0.60（整体缩小 15%，环半径 UV 0.30）
   .replace('getBeam(uv, pos, 0.5400,', 'getBeam(uv, pos, 0.6000,')
+  // ⚠️ 吸积盘光学扭曲（黑洞扭曲光 → 吸积盘不是完美圆）：
+  //   1) 上半圆亮弧：顶部 25°..155° 明亮弧段（吸积盘主可见部分）
+  //   2) 草帽帽檐：从上半圆两侧切点（45°/135°）沿切线方向向外延伸两条直线，
+  //      顺着圆的切面角度走（线性平滑，起点与圆相切无折角），视觉像草帽
+  //   3) 下半圆错位：底部 205°..335° 弧段因光扭曲向圆心内缩 8%（R*0.92），
+  //      与上半圆左右断开不衔接（像水中折射物体一样错位）
+  .replace(
+    'float getBeam(vec2 uv, vec2 pos, float radius, float angleVal, float skewVal, float thickness, float time, float phaseVal, vec2 resolution) {\\nreturn drawRing(uv, pos, radius, angleVal, resolution, skewVal, angleVal, thickness, time, phaseVal);\\n}',
+    'float getBeam(vec2 uv, vec2 pos, float radius, float angleVal, float skewVal, float thickness, float time, float phaseVal, vec2 resolution) {\\nreturn drawRing(uv, pos, radius, angleVal, resolution, skewVal, angleVal, thickness, time, phaseVal);\\n}\\nfloat drawDiskArc(vec2 uv, vec2 center, float ringR, float a0, float a1, float halfThick) {\\nfloat distFromCenter = length(uv - center);\\nfloat ringDist = abs(distFromCenter - ringR);\\nif (ringDist > halfThick) return 0.0;\\nfloat pointAngle = calculateAngle(uv, center);\\nfloat aa = mod(pointAngle - a0 + TWO_PI, TWO_PI);\\nif (aa > (a1 - a0)) return 0.0;\\nreturn 1.0 - smoothstep(0.0, 0.2, ringDist / halfThick);\\n}\\nfloat drawDiskLine(vec2 uv, vec2 p0, vec2 p1, float halfThick) {\\nvec2 d = p1 - p0;\\nfloat len2 = dot(d, d);\\nfloat t = len2 > 0.00001 ? clamp(dot(uv - p0, d) / len2, 0.0, 1.0) : 0.0;\\nvec2 proj = p0 + d * t;\\nfloat dist = length(uv - proj);\\nreturn 1.0 - smoothstep(0.0, 0.2, dist / halfThick);\\n}\\nfloat getAccretionDisk(vec2 uv, vec2 center, float ringR, float thickness) {\\nfloat aspectRatio = uResolution.x / uResolution.y;\\nvec2 aUV = vec2(uv.x * aspectRatio, uv.y);\\nvec2 aC = vec2(center.x * aspectRatio, center.y);\\nfloat halfThick = thickness * 0.35;\\nfloat disk = 0.0;\\nfloat UPPER_A0 = 0.4363;\\nfloat UPPER_A1 = 2.7053;\\ndisk += drawDiskArc(aUV, aC, ringR, UPPER_A0, UPPER_A1, halfThick);\\nfloat LOWER_R = ringR * 0.92;\\ndisk += drawDiskArc(aUV, aC, LOWER_R, 3.5779, 5.8469, halfThick) * 0.8;\\nfloat tR = 0.7854;\\nvec2 pR = aC + ringR * vec2(cos(tR), sin(tR));\\nvec2 dirR = normalize(vec2(0.85, 0.53));\\nfloat lenR = ringR * 1.15;\\ndisk += drawDiskLine(aUV, pR, pR + dirR * lenR, halfThick) * 0.9;\\nfloat tL = 2.3562;\\nvec2 pL = aC + ringR * vec2(cos(tL), sin(tL));\\nvec2 dirL = normalize(vec2(-0.85, 0.53));\\nfloat lenL = ringR * 1.15;\\ndisk += drawDiskLine(aUV, pL, pL + dirL * lenL, halfThick) * 0.9;\\nreturn disk;\\n}',
+  )
   // 取消角度空间旋转 angleVal 0.6345→0（≈228° 旋转让弧段围绕左上角收缩），
   // 改为 0 后角度空间=屏幕空间，uBeamAngle 直接对应屏幕方向（0=右，π/2=上）。
   // 粗细 0.3000 → uBeamThickness（JS 驱动）。
   .replace(
     'getBeam(uv, pos, 0.6000, 0.6345, 0.5000, 0.3000, uTime, 0.7300, uResolution)',
     'getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution)',
+  )
+  // main 叠加吸积盘（强度 0.38，作为背景结构弱于动态光弧）
+  // ⚠️ 必须放在 angleVal 归零替换之后（main 里的 getBeam 文本先变成 0.0000/uBeamThickness 才能匹配）
+  .replace(
+    'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);',
+    'float beam = getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution);\\nbeam += getAccretionDisk(uv, pos, 0.6000 * 0.5, uBeamThickness) * 0.38;',
   )
   // 日食中心：y 0.4 → 0.5（垂直居中，对齐 pyai.site 文字）
   .replace('vec2 pos = vec2(0.5, 0.4)', 'vec2 pos = vec2(0.5, 0.5)')
