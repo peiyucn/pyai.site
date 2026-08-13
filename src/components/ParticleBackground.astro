@@ -85,7 +85,13 @@ const { variant = 'light' } = Astro.props;
       if (width === 0 || height === 0) return;
       ctx.clearRect(0, 0, width, height);
       const color = COLORS[variant] || COLORS.light;
-      const bhx = width / 2, bhy = height / 2;
+      // 黑洞圆心（像素）：跟随 WebGL 黑洞（MoonshotHero beam hook 每帧写入的归一化 UV 坐标，
+      // x 右=+、y 上=+）。粒子被吞/渐隐的"隐藏区域"必须与黑洞精确同步，
+      // 否则鼠标移动时黑洞移走、粒子隐藏区却留在原地（bug 根因）。
+      // 未就绪（WebGL 场景还没创建 / 无 hero 页面）时回退到画布中心。
+      const bh = window.__pyaiBH;
+      const bhx = width * (bh ? bh.x : 0.5);
+      const bhy = height * (bh ? 1 - bh.y : 0.5); // UV y 向上为正 → 画布 y 向下为正
       // 黑洞视觉半径（像素）：基于视口短边
       const bhVisual = Math.min(width, height) * BH_VISUAL_R;
       const bhCore = Math.min(width, height) * BH_RADIUS;

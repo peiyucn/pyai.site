@@ -39,7 +39,11 @@ JSON.parse(sceneJson); // 校验合法性
 //     目标视觉（去 Moonshot 模仿感）：
 //       - 金色满圈光弧 = 日全食，居中放大，随鼠标轻微位移（保留 godrays/beam 的 trackMouse）
 //       - pyai.site 作为 WebGL 文字横穿日食中心，两端超出光弧边缘产生"灼烧"
-//       - 文字固定不滚动（移除 replicate）、去透镜畸变（移除 voronoi）
+//       - 文字固定不滚动（移除 replicate 滚动复制），保留 voronoi 透镜畸变
+//         = 鼠标"搞乱"文字的原版实现（shatter 层 trackMouse 0.8，鼠标靠近时
+//           文字被 voronoi 单元格打散错位）。⚠️ 引擎 getChildEffectItems() 依赖
+//           text.effects 数组才把 voronoi 作为子效果渲染——清空 effects 会让
+//           voronoi 层空挂不渲染，"搞乱"效果消失（曾踩坑）。
 sceneJson = sceneJson
   // 文字：Record Distill Create → pyai.site
   .replace('"textContent":"Record Distill Create"', '"textContent":"pyai.site"')
@@ -49,15 +53,16 @@ sceneJson = sceneJson
   .replace('"opacity":0.42', '"opacity":1.0')
   // 配色：光弧保持金色，文字/光芒/格栅质感改灰白（冷暖对比，光弧成为唯一金色焦点）
   .replace('"fill":["#FFD48A"]', '"fill":["#EDEDED"]')
-  // ⚠️ text 加 trackMouse：引擎的 disablePlanes() 会把"静态层"（无动画/无 trackMouse）
-  //    在渲染数帧后 _canDraw=false 禁用 → 文字消失/鼠标效果永不生效。
-  //    trackMouse 非 0 让引擎判定 text 为动态层 → 持续渲染，且鼠标 uniform 持续驱动。
-  //    （值本身不参与计算，只用于动态判定；实际位移/倾斜由 VS/FS 里的 uMousePos 驱动）
+  // text 加 trackMouse：引擎 disablePlanes() 会把"静态层"禁用（_canDraw=false）→ 文字消失。
+  // trackMouse 非 0 让引擎判定 text 为动态层 → 持续渲染。
   .replace('"textContent":"pyai.site","fill":["#EDEDED"]', '"textContent":"pyai.site","trackMouse":0.3,"fill":["#EDEDED"]')
   .replace('vec3(1, 0.9333333333333333, 0.8509803921568627)', 'vec3(1, 1, 1)')
   .replace('vec3(1.10, 0.82, 0.55)', 'vec3(1.0, 1.0, 1.0)')
-  // 移除文字两个子效果（replicate 滚动复制 + voronoi 透镜畸变）→ 固定不滚动
-  .replace('"effects":["71bb708a-ecd8-48d4-8919-1175e974b5e0","7a55e45c-6061-49ef-a501-c6b0a931022a"]', '"effects":[]')
+  // ⚠️ 鼠标"搞乱"文字：保留 voronoi（shatter）作为 text 子效果（原版实现，
+  //    trackMouse 0.8 + mPos 跟随鼠标 → 鼠标扫过时文字被 voronoi 打散错位）。
+  //    移除 replicate（滚动复制，用户要求文字固定不滚动）。
+  //    effects 数组 = 引擎渲染子效果的开关，清空则 voronoi 空挂不渲染。
+  .replace('"effects":["71bb708a-ecd8-48d4-8919-1175e974b5e0","7a55e45c-6061-49ef-a501-c6b0a931022a"]', '"effects":["7a55e45c-6061-49ef-a501-c6b0a931022a"]')
   // 光弧参数化：弧长 uBeamArc（随鼠标距离动态缩短 = 太阳被遮挡）、粗细 uBeamThickness。
   // ⚠️ 保留 angularFading 峰值衰减（1.04 - smoothstep(0, fade, diff)），其底值 0.04 天然
   //    形成"细圈"——弧段外圆环微弱可见、弧段内亮弧，是原始 Moonshot 的设计。
@@ -117,22 +122,17 @@ sceneJson = sceneJson
   )
   // 色差方向原点 pos 也跟随黑洞圆心（原本固定屏幕中心，导致畸变方向不随黑洞移动）
   .replace('vec2 pos = vec2(0.5, 0.5);', 'vec2 pos = vec2(0.5, 0.5) + vec2((uMousePos.x-0.5)*0.22, (uMousePos.y-0.5)*0.12);')
-  // 文字鼠标效果（原版 shader 的旋转从未生效——gl_Position 用的是未旋转的顶点，
-  // 旋转只写进 vVertexPosition 而 fragment shader 未使用）：把旋转真正应用到几何，
-  // 文字随鼠标 3D 微倾。
+  // ⚠️ 回退文字鼠标"平移/倾斜"（用户明确不要"文字跟着鼠标移动"）：
+  //    原版 pyai-site-hero.html 的"搞乱"效果 = voronoi 透镜畸变（子效果已恢复），
+  //    而非 vertex 旋转/FS 位移。恢复原版：gl_Position 用未旋转顶点（旋转写进
+  //    vVertexPosition，原版 fragment 不使用）、FS 位移系数 0.0000（无平移）。
   .replace(
-    'gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);\\nvVertexPosition = (rotationMatrix * vec4(aVertexPosition, 1.0)).xyz;',
     'vec4 rotatedPos = rotationMatrix * vec4(aVertexPosition, 1.0);\\ngl_Position = uPMatrix * uMVMatrix * rotatedPos;\\nvVertexPosition = rotatedPos.xyz;',
+    'gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);\\nvVertexPosition = (rotationMatrix * vec4(aVertexPosition, 1.0)).xyz;',
   )
-  // 鼠标 3D 倾斜幅度：±0.25 rad（原版）→ ±0.4 rad（×1.6）。
-  // ⚠️ 原版在 z=0 平面 + 正交投影下旋转几乎不可见（cos≈0.97 的缩放 + 微量剪切），
-  //    这是"鼠标搞乱文字"效果在复刻后消失的根因。加大角度后产生明显的
-  //    "文字随鼠标倾斜"效果（≈10% 水平压缩 + 15% 剪切），配合 FS 位移。
-  .replace('float angleX = uMousePos.y * 0.5 - 0.25;', 'float angleX = uMousePos.y * 0.8 - 0.4;')
-  .replace('float angleY = (1.-uMousePos.x) * 0.5 - 0.25;', 'float angleY = (1.-uMousePos.x) * 0.8 - 0.4;')
-  // 文字随鼠标位移：FS 里预留的鼠标位移系数 0.0000（完全无位移）→ 0.15
-  // （鼠标移动时文字带明显视差跟随，配合 vertex 3D 倾斜 = "鼠标搞乱文字"效果）
-  .replace('pos = mix(vec2(0), (uMousePos - 0.5), 0.0000);uv -= pos;', 'pos = mix(vec2(0), (uMousePos - 0.5), 0.1500);uv -= pos;');
+  .replace('float angleX = uMousePos.y * 0.8 - 0.4;', 'float angleX = uMousePos.y * 0.5 - 0.25;')
+  .replace('float angleY = (1.-uMousePos.x) * 0.8 - 0.4;', 'float angleY = (1.-uMousePos.x) * 0.5 - 0.25;')
+  .replace('pos = mix(vec2(0), (uMousePos - 0.5), 0.1500);uv -= pos;', 'pos = mix(vec2(0), (uMousePos - 0.5), 0.0000);uv -= pos;');
 
 // 黑洞左右移动幅度：0.35 → 0.22（用户反馈 0.35 仍过大；y 保持 0.12 不变）。
 // 作用于所有跟随层（beam/godrays/voronoi/chromab/ripple/diffuse 等 6 处）。
@@ -148,7 +148,10 @@ JSON.parse(sceneJson); // 替换后再次校验
 {
   const scene = JSON.parse(sceneJson);
   scene.history = scene.history.filter(
-    (layer) => layer.type !== 'liquify' && layer.type !== 'fbm',
+    (layer) =>
+      layer.type !== 'liquify' &&
+      layer.type !== 'fbm' &&
+      layer.type !== 'replicate', // replicate 滚动复制已从 text.effects 移除，直接删层防残留
   );
   sceneJson = JSON.stringify(scene);
 }

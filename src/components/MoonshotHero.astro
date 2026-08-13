@@ -333,6 +333,12 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
             var dx = mx - 0.5;
             var dy = my - 0.5;
             var dist = Math.sqrt(dx * dx + dy * dy);
+            // 黑洞圆心（UV 坐标，右=+x、上=+y，与 shader 内公式 + clamp 完全一致）
+            // → 写入全局供 canvas 粒子（ParticleBackground）同步吸入中心，
+            //   使"粒子被吞掉/渐隐的隐藏区域"精确跟随黑洞移动。
+            var bhX = Math.min(0.88, Math.max(0.12, 0.5 + dx * 0.22));
+            var bhY = Math.min(0.68, Math.max(0.32, 0.5 + dy * 0.12));
+            window.__pyaiBH = { x: bhX, y: bhY };
             var offset = Math.min(1.0, dist * 2.0); // 灵敏度：边角 dist≈0.707 → offset≈1
             // 目标弧长（中心满圈 → 偏移线性缩短）、粗细（克制：0.2 → 0.36，原 0.3 → 0.65 太粗）
             var targetArc = TWO_PI - offset * (TWO_PI - MIN_ARC);
