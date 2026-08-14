@@ -3,10 +3,10 @@
 
 /* ===== Tailwind 4 主题定制 ===== */
 @theme {
-  /* 中性灰黑风格的强调色：取顶部菜单栏背景深紫渐变的中段色调（紫感明显、深浅背景均清晰） */
-  --color-accent: #4c3a8a;
-  --color-accent-2: #7c3aed;
-  --color-accent-3: #8b5cf6;
+  /* 深空「月食」强调色：与首页黑+金宇宙语言统一，金色三档 */
+  --color-accent: #e8a24a;
+  --color-accent-2: #f0b95e;
+  --color-accent-3: #ffd48a;
 
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
     'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', 'Helvetica Neue',
@@ -14,9 +14,10 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas,
     'Liberation Mono', 'Courier New', monospace;
 
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12);
+  /* 深色底下的阴影：更重、更通透 */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
 
   --animate-fade-in-up: fade-in-up 0.6s ease both;
 
@@ -34,39 +35,36 @@
 
 /* ===== 基础样式 ===== */
 @layer base {
-  /* 全站整体放大 125%：根字号 16px → 20px，所有 rem 单位（字号/间距/卡片/按钮）等比缩放 */
+  /* 全站整体放大 125%：根字号 16px → 20px，所有 rem 单位等比缩放 */
   html {
     font-size: 125%;
     /* 滚动条常驻占位：不同页面内容长短不一导致滚动条出现/消失，
        视口宽度随之变化 → 标题栏 max-w 容器左右跳动。
        稳定 gutter 后所有页面内容宽度恒定。 */
     scrollbar-gutter: stable;
+    /* 深空底色：放在 html 上，负 z-index 的星空背景层（SpaceBackdrop）
+       才能浮在底色之上、页面内容之下 */
+    background: #0a0a10;
   }
 
   body {
-    /* 灰白基调：暖灰背景 + 深灰文字，纸感层次（比之前略深） */
-    @apply bg-[#ecebe7] text-zinc-900 antialiased;
+    /* 深空底 + 暖白文字（呼应首页 hero 的 #edebe4，此处用 zinc-200 中性白） */
+    @apply text-zinc-200 antialiased;
     font-family: var(--font-sans);
-    /* 顶部极淡的蓝紫光晕，灰白质感 */
-    background-image: radial-gradient(
-      ellipse 80% 50% at 50% -20%,
-      color-mix(in srgb, var(--color-accent) 5%, transparent),
-      transparent
-    );
-    background-attachment: fixed;
+    background: transparent;
     position: relative;
   }
 
-  /* 全站颗粒感（噪点纹理）：细颗粒叠加层 */
+  /* 全站颗粒感（星尘）：细颗粒叠加层，screen 只增亮深色底 */
   body::after {
     content: '';
     position: fixed;
     inset: 0;
     z-index: 50;
     pointer-events: none;
-    opacity: 0.5;
+    opacity: 0.13;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    mix-blend-mode: overlay;
+    mix-blend-mode: screen;
   }
 
   a {
@@ -79,11 +77,26 @@
   img {
     @apply max-w-full h-auto rounded-xl;
   }
+
+  /* 深色正文排版（prose-invert 基础上覆写为金色链接 + 暖白强调） */
+  .prose.prose-invert :where(a) {
+    color: var(--color-accent-3);
+    text-decoration-color: color-mix(in srgb, var(--color-accent-3) 40%, transparent);
+  }
+  .prose.prose-invert :where(a):hover {
+    color: var(--color-accent-3);
+  }
+  .prose.prose-invert :where(strong) {
+    color: #f4f0e8;
+  }
+  .prose.prose-invert :where(code):not(:where(pre *)) {
+    color: var(--color-accent-3);
+  }
 }
 
 /* ===== 通用工具组件样式 ===== */
 @layer components {
-  /* 渐变文字 */
+  /* 渐变文字（金色） */
   .text-gradient {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(
@@ -94,23 +107,23 @@
     );
   }
 
-  /* 标签 */
+  /* 标签（深色玻璃小胶囊） */
   .tag {
-    @apply inline-block rounded-full border border-zinc-200 bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-500 transition-colors;
+    @apply inline-block rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs font-medium text-zinc-400 transition-colors;
   }
   .tag:hover {
     @apply border-accent text-accent;
   }
 
-  /* 项目状态徽章（颜色区分：维护中绿 / 开发中蓝 / 已归档暖灰） */
+  /* 项目状态徽章（颜色区分：维护中绿 / 开发中蓝 / 已归档暖灰，深色底用高亮前景 + 半透明底） */
   .status-active {
-    @apply bg-emerald-50 text-emerald-700;
+    @apply bg-emerald-500/15 text-emerald-300;
   }
   .status-wip {
-    @apply bg-sky-50 text-sky-700;
+    @apply bg-sky-500/15 text-sky-300;
   }
   .status-archived {
-    @apply bg-zinc-100 text-zinc-500;
+    @apply bg-white/5 text-zinc-400;
   }
 
   /* 已归档项目卡片：整体压暗，降低视觉权重 */

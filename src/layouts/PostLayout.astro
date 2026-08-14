@@ -35,10 +35,10 @@ const backLabel = locale === 'zh' ? '← 返回列表' : '← Back to list';
       <a href={backHref} class="text-sm text-accent hover:underline">
         {backLabel}
       </a>
-      <h1 class="mt-4 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
+      <h1 class="mt-4 text-3xl font-extrabold leading-tight tracking-tight text-zinc-50 sm:text-4xl">
         {data.title}
       </h1>
-      <div class="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-zinc-600">
+      <div class="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-zinc-400">
         <time datetime={data.date.toISOString()}>
           {t(locale, 'common.publishedAt')}：{formatDate(data.date, locale)}
         </time>
@@ -85,11 +85,11 @@ const backLabel = locale === 'zh' ? '← 返回列表' : '← Back to list';
       }
     </header>
 
-    <div class="prose max-w-none">
+    <div class="prose prose-invert max-w-none">
       <slot />
     </div>
 
-    <footer class="mt-14 border-t border-zinc-300 pt-8">
+    <footer class="mt-14 border-t border-white/10 pt-8">
       <a href={backHref} class="text-sm text-accent hover:underline">
         {backLabel}
       </a>

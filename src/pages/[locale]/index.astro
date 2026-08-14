@@ -1,4 +1,4 @@
-﻿---
+---
 import Base from '../../layouts/Base.astro';
 // 首页：单屏深色月食 Hero（黑底 + 金色光弧 + 星点粒子），不展示具体内容
 import MoonshotHero from '../../components/MoonshotHero.astro'; // 月食动画（文字带 + 光弧跟随）
@@ -35,11 +35,28 @@ const pills: { key: UIKey; href: string }[] = [
 >
   <!-- 深色 Hero：日全食动画（含 pyai.site 大标题）+ 星点粒子 + 内容层 -->
   <section class="hero-section">
-    <div class="hero-bg" aria-hidden="true">
-      <ParticleBackground variant="dark" />
-    </div>
     <div class="hero-anim">
       <MoonshotHero />
+    </div>
+    <!-- 星点层：复用内页 SpaceBackdrop 的 box-shadow 星点（颜色/亮度/密度一致），
+         mask 径向挖洞让黑洞中心保持纯黑（跟随 --bh-x/--bh-y） -->
+    <div class="hero-stars" aria-hidden="true">
+      <div class="hero-star-layer hero-star-layer--1"></div>
+      <div class="hero-star-layer hero-star-layer--2"></div>
+      <div class="hero-star-layer hero-star-layer--3"></div>
+      <div class="hero-star-twinkle" aria-hidden="true">
+        <span class="twinkle-star" style="left: 10%; top: 15%; animation-duration: 0.35s; animation-delay: 0s;"></span>
+        <span class="twinkle-star" style="left: 30%; top: 8%; animation-duration: 0.6s; animation-delay: 0.3s;"></span>
+        <span class="twinkle-star" style="left: 62%; top: 10%; animation-duration: 0.9s; animation-delay: 0.7s;"></span>
+        <span class="twinkle-star" style="left: 88%; top: 30%; animation-duration: 1.3s; animation-delay: 0.2s;"></span>
+        <span class="twinkle-star" style="left: 92%; top: 72%; animation-duration: 0.45s; animation-delay: 0.5s;"></span>
+        <span class="twinkle-star" style="left: 70%; top: 88%; animation-duration: 0.75s; animation-delay: 0.9s;"></span>
+        <span class="twinkle-star" style="left: 45%; top: 92%; animation-duration: 1.1s; animation-delay: 1.2s;"></span>
+        <span class="twinkle-star" style="left: 12%; top: 80%; animation-duration: 1.5s; animation-delay: 0.4s;"></span>
+      </div>
+    </div>
+    <div class="hero-bg" aria-hidden="true">
+      <ParticleBackground variant="dark" />
     </div>
     <div class="hero-content">
       <p class="hero-tagline animate-in">
@@ -90,11 +107,200 @@ const pills: { key: UIKey; href: string }[] = [
     background: #000;
     color: #edebe4;
   }
-  /* 黑洞动画层：全屏铺满（含 pyai.site 大标题），最底层 */
+  /* 黑洞动画层：全屏铺满（含 pyai.site 大标题），最底层；
+     就绪前透明，WebGL 初始化完成后淡入（MoonshotHero 加 .hero-anim-ready），避免"突然弹出" */
   .hero-anim {
     position: absolute;
     inset: 0;
     z-index: 0;
+    opacity: 0;
+    transition: opacity 0.9s ease;
+  }
+  .hero-anim.hero-anim-ready {
+    opacity: 1;
+  }
+  /* 星点层：复用内页 SpaceBackdrop 的 box-shadow 星点（颜色/亮度/密度完全一致），
+     mask 径向挖洞让黑洞中心保持纯黑（跟随 --bh-x/--bh-y CSS 变量，
+     由 MoonshotHero 的 beam hook 每帧写入） */
+  .hero-stars {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    -webkit-mask-image: radial-gradient(circle at var(--bh-x, 50%) var(--bh-y, 50%), transparent 0, transparent 28%, black 31%);
+    mask-image: radial-gradient(circle at var(--bh-x, 50%) var(--bh-y, 50%), transparent 0, transparent 28%, black 31%);
+  }
+  .hero-star-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    border-radius: 50%;
+    background: transparent;
+    will-change: transform;
+  }
+  .hero-star-layer--1 {
+    box-shadow:
+      23px 78px rgba(255, 255, 255, 0.48),
+      89px 210px rgba(255, 255, 255, 0.38),
+      154px 45px rgba(255, 255, 255, 0.43),
+      231px 312px rgba(255, 255, 255, 0.33),
+      301px 98px rgba(255, 255, 255, 0.50),
+      367px 288px rgba(255, 255, 255, 0.35),
+      412px 140px rgba(255, 255, 255, 0.40),
+      478px 320px rgba(255, 255, 255, 0.30),
+      545px 55px rgba(255, 255, 255, 0.45),
+      601px 250px rgba(255, 255, 255, 0.38),
+      689px 105px rgba(255, 255, 255, 0.50),
+      720px 355px rgba(255, 255, 255, 0.33),
+      789px 180px rgba(255, 255, 255, 0.43),
+      856px 66px rgba(255, 255, 255, 0.38),
+      912px 300px rgba(255, 255, 255, 0.30),
+      987px 150px rgba(255, 255, 255, 0.48),
+      1024px 40px rgba(255, 255, 255, 0.38),
+      1102px 260px rgba(255, 255, 255, 0.33),
+      1167px 90px rgba(255, 255, 255, 0.45),
+      1210px 340px rgba(255, 255, 255, 0.30),
+      1289px 200px rgba(255, 255, 255, 0.40),
+      1345px 78px rgba(255, 255, 255, 0.38),
+      1412px 300px rgba(255, 255, 255, 0.33),
+      1480px 120px rgba(255, 255, 255, 0.48),
+      1544px 40px rgba(255, 255, 255, 0.38),
+      1590px 260px rgba(255, 255, 255, 0.30),
+      1660px 160px rgba(255, 255, 255, 0.43),
+      1720px 340px rgba(255, 255, 255, 0.33),
+      1788px 80px rgba(255, 255, 255, 0.40),
+      1844px 220px rgba(255, 255, 255, 0.35),
+      1912px 130px rgba(255, 255, 255, 0.45),
+      95px 430px rgba(255, 255, 255, 0.38),
+      210px 560px rgba(255, 255, 255, 0.33),
+      345px 480px rgba(255, 255, 255, 0.43),
+      470px 610px rgba(255, 255, 255, 0.30),
+      590px 430px rgba(255, 255, 255, 0.40),
+      700px 560px rgba(255, 255, 255, 0.35),
+      830px 470px rgba(255, 255, 255, 0.45),
+      950px 620px rgba(255, 255, 255, 0.30),
+      1080px 430px rgba(255, 255, 255, 0.38),
+      1200px 560px rgba(255, 255, 255, 0.33),
+      1330px 480px rgba(255, 255, 255, 0.43),
+      1450px 610px rgba(255, 255, 255, 0.30),
+      1580px 440px rgba(255, 255, 255, 0.38),
+      1700px 570px rgba(255, 255, 255, 0.35),
+      1830px 490px rgba(255, 255, 255, 0.40),
+      120px 680px rgba(255, 255, 255, 0.40),
+      340px 720px rgba(255, 255, 255, 0.33),
+      560px 660px rgba(255, 255, 255, 0.45),
+      780px 740px rgba(255, 255, 255, 0.35),
+      1000px 680px rgba(255, 255, 255, 0.43),
+      1220px 760px rgba(255, 255, 255, 0.33),
+      1440px 660px rgba(255, 255, 255, 0.40),
+      1660px 720px rgba(255, 255, 255, 0.35),
+      1880px 680px rgba(255, 255, 255, 0.43),
+      60px 820px rgba(255, 255, 255, 0.38),
+      300px 860px rgba(255, 255, 255, 0.33),
+      560px 820px rgba(255, 255, 255, 0.43),
+      820px 880px rgba(255, 255, 255, 0.35),
+      1080px 840px rgba(255, 255, 255, 0.40),
+      1340px 900px rgba(255, 255, 255, 0.33),
+      1600px 860px rgba(255, 255, 255, 0.38),
+      1840px 920px rgba(255, 255, 255, 0.35);
+  }
+  .hero-star-layer--2 {
+    box-shadow:
+      40px 160px rgba(255, 212, 138, 0.63),
+      180px 40px rgba(255, 212, 138, 0.50),
+      320px 200px rgba(255, 212, 138, 0.56),
+      500px 90px rgba(255, 212, 138, 0.50),
+      640px 330px rgba(255, 212, 138, 0.56),
+      760px 60px rgba(255, 212, 138, 0.50),
+      900px 200px rgba(255, 212, 138, 0.63),
+      1040px 90px rgba(255, 212, 138, 0.50),
+      1180px 330px rgba(255, 212, 138, 0.56),
+      1320px 60px rgba(255, 212, 138, 0.50),
+      1470px 200px rgba(255, 212, 138, 0.56),
+      1600px 100px rgba(255, 212, 138, 0.50),
+      1750px 300px rgba(255, 212, 138, 0.56),
+      1900px 60px rgba(255, 212, 138, 0.50),
+      130px 350px rgba(255, 212, 138, 0.50),
+      420px 420px rgba(255, 212, 138, 0.56),
+      720px 380px rgba(255, 212, 138, 0.50),
+      1020px 430px rgba(255, 212, 138, 0.56),
+      1330px 370px rgba(255, 212, 138, 0.50),
+      1640px 420px rgba(255, 212, 138, 0.56),
+      200px 700px rgba(255, 212, 138, 0.56),
+      640px 760px rgba(255, 212, 138, 0.50),
+      980px 700px rgba(255, 212, 138, 0.56),
+      1300px 780px rgba(255, 212, 138, 0.50),
+      1660px 700px rgba(255, 212, 138, 0.56),
+      400px 840px rgba(255, 212, 138, 0.50),
+      900px 880px rgba(255, 212, 138, 0.56),
+      1400px 860px rgba(255, 212, 138, 0.50),
+      1800px 900px rgba(255, 212, 138, 0.56);
+  }
+  /* 近景亮星：2px 更大更亮，与远/中两层形成纵深 */
+  .hero-star-layer--3 {
+    width: 2px;
+    height: 2px;
+    box-shadow:
+      60px 120px rgba(255, 255, 255, 0.75),
+      320px 60px rgba(255, 255, 255, 0.69),
+      580px 180px rgba(255, 255, 255, 0.81),
+      820px 90px rgba(255, 255, 255, 0.75),
+      1050px 220px rgba(255, 255, 255, 0.69),
+      1280px 60px rgba(255, 255, 255, 0.81),
+      1500px 170px rgba(255, 255, 255, 0.75),
+      1720px 80px rgba(255, 255, 255, 0.69),
+      1900px 200px rgba(255, 255, 255, 0.75),
+      240px 380px rgba(255, 255, 255, 0.69),
+      980px 340px rgba(255, 255, 255, 0.75),
+      1560px 320px rgba(255, 255, 255, 0.69),
+      150px 750px rgba(255, 255, 255, 0.75),
+      700px 680px rgba(255, 255, 255, 0.69),
+      1150px 780px rgba(255, 255, 255, 0.75),
+      1550px 720px rgba(255, 255, 255, 0.69),
+      1850px 800px rgba(255, 255, 255, 0.75),
+      450px 900px rgba(255, 255, 255, 0.69),
+      320px 690px rgba(255, 255, 255, 0.63),
+      620px 820px rgba(255, 255, 255, 0.75),
+      900px 720px rgba(255, 255, 255, 0.69),
+      1250px 850px rgba(255, 255, 255, 0.75),
+      1700px 830px rgba(255, 255, 255, 0.69),
+      200px 940px rgba(255, 255, 255, 0.63),
+      800px 950px rgba(255, 255, 255, 0.75),
+      1450px 940px rgba(255, 255, 255, 0.69),
+      1850px 960px rgba(255, 255, 255, 0.63);
+  }
+  /* 闪烁星点：少数几颗独立闪烁（各自节奏不同），营造"活"的星空 */
+  .hero-star-twinkle {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    will-change: transform;
+  }
+  .twinkle-star {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 3px rgba(255, 255, 255, 0.55);
+    animation-name: star-twinkle;
+    animation-timing-function: steps(1, end);
+    animation-iteration-count: infinite;
+    animation-duration: 0.7s;
+  }
+  @keyframes star-twinkle {
+    0%, 100% { opacity: 0.7; }
+    8%  { opacity: 0.3; }
+    19% { opacity: 0.75; }
+    27% { opacity: 0.45; }
+    38% { opacity: 0.9; }
+    47% { opacity: 0.55; }
+    58% { opacity: 0.25; }
+    69% { opacity: 0.8; }
+    78% { opacity: 0.4; }
+    88% { opacity: 0.65; }
   }
   /* 星点粒子背景层：覆盖在动画之上、内容之下（否则被黑洞黑底 canvas 盖住看不见） */
   .hero-bg {
@@ -141,13 +347,13 @@ const pills: { key: UIKey; href: string }[] = [
     width: 1.45em;
     height: 1.45em;
     flex: none;
-    color: #4d6bfe;
+    color: #fff;
   }
   .hero-working :global(.ds-text) {
     height: 1.17em;
     width: auto;
     flex: none;
-    color: #4d6bfe;
+    color: #fff;
     /* 缩小鲸鱼与 DeepSeek 文字之间的间距（.hero-working gap 0.4em 偏宽） */
     margin-left: -0.18em;
   }
@@ -260,3 +466,56 @@ const pills: { key: UIKey; href: string }[] = [
     }
   }
 </style>
+
+<script>
+  // 星点视差：星星跟随黑洞（window.__pyaiBH，由 MoonshotHero 每帧写入）做小幅度位移。
+  // 三层幅度递减（越远越小），与黑洞的大幅移动形成空间纵深。
+  (() => {
+    const LAYERS = [
+      { selector: '.hero-star-layer--1', factor: 0.08 }, // 远
+      { selector: '.hero-star-layer--2', factor: 0.16 }, // 中
+      { selector: '.hero-star-layer--3', factor: 0.24 }, // 近
+      { selector: '.hero-star-twinkle', factor: 0.24 }, // 闪烁星（跟随近景）
+    ];
+    let rafId = 0;
+    // 全局位移量：统一缩放星星的移动幅度（1.0 = 当前默认），
+    // 调大/调小整体放大/缩小，不改变三层之间的相对比例。
+    const AMOUNT = 1.0;
+
+    function apply() {
+      const bh = window.__pyaiBH;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      for (const { selector, factor } of LAYERS) {
+        const el = document.querySelector(selector);
+        if (!el) continue;
+        if (!bh) {
+          el.style.transform = '';
+          continue;
+        }
+        const ox = bh.x - 0.5; // 黑洞偏移（UV 归一化，中心 0.5）
+        const oy = bh.y - 0.5; // y 向上为正
+        const tx = ox * factor * AMOUNT * vw;
+        const ty = -oy * factor * AMOUNT * vh; // CSS y 向下为正 → 取反
+        el.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
+      }
+    }
+
+    function loop() {
+      if (!document.querySelector('.hero-star-layer--1')) {
+        rafId = 0; // 已离开首页，停止空转
+        return;
+      }
+      apply();
+      rafId = requestAnimationFrame(loop);
+    }
+
+    function start() {
+      if (rafId) return;
+      rafId = requestAnimationFrame(loop);
+    }
+
+    start();
+    document.addEventListener('astro:page-load', start);
+  })();
+</script>

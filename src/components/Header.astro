@@ -27,7 +27,7 @@ function isActive(href: string): boolean {
 ---
 
 <header
-  class="site-header sticky top-0 z-[60] border-b border-purple-300/20"
+  class="site-header sticky top-0 z-[60] border-b border-white/10"
 >
   <div class="mx-auto flex h-14 max-w-3xl items-center gap-6 px-5">
     <a
@@ -59,27 +59,25 @@ function isActive(href: string): boolean {
 </header>
 
 <style>
-  /* 深色标题栏背景：毛玻璃（纯净深紫，不透明度稍高避免与浅色页面混合显脏）
-     （arbitrary class bg-[linear-gradient(...)] 在 Tailwind 4 下编译失败导致背景透明） */
+  /* 深色标题栏背景：近黑毛玻璃，金色描边在边框（border-white/10）基础上由下方 active 高亮补足 */
   .site-header {
     background: linear-gradient(
       115deg,
-      rgba(24, 20, 60, 0.86) 0%,
-      rgba(37, 30, 82, 0.82) 40%,
-      rgba(58, 30, 96, 0.84) 75%,
-      rgba(24, 20, 60, 0.82) 100%
+      rgba(10, 10, 16, 0.8) 0%,
+      rgba(18, 15, 26, 0.74) 45%,
+      rgba(12, 11, 18, 0.78) 100%
     );
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
   }
 
-  /* 深色标题栏上的 .site 渐变：亮紫渐变，深色毛玻璃上清晰可见 */
+  /* 深色标题栏上的 .site 渐变：金色渐变，呼应首页月食金 */
   .header-logo .text-gradient {
     background-image: linear-gradient(
       135deg,
-      #a5b4fc 0%,
-      #c4b5fd 50%,
-      #e9d5ff 100%
+      #e8a24a 0%,
+      #f0b95e 50%,
+      #ffd48a 100%
     );
   }
 
@@ -92,14 +90,14 @@ function isActive(href: string): boolean {
     color: #fff;
   }
 
-  /* 选中态：亮紫文字 + 淡紫底 + 中等字重 */
+  /* 选中态：金色文字 + 淡金底 + 中等字重 */
   .nav-item-active,
   .nav-item-active:hover {
-    color: #c4b5fd;
+    color: #ffd48a;
     font-weight: 600;
-    background: rgba(196, 181, 253, 0.15);
+    background: rgba(232, 162, 74, 0.14);
   }
   .nav-item-active:hover {
-    background: rgba(196, 181, 253, 0.25);
+    background: rgba(232, 162, 74, 0.22);
   }
 </style>

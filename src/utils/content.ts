@@ -1,6 +1,8 @@
 import type { CollectionEntry } from 'astro:content';
 import { getCollection } from 'astro:content';
 import type { Locale } from '../i18n/ui';
+import fs from 'node:fs';
+import path from 'node:path';
 
 export type Record = CollectionEntry<'records'>;
 export type Project = CollectionEntry<'projects'>;
@@ -13,12 +15,35 @@ export async function getRecords(locale: Locale): Promise<Record[]> {
   return records.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 }
 
-/** 取指定语言的项目，按 order 降序 */
+/** 项目状态排序优先级：维护中 > 开发中 > 已归档 */
+const PROJECT_STATUS_ORDER: Record<string, number> = {
+  active: 0,
+  wip: 1,
+  archived: 2,
+};
+
+/** 取指定语言的项目：先按状态分组（维护中→开发中→已归档），组内按 order 降序 */
 export async function getProjects(locale: Locale): Promise<Project[]> {
   const projects = await getCollection('projects', (project) => {
     return project.data.locale === locale;
   });
-  return projects.sort((a, b) => b.data.order - a.data.order);
+  return projects.sort((a, b) => {
+    const pa = PROJECT_STATUS_ORDER[a.data.status] ?? 1;
+    const pb = PROJECT_STATUS_ORDER[b.data.status] ?? 1;
+    if (pa !== pb) return pa - pb;
+    return b.data.order - a.data.order;
+  });
+}
+
+/** 读取项目同步快照的元信息（更新时间），由 projects-sync workflow 写入 meta.json */
+export function getProjectsMeta(): { updatedAt?: string } {
+  try {
+    const file = path.resolve(process.cwd(), 'data', 'projects', 'meta.json');
+    if (!fs.existsSync(file)) return {};
+    return JSON.parse(fs.readFileSync(file, 'utf8')) as { updatedAt?: string };
+  } catch {
+    return {};
+  }
 }
 
 /**

@@ -252,7 +252,12 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
         try { scene.resize(); } catch (e) {}
         var ok = forceInit(scene);
         if (!ok && bootTries++ < MAX_TRIES) setTimeout(boot, 100);
-        else if (ok) installBeamHook(); // 场景就绪后（重）挂载 beam hook
+        else if (ok) {
+          installBeamHook(); // 场景就绪后（重）挂载 beam hook
+          // 黑洞就绪：淡入（配合 index.astro 的 .hero-anim opacity 过渡，避免突然弹出）
+          var heroAnimEl = document.querySelector('.hero-anim');
+          if (heroAnimEl) heroAnimEl.classList.add('hero-anim-ready');
+        }
       } catch (e) {}
     }
 
@@ -360,10 +365,17 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
             var bhX = Math.min(0.88, Math.max(0.12, 0.5 + smoothBH.x));
             var bhY = Math.min(0.68, Math.max(0.32, 0.5 + smoothBH.y));
             window.__pyaiBH = { x: bhX, y: bhY };
+            // CSS 星点层（.hero-stars）的挖洞蒙版圆心：写 CSS 变量（屏幕百分比坐标，
+            // x=bhX、y=1-bhY 因为 CSS y 向下为正、UV y 向上为正），供 mask radial-gradient 跟随黑洞
+            var heroSec = document.querySelector('.hero-section');
+            if (heroSec) {
+              heroSec.style.setProperty('--bh-x', (bhX * 100).toFixed(2) + '%');
+              heroSec.style.setProperty('--bh-y', ((1 - bhY) * 100).toFixed(2) + '%');
+            }
             var offset = Math.min(1.0, dist * 2.0); // 灵敏度：边角 dist≈0.707 → offset≈1
             // 目标弧长（中心满圈 → 偏移线性缩短）、粗细（克制：0.2 → 0.36，原 0.3 → 0.65 太粗）
             var targetArc = TWO_PI - offset * (TWO_PI - MIN_ARC);
-            var targetThickness = 0.2 + offset * 0.16;
+            var targetThickness = 0.2 + offset * 0.12;
             // 缺口方向 = 鼠标方向
             var target = Math.atan2(dy, dx);
             if (target < 0) target += TWO_PI;
@@ -435,14 +447,14 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
     width: 100% !important;
     height: 100% !important;
   }
-  /* 底部渐变：黑 → 透明，让动画底部自然融入 hero 黑底（原版 linear-gradient to top #000 37.366%） */
+  /* 底部渐变：蓝紫 → 透明，让动画底部融入蓝紫深空（呼应内页底部蓝紫光晕） */
   .moonshot-gradient {
     position: absolute;
     left: 0;
     right: 0;
     bottom: 0;
     height: 50%;
-    background: linear-gradient(to top, #000 37.366%, transparent);
+    background: linear-gradient(to top, #0b0a13 37.366%, transparent);
     pointer-events: none;
   }
 </style>

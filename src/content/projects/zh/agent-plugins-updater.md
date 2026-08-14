@@ -3,7 +3,7 @@ title: agent-plugins-updater
 description: 在 VS Code 的 Agent Plugins 视图中一键更新 Agent 插件，无需翻找命令面板或反复卸载重装。
 locale: zh
 repo: https://github.com/peiyucn/agent-plugins-updater
-status: active
+status: archived
 order: 4
 featured: true
 ---

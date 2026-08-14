@@ -91,6 +91,12 @@ async function main() {
   const fresh = items.filter((it) => !existingUrls.has(it.url));
   if (fresh.length === 0) {
     console.log('No new items. Nothing to do.');
+    // 无增量也刷新 meta.json 的 updatedAt，让观影页"最后更新于"每日更新
+    fs.writeFileSync(
+      META_PATH,
+      JSON.stringify({ updatedAt: new Date().toISOString(), type: 'douban-sync' }, null, 2),
+      'utf8',
+    );
     // 输出计数 0：工作流据此跳过 enrich（无增量不跑豆瓣补充）
     writeOutput('new_count', 0);
     return;

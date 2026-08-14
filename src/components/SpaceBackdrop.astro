@@ -1,0 +1,235 @@
+---
+// 全站深空背景层（安静版）：固定极淡星点 + 顶部金色光晕
+// 纯 CSS 实现，零 JS、零运行时开销；放在负 z-index，浮于 html 深色底之上、内容之下
+// 首页由 MoonshotHero 的纯黑 hero 覆盖，本组件只作用于其他页面
+---
+
+<div class="space-backdrop" aria-hidden="true">
+  <div class="star-field">
+    <div class="star-layer star-layer--1"></div>
+    <div class="star-layer star-layer--2"></div>
+    <div class="star-layer star-layer--3"></div>
+  </div>
+</div>
+
+<style>
+  .space-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    /* 顶部金色光晕（呼应首页月食金色）+ 底部极淡蓝紫深空纵深 */
+    background:
+      radial-gradient(
+        ellipse 80% 45% at 50% -10%,
+        rgba(232, 162, 74, 0.09),
+        transparent 62%
+      ),
+      radial-gradient(
+        ellipse 70% 45% at 50% 112%,
+        rgba(96, 78, 168, 0.08),
+        transparent 62%
+      );
+  }
+
+  /* 星点容器：只在内容列（max-w-3xl ≈ 48rem）两侧的边栏显示，避免遮挡正文 */
+  .star-field {
+    position: absolute;
+    inset: 0;
+    -webkit-mask-image: linear-gradient(to right, black 0, black calc(50% - 24rem), transparent calc(50% - 24rem), transparent calc(50% + 24rem), black calc(50% + 24rem), black 100%);
+    mask-image: linear-gradient(to right, black 0, black calc(50% - 24rem), transparent calc(50% - 24rem), transparent calc(50% + 24rem), black calc(50% + 24rem), black 100%);
+  }
+
+  /* 星点层：1×1 透明点，用 box-shadow 铺出一片静止星点 */
+  .star-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    border-radius: 50%;
+    background: transparent;
+    will-change: transform;
+  }
+
+  /* 第一层：灰白细星，密集但极暗 */
+  .star-layer--1 {
+    box-shadow:
+      23px 78px rgba(255, 255, 255, 0.38),
+      89px 210px rgba(255, 255, 255, 0.3),
+      154px 45px rgba(255, 255, 255, 0.34),
+      231px 312px rgba(255, 255, 255, 0.26),
+      301px 98px rgba(255, 255, 255, 0.4),
+      367px 288px rgba(255, 255, 255, 0.28),
+      412px 140px rgba(255, 255, 255, 0.32),
+      478px 320px rgba(255, 255, 255, 0.24),
+      545px 55px rgba(255, 255, 255, 0.36),
+      601px 250px rgba(255, 255, 255, 0.3),
+      689px 105px rgba(255, 255, 255, 0.4),
+      720px 355px rgba(255, 255, 255, 0.26),
+      789px 180px rgba(255, 255, 255, 0.34),
+      856px 66px rgba(255, 255, 255, 0.3),
+      912px 300px rgba(255, 255, 255, 0.24),
+      987px 150px rgba(255, 255, 255, 0.38),
+      1024px 40px rgba(255, 255, 255, 0.3),
+      1102px 260px rgba(255, 255, 255, 0.26),
+      1167px 90px rgba(255, 255, 255, 0.36),
+      1210px 340px rgba(255, 255, 255, 0.24),
+      1289px 200px rgba(255, 255, 255, 0.32),
+      1345px 78px rgba(255, 255, 255, 0.3),
+      1412px 300px rgba(255, 255, 255, 0.26),
+      1480px 120px rgba(255, 255, 255, 0.38),
+      1544px 40px rgba(255, 255, 255, 0.3),
+      1590px 260px rgba(255, 255, 255, 0.24),
+      1660px 160px rgba(255, 255, 255, 0.34),
+      1720px 340px rgba(255, 255, 255, 0.26),
+      1788px 80px rgba(255, 255, 255, 0.32),
+      1844px 220px rgba(255, 255, 255, 0.28),
+      1912px 130px rgba(255, 255, 255, 0.36),
+      95px 430px rgba(255, 255, 255, 0.3),
+      210px 560px rgba(255, 255, 255, 0.26),
+      345px 480px rgba(255, 255, 255, 0.34),
+      470px 610px rgba(255, 255, 255, 0.24),
+      590px 430px rgba(255, 255, 255, 0.32),
+      700px 560px rgba(255, 255, 255, 0.28),
+      830px 470px rgba(255, 255, 255, 0.36),
+      950px 620px rgba(255, 255, 255, 0.24),
+      1080px 430px rgba(255, 255, 255, 0.3),
+      1200px 560px rgba(255, 255, 255, 0.26),
+      1330px 480px rgba(255, 255, 255, 0.34),
+      1450px 610px rgba(255, 255, 255, 0.24),
+      1580px 440px rgba(255, 255, 255, 0.3),
+      1700px 570px rgba(255, 255, 255, 0.28),
+      1830px 490px rgba(255, 255, 255, 0.32),
+      60px 660px rgba(255, 255, 255, 0.3),
+      240px 720px rgba(255, 255, 255, 0.26),
+      460px 680px rgba(255, 255, 255, 0.34),
+      700px 760px rgba(255, 255, 255, 0.28),
+      920px 700px rgba(255, 255, 255, 0.32),
+      1150px 780px rgba(255, 255, 255, 0.26),
+      1380px 720px rgba(255, 255, 255, 0.34),
+      1620px 800px rgba(255, 255, 255, 0.28),
+      1840px 740px rgba(255, 255, 255, 0.3),
+      100px 860px rgba(255, 255, 255, 0.26),
+      360px 900px rgba(255, 255, 255, 0.32),
+      620px 860px rgba(255, 255, 255, 0.28),
+      880px 920px rgba(255, 255, 255, 0.34),
+      1120px 880px rgba(255, 255, 255, 0.26),
+      1360px 940px rgba(255, 255, 255, 0.32),
+      1600px 900px rgba(255, 255, 255, 0.28),
+      1820px 960px rgba(255, 255, 255, 0.34),
+      80px 1020px rgba(255, 255, 255, 0.3),
+      340px 1060px rgba(255, 255, 255, 0.26),
+      640px 1020px rgba(255, 255, 255, 0.32),
+      960px 1080px rgba(255, 255, 255, 0.28),
+      1280px 1040px rgba(255, 255, 255, 0.34),
+      1560px 1080px rgba(255, 255, 255, 0.3),
+      1800px 1040px rgba(255, 255, 255, 0.26);
+  }
+
+  /* 第二层：暖金亮星，稀疏，稍亮 */
+  .star-layer--2 {
+    box-shadow:
+      40px 160px rgba(255, 212, 138, 0.5),
+      180px 40px rgba(255, 212, 138, 0.4),
+      320px 200px rgba(255, 212, 138, 0.45),
+      500px 90px rgba(255, 212, 138, 0.4),
+      640px 330px rgba(255, 212, 138, 0.45),
+      760px 60px rgba(255, 212, 138, 0.4),
+      900px 200px rgba(255, 212, 138, 0.5),
+      1040px 90px rgba(255, 212, 138, 0.4),
+      1180px 330px rgba(255, 212, 138, 0.45),
+      1320px 60px rgba(255, 212, 138, 0.4),
+      1470px 200px rgba(255, 212, 138, 0.45),
+      1600px 100px rgba(255, 212, 138, 0.4),
+      1750px 300px rgba(255, 212, 138, 0.45),
+      1900px 60px rgba(255, 212, 138, 0.4),
+      130px 350px rgba(255, 212, 138, 0.4),
+      420px 420px rgba(255, 212, 138, 0.45),
+      720px 380px rgba(255, 212, 138, 0.4),
+      1020px 430px rgba(255, 212, 138, 0.45),
+      1330px 370px rgba(255, 212, 138, 0.4),
+      1640px 420px rgba(255, 212, 138, 0.45),
+      160px 700px rgba(255, 212, 138, 0.45),
+      560px 760px rgba(255, 212, 138, 0.4),
+      980px 720px rgba(255, 212, 138, 0.45),
+      1400px 800px rgba(255, 212, 138, 0.4),
+      1760px 740px rgba(255, 212, 138, 0.45),
+      240px 880px rgba(255, 212, 138, 0.4),
+      760px 920px rgba(255, 212, 138, 0.45),
+      1200px 880px rgba(255, 212, 138, 0.4),
+      1640px 960px rgba(255, 212, 138, 0.45),
+      480px 1040px rgba(255, 212, 138, 0.4),
+      1080px 1000px rgba(255, 212, 138, 0.45);
+  }
+
+  /* 第三层：近景亮星（2px 更大更亮），与远/中两层形成纵深 */
+  .star-layer--3 {
+    width: 2px;
+    height: 2px;
+    box-shadow:
+      60px 120px rgba(255, 255, 255, 0.6),
+      320px 60px rgba(255, 255, 255, 0.55),
+      580px 180px rgba(255, 255, 255, 0.65),
+      820px 90px rgba(255, 255, 255, 0.6),
+      1050px 220px rgba(255, 255, 255, 0.55),
+      1280px 60px rgba(255, 255, 255, 0.65),
+      1500px 170px rgba(255, 255, 255, 0.6),
+      1720px 80px rgba(255, 255, 255, 0.55),
+      1900px 200px rgba(255, 255, 255, 0.6),
+      240px 380px rgba(255, 255, 255, 0.55),
+      980px 340px rgba(255, 255, 255, 0.6),
+      1560px 320px rgba(255, 255, 255, 0.55),
+      300px 720px rgba(255, 255, 255, 0.6),
+      880px 800px rgba(255, 255, 255, 0.55),
+      1500px 760px rgba(255, 255, 255, 0.6),
+      620px 920px rgba(255, 255, 255, 0.55),
+      1180px 900px rgba(255, 255, 255, 0.6),
+      1700px 1000px rgba(255, 255, 255, 0.55),
+      80px 1000px rgba(255, 255, 255, 0.6);
+  }
+</style>
+
+<script>
+  // 内页星空滚动视差：随滚动缓慢上移（越远越慢），带阻尼（指数平滑滞后跟随）
+  (() => {
+    const LAYERS = [
+      { selector: '.star-layer--1', factor: 0.05 }, // 远
+      { selector: '.star-layer--2', factor: 0.1 }, // 中
+      { selector: '.star-layer--3', factor: 0.15 }, // 近
+    ];
+    const DAMP = 3; // 阻尼系数：越小越"黏"、滞后越明显（时间常数 ≈ 1/DAMP 秒）
+    const smooth = LAYERS.map(() => 0);
+    let rafId = 0;
+    let lastT = 0;
+
+    function loop(now) {
+      const dt = lastT ? Math.min(0.1, (now - lastT) / 1000) : 0.016;
+      lastT = now;
+      const alpha = 1 - Math.exp(-DAMP * dt); // 帧率无关的指数平滑
+      const y = window.scrollY || 0;
+      let settled = true;
+      for (let i = 0; i < LAYERS.length; i++) {
+        const { selector, factor } = LAYERS[i];
+        const el = document.querySelector(selector);
+        if (!el) continue;
+        const target = y * factor;
+        smooth[i] += (target - smooth[i]) * alpha;
+        el.style.transform = `translate3d(0, ${-smooth[i].toFixed(1)}px, 0)`;
+        if (Math.abs(target - smooth[i]) > 0.1) settled = false;
+      }
+      rafId = settled ? 0 : requestAnimationFrame(loop);
+    }
+
+    function start() {
+      if (rafId) return;
+      lastT = 0;
+      rafId = requestAnimationFrame(loop);
+    }
+
+    start();
+    window.addEventListener('scroll', start, { passive: true });
+    window.addEventListener('resize', start);
+  })();
+</script>

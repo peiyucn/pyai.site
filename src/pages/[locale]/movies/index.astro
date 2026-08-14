@@ -30,19 +30,17 @@ function formatSyncTime(iso: string): string {
 }
 
 const meta = getMoviesMeta();
-// 合并为单行：pyai 的观影记录 | 2026-8-12 14:30:22 updated
-const description = meta.updatedAt
-  ? `${t(locale, 'movies.description')} | ${t(locale, 'movies.syncedAt', {
-      date: formatSyncTime(meta.updatedAt),
-    })}`
-  : t(locale, 'movies.description');
+const syncNote = meta.updatedAt
+  ? t(locale, 'movies.syncedAt', { date: formatSyncTime(meta.updatedAt) })
+  : undefined;
 ---
 
 <ListLayout
   locale={locale}
   pathname={pathname}
   title={t(locale, 'movies.title')}
-  description={description}
+  description={t(locale, 'movies.description')}
+  syncNote={syncNote}
 >
   <MovieList
     movies={pageMovies}

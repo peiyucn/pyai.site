@@ -1,4 +1,4 @@
-name: Sync Douban
+name: Daily Sync
 
 on:
   schedule:
@@ -11,7 +11,7 @@ permissions:
   actions: write
 
 concurrency:
-  group: douban-sync
+  group: daily-sync
   cancel-in-progress: false
 
 jobs:
@@ -26,35 +26,39 @@ jobs:
         with:
           node-version: 22
 
-      # 增量同步：只抓列表页第 1 页（最近 30 条），与现有数据按 URL 去重追加
-      # 秒级完成；新标记的电影必然在最近 30 条内；输出 new_count 供后续判断
+      # 豆瓣：列表页增量同步（秒级）
       - name: Sync Douban (incremental)
-        id: sync
+        id: douban
         env:
           DOUBAN_USER: pei830
           DOUBAN_OUTPUT_DIR: ${{ github.workspace }}/data
         run: node scripts/douban-sync/douban-incremental.mjs
 
-      # 仅当本次同步有新条目时，补充这些新条目的豆瓣数据（isTv/评分/地区）
-      # 无新条目则跳过，不产生任何豆瓣请求
+      # 豆瓣：仅新条目补充评分/地区等
       - name: Enrich Douban ratings (new items)
-        if: steps.sync.outputs.new_count != '' && steps.sync.outputs.new_count != '0'
+        if: steps.douban.outputs.new_count != '' && steps.douban.outputs.new_count != '0'
         env:
           DOUBAN_USER: pei830
           DOUBAN_OUTPUT_DIR: ${{ github.workspace }}/data
         run: node scripts/douban-sync/douban-enrich.mjs
 
+      # 项目：从 GitHub 同步各仓库 archived 状态
+      - name: Sync project statuses from GitHub
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/projects-sync/projects-sync.mjs
+
+      # 一次性提交所有按天更新的产物
       - name: Commit changes
         id: commit
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: 'chore(douban): sync watchlist from Douban'
-          file_pattern: 'data/**'
+          commit_message: 'chore(daily-sync): sync douban & projects'
+          file_pattern: 'data/** src/content/projects/**'
 
-      # 数据有变动时，显式触发部署（GITHUB_TOKEN 的 push 不会触发 deploy.yml 的 on: push）
+      # 有变动时触发一次部署
       - name: Trigger deploy
         if: steps.commit.outputs.changes_detected == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run deploy.yml --ref master
-

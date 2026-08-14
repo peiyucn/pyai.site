@@ -37,7 +37,7 @@ const allTags = [...tagCounts.entries()]
         data-records-tag=""
         class:list={[
           'record-tag rounded-full border px-2.5 py-1 text-xs transition-colors',
-          'border-zinc-900 bg-zinc-900 font-semibold text-white',
+          'border-accent bg-accent font-semibold text-[#2a1a06]',
         ]}
       >
         {t(locale, 'common.allTags')}
@@ -49,7 +49,7 @@ const allTags = [...tagCounts.entries()]
             data-records-tag={tag}
             class:list={[
               'record-tag rounded-full border px-2.5 py-1 text-xs transition-colors',
-              'border-zinc-300 text-zinc-600 hover:bg-zinc-300 hover:text-zinc-900',
+              'border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-100',
             ]}
           >
             {tag}
@@ -64,14 +64,14 @@ const allTags = [...tagCounts.entries()]
       records.length > 0 ? (
         records.map((record, i) => (
           <div
-            class:list={['record-item', i > 0 ? 'border-t border-zinc-300' : '']}
+            class:list={['record-item', i > 0 ? 'border-t border-white/10' : '']}
             data-record-tags={record.data.tags.join(',')}
           >
             <RecordCard record={record} locale={locale} />
           </div>
         ))
       ) : (
-        <p class="text-sm text-zinc-600">{t(locale, 'common.noContent')}</p>
+        <p class="text-sm text-zinc-400">{t(locale, 'common.noContent')}</p>
       )
     }
   </div>
@@ -93,8 +93,8 @@ const allTags = [...tagCounts.entries()]
         const isActive = (b.dataset.recordsTag ?? '') === tag;
         b.className = 'record-tag rounded-full border px-2.5 py-1 text-xs transition-colors' +
           (isActive
-            ? ' border-zinc-900 bg-zinc-900 font-semibold text-white'
-            : ' border-zinc-300 text-zinc-600 hover:bg-zinc-300 hover:text-zinc-900');
+            ? ' border-accent bg-accent font-semibold text-[#2a1a06]'
+            : ' border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-100');
       });
     };
 
@@ -129,8 +129,8 @@ const allTags = [...tagCounts.entries()]
         const isActive = (b.dataset.recordsTag ?? '') === tag;
         b.className = 'record-tag rounded-full border px-2.5 py-1 text-xs transition-colors' +
           (isActive
-            ? ' border-zinc-900 bg-zinc-900 font-semibold text-white'
-            : ' border-zinc-300 text-zinc-600 hover:bg-zinc-300 hover:text-zinc-900');
+            ? ' border-accent bg-accent font-semibold text-[#2a1a06]'
+            : ' border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-100');
       });
     });
     // 初始状态：显示全部

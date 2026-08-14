@@ -1,72 +1,92 @@
 ---
-import { languages, type Locale } from '../i18n/ui';
 import { localizePath } from '../i18n/utils';
+import type { Locale } from '../i18n/ui';
 
 interface Props {
   locale: Locale;
   pathname: string;
-  /** 深色背景（深色紫毛玻璃标题栏）下使用，文字与边框切换为浅色 */
+  /** 深色背景（标题栏 / 首页）下使用 */
   dark?: boolean;
 }
 
 const { locale, pathname, dark = false } = Astro.props;
-const other: Locale = locale === 'zh' ? 'en' : 'zh';
+
+const options: { code: Locale; label: string; full: string }[] = [
+  { code: 'zh', label: '中', full: '中文' },
+  { code: 'en', label: 'EN', full: 'English' },
+];
 ---
 
-<a
-  href={localizePath(pathname, other)}
+<div
   class:list={['lang-switch', dark && 'lang-switch-dark']}
-  aria-label={`Switch to ${languages[other]}`}
+  role="group"
+  aria-label="Language"
 >
-  <svg
-    class="lang-switch-icon"
-    aria-hidden="true"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="1.8"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  >
-    <circle cx="12" cy="12" r="9" />
-    <path d="M3 12h18" />
-    <path d="M12 3a14.5 14.5 0 0 1 0 18 14.5 14.5 0 0 1 0-18z" />
-  </svg>
-  {languages[other]}
-</a>
+  {
+    options.map((opt) => (
+      <a
+        href={localizePath(pathname, opt.code)}
+        class:list={['lang-opt', opt.code === locale && 'lang-opt-active']}
+        aria-current={opt.code === locale ? 'page' : undefined}
+        aria-label={opt.full}
+      >
+        {opt.label}
+      </a>
+    ))
+  }
+</div>
 
 <style>
   .lang-switch {
     display: inline-flex;
     align-items: center;
-    gap: 0.35em;
-    font-size: 0.88rem;
-    font-weight: 500;
-    color: #18181b; /* 黑色图标+文字 */
-    border: 1px solid var(--border);
+    gap: 2px;
+    padding: 2px;
     border-radius: 999px;
-    padding: 0.25em 0.9em;
-    white-space: nowrap;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    border: 1px solid rgba(24, 24, 27, 0.18);
+    background: rgba(24, 24, 27, 0.04);
   }
-  .lang-switch:hover {
+  .lang-opt {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2em;
+    padding: 0.18em 0.6em;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    line-height: 1.4;
+    color: #18181b;
+    white-space: nowrap;
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+  .lang-opt:hover {
     color: var(--accent);
-    border-color: var(--accent);
     text-decoration: none;
   }
-  .lang-switch-icon {
-    width: 0.95em;
-    height: 0.95em;
-    flex-shrink: 0;
+  .lang-opt-active,
+  .lang-opt-active:hover {
+    background: linear-gradient(135deg, #ffd48a 0%, #f0b95e 50%, #e8a24a 100%);
+    color: #2a1a06;
+    font-weight: 600;
   }
 
-  /* 深色标题栏变体：浅色文字 + 半透明白边框 */
+  /* 深色标题栏 / 首页变体 */
   .lang-switch-dark {
-    color: rgba(255, 255, 255, 0.92);
     border-color: rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.05);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
   }
-  .lang-switch-dark:hover {
-    color: #ffd48a;
-    border-color: #ffd48a;
+  .lang-switch-dark .lang-opt {
+    color: rgba(255, 255, 255, 0.72);
+  }
+  .lang-switch-dark .lang-opt:hover {
+    color: #fff;
+  }
+  .lang-switch-dark .lang-opt-active,
+  .lang-switch-dark .lang-opt-active:hover {
+    background: linear-gradient(135deg, #ffd48a 0%, #f0b95e 50%, #e8a24a 100%);
+    color: #2a1a06;
   }
 </style>

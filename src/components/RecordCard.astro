@@ -18,13 +18,13 @@ const url = `/${locale}/records/${stripLocale(record.id)}/`;
 >
   <a href={url} class="block hover:no-underline">
     <h2
-      class="text-xl font-bold leading-snug text-zinc-900 transition-colors group-hover:text-accent"
+      class="text-xl font-bold leading-snug text-zinc-50 transition-colors group-hover:text-accent"
     >
       {record.data.title}
     </h2>
     {
       record.data.description && (
-        <p class="mt-1.5 text-sm leading-relaxed text-zinc-600">
+        <p class="mt-1.5 text-sm leading-relaxed text-zinc-400">
           {record.data.description}
         </p>
       )

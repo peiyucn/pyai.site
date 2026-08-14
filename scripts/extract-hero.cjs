@@ -85,6 +85,14 @@ sceneJson = sceneJson
     'getBeam(uv, pos, 0.6000, 0.6345, 0.5000, 0.3000, uTime, 0.7300, uResolution)',
     'getBeam(uv, pos, 0.6000, 0.0000, 0.5000, uBeamThickness, uTime, 0.7300, uResolution)',
   )
+  // 光弧真正"变粗"：drawRing 的环带宽度由 smoothstep(0.2, 0.002, ...) 写死，
+  // thickness 之前只进入 lineRadius（亮度分子），不改变环带宽度 → 用户反馈"没变粗"。
+  // 把 0.2 改为 thickness：鼠标居中 thickness=0.2 时与原完全一致（baseline 不变），
+  // 鼠标偏移 thickness 增大（0.2→0.36）时 smoothstep 过渡范围变宽 → 环带变粗。
+  .replace(
+    '\\nfloat brightness = lineRadius / max(0.0001, 1.0 - smoothstep(0.2, 0.002, ringDist + 0.02));',
+    '\\nfloat brightness = lineRadius / max(0.0001, 1.0 - smoothstep(thickness, 0.002, ringDist + 0.02));',
+  )
   // ⚠️ 吸积盘：贯穿黑洞中央的强光横线（短线段 + 两边渐隐）
   //    - y 固定在黑洞圆心 pos.y（跟随黑洞移动）
   //    - x 方向高斯衰减 exp(-dx²·k)：中心最亮、左右逐渐消失（不贯穿屏幕）

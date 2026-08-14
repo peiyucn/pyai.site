@@ -26,6 +26,7 @@ export type UIKey =
   | 'records.description'
   | 'projects.title'
   | 'projects.description'
+  | 'projects.lastUpdated'
   | 'movies.title'
   | 'movies.description'
   | 'movies.syncedAt'
@@ -89,9 +90,10 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'records.description': '博客、笔记与思考',
     'projects.title': '项目',
     'projects.description': 'pyai 的一些开源作品。',
+    'projects.lastUpdated': '最后更新于 {date} by GitHub Action',
     'movies.title': '观影',
     'movies.description': 'pyai 的观影记录',
-    'movies.syncedAt': '{date} updated',
+    'movies.syncedAt': '最后更新于 {date} by GitHub Action',
     'movies.stats': '统计',
     'movies.watched': '看过',
     'movies.watching': '在看',
@@ -147,9 +149,10 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'records.description': 'Blog, notes and thoughts',
     'projects.title': 'Projects',
     'projects.description': 'Some open-source work of pyai.',
+    'projects.lastUpdated': 'Last updated {date} by GitHub Action',
     'movies.title': 'Movies',
     'movies.description': "pyai's movie diary",
-    'movies.syncedAt': '{date} updated',
+    'movies.syncedAt': 'Last updated {date} by GitHub Action',
     'movies.stats': 'Stats',
     'movies.watched': 'Watched',
     'movies.watching': 'Watching',

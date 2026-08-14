@@ -45,7 +45,7 @@ const pages = pageLinks(currentPage, totalPages);
               ? `${prefix}/`
               : `${prefix}/page/${currentPage - 1}/`
           }
-          class="rounded-md px-2.5 py-1 text-sm text-zinc-600 transition-colors hover:bg-zinc-300 hover:text-zinc-900"
+          class="rounded-md px-2.5 py-1 text-sm text-zinc-400 transition-colors hover:bg-white/10 hover:text-zinc-100"
         >
           ← {t(locale, 'movies.prevPage')}
         </a>
@@ -60,8 +60,8 @@ const pages = pageLinks(currentPage, totalPages);
             class:list={[
               'rounded-md px-2.5 py-1 text-sm transition-colors',
               p === currentPage
-                ? 'bg-zinc-900 font-semibold text-white'
-                : 'text-zinc-600 hover:bg-zinc-300 hover:text-zinc-900',
+                ? 'bg-accent font-semibold text-[#2a1a06]'
+                : 'text-zinc-400 hover:bg-white/10 hover:text-zinc-100',
             ]}
           >
             {p}
@@ -71,7 +71,7 @@ const pages = pageLinks(currentPage, totalPages);
       {currentPage < totalPages && (
         <a
           href={`${prefix}/page/${currentPage + 1}/`}
-          class="rounded-md px-2.5 py-1 text-sm text-zinc-600 transition-colors hover:bg-zinc-300 hover:text-zinc-900"
+          class="rounded-md px-2.5 py-1 text-sm text-zinc-400 transition-colors hover:bg-white/10 hover:text-zinc-100"
         >
           {t(locale, 'movies.nextPage')} →
         </a>
