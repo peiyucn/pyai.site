@@ -39,6 +39,8 @@ const pills: { key: UIKey; href: string }[] = [
     <div class="hero-anim">
       <MoonshotHero />
     </div>
+    <!-- 移动端静态标题（无 WebGL 时的回退，像素字体） -->
+    <div class="hero-static-title" aria-hidden="true">pyai.site</div>
     <!-- 星点层：复用内页 SpaceBackdrop 的 box-shadow 星点（颜色/亮度/密度一致），
          mask 径向挖洞让黑洞中心保持纯黑（跟随 --bh-x/--bh-y） -->
     <div class="hero-stars" aria-hidden="true">
@@ -122,6 +124,30 @@ const pills: { key: UIKey; href: string }[] = [
   }
   .hero-anim.hero-anim-ready {
     opacity: 1;
+  }
+  /* 移动端静态标题（无 WebGL 时的回退）：像素字体，居中 */
+  .hero-static-title {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    pointer-events: none;
+    white-space: nowrap;
+    font-family: 'Fusion Pixel Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: clamp(2rem, 9vw, 4rem);
+    letter-spacing: 0.02em;
+    color: #edebe4;
+  }
+  /* 移动端：跳过 WebGL，显示静态标题 + 底部渐变 */
+  @media (max-width: 768px) {
+    .hero-anim {
+      opacity: 1;
+    }
+    .hero-static-title {
+      display: flex;
+    }
   }
   /* 星点层：复用内页 SpaceBackdrop 的 box-shadow 星点（颜色/亮度/密度完全一致），
      mask 径向挖洞让黑洞中心保持纯黑（跟随 --bh-x/--bh-y CSS 变量，

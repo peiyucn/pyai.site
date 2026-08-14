@@ -35,17 +35,21 @@
 
 ## 二、项目结构（摘要）
 
-完整目录树见 `README.md`。AI 开发只需关注以下路径：
+AI 开发需关注的路径如下：
 
 - `src/pages/[locale]/` — 双语页面（index / records / projects / movies / about）
-- `src/components/` — 组件（Header / MovieList / RecordCard / Pagination 等）
+- `src/components/` — 组件（Header / Footer / MovieList / RecordCard / Pagination / ProjectCard / MiniBlackHole / GitHubLink 等）
 - `src/layouts/` — Base / ListLayout / PostLayout
 - `src/content.config.ts` — 内容集合 schema（records / projects / movies）
 - `src/content/records/` — 记录（zh/en 双语，用 tags 区分类型）
+- `src/data/hero-scene.json` — 首页黑洞 WebGL 场景数据（shader 内嵌，标题字体为 Fusion Pixel 像素字体）
 - `src/i18n/` — UI 文案字典（新增文案先加 ui.ts 的 zh/en）
 - `src/utils/` — douban.ts（观影数据）/ content.ts（内容工具）
+- `public/vendor/` — 引擎（unicornstudio.js）与字体（fonts/fusion-pixel-…otf）
 - `data/pei830/` — 豆瓣数据（movies.json + meta.json）
-- `scripts/douban-sync/` — 同步脚本
+- `data/projects/meta.json` — 项目同步快照时间（projects-sync 写入）
+- `scripts/douban-sync/` — 豆瓣同步脚本
+- `scripts/projects-sync/` — 项目状态同步脚本
 
 ## 三、技术配置要点
 
@@ -53,6 +57,7 @@
 - **Content Layer**：movies 用自定义 loader 读 `data/pei830/movies.json`，注意函数式 loader 返回扁平结构（id 与 data 字段平级）
 - **Tailwind 4**：主题在 `src/styles/global.css` 的 `@theme`，新增颜色/动画在此处定义
 - **构建**：`pnpm build`（`astro build`，静态输出 `dist/`），改动后必须验证 exit=0
+- **首页 Hero（WebGL）**：`MoonshotHero.astro` 用 UnicornStudio 引擎渲染黑洞场景（`src/data/hero-scene.json`，shader 内嵌）。改 shader 直接改 `hero-scene.json` 里对应图层的 `compiledFragmentShaders` 字符串。**移动端（≤768px）跳过 WebGL**，用 `index.astro` 的 `.hero-static-title` 静态标题回退
 
 ## 四、部署与数据同步（维护细节）
 
@@ -62,9 +67,11 @@
 - 自定义域名 `pyai.site` 由仓库根目录 `CNAME` 文件指定
 - 首次配置：GitHub 仓库 Settings → Pages → Source 选择 "GitHub Actions"
 
-### 豆瓣数据同步
+### 每日同步（daily-sync.yml）
 
-数据位置：`data/pei830/`（`movies.json` 全量 + `meta.json` 快照时间）。GitHub Actions 每日 08:30（UTC+8）自动执行（`.github/workflows/douban-sync.yml`）：
+`.github/workflows/daily-sync.yml` 每日 08:30（UTC+8，cron `30 0 * * *`）自动执行，也可 `workflow_dispatch` 手动触发，包含「豆瓣」与「项目」两部分：
+
+**豆瓣**（脚本在 `scripts/douban-sync/`，数据在 `data/pei830/` 的 `movies.json` + `meta.json`）：
 
 1. **列表增量**（`douban-incremental.mjs`）：抓列表页第 1 页（最近 30 条），与现有数据按 URL 去重，只追加新条目（秒级）
 2. **评分补充**（`douban-enrich.mjs`）：调用 `subject_abstract` 接口，只处理缺豆瓣评分的条目，`MAX_PER_RUN` 限批
@@ -76,6 +83,12 @@ DOUBAN_USER=pei830 DOUBAN_OUTPUT_DIR=data node scripts/douban-sync/douban-full-e
 ```
 
 注意：豆瓣评分/导演/地区为**同步时快照**，三个脚本写 `movies.json` 时都要顺带更新 `meta.json` 的 `updatedAt`。
+
+**项目**（脚本在 `scripts/projects-sync/`）：
+
+`projects-sync.mjs` 读取 `src/content/projects/` 各项目的 GitHub 仓库 `archived` 状态，映射到项目 frontmatter 的 `status`（active/wip/archived），并总是写 `data/projects/meta.json`（`updatedAt` 决定项目页「最后更新于」）。
+
+同步提交后若检测到变更（`git-auto-commit-action`），用 `gh workflow run deploy.yml` 触发部署（GITHUB_TOKEN 的 push 不会自动触发其他 workflow）。
 
 ## 五、内容发布工作流
 
@@ -115,7 +128,7 @@ DOUBAN_USER=pei830 DOUBAN_OUTPUT_DIR=data node scripts/douban-sync/douban-full-e
 
 ## 六、其他约定
 
-- **项目页**（`src/content/projects/`）：每个仓库一个目录，含 `zh`/`en` 两文件，字段见 `src/content.config.ts`（status: active/wip/archived）
+- **项目页**（`src/content/projects/`）：与记录一致，`zh`/`en` 两个语言目录各放一个同名 `.md`，字段见 `src/content.config.ts`（status: active/wip/archived）
 - **导航板块**：首页 / 记录 / 项目 / 观影 / 关于
 - **观影数据**：`data/pei830/movies.json` 由同步脚本生成，勿手改；`meta.json` 的 `updatedAt` 决定页面底部"更新于"时间
 - **邮箱反爬**：关于页邮箱用 charCode 混淆 + 运行时 JS 拼接，不要在源码中写完整邮箱

@@ -1,10 +1,9 @@
 ---
 // 月食 Hero 动画组件（黑底发光，源自 UnicornStudio 场景复刻）
-// 结构：全宽横条场景（文字带 Record Distill Create + 金色光弧跟随鼠标 + 透镜畸变）
-// 依赖（均由 scripts/extract-hero.cjs 从 pyai-site-hero.html 生成）：
+// 结构：全宽场景（pyai.site 像素字标题 + 金色光弧跟随鼠标 + 透镜畸变）
+// 依赖：
 //   - public/vendor/unicornstudio.js  引擎 UMD
-//   - public/vendor/notosans-latin.css 文字带字体
-//   - src/data/hero-scene.json         场景数据（shader 内嵌）
+//   - src/data/hero-scene.json         场景数据（shader 内嵌；标题字体用 Fusion Pixel，@font-face 见 global.css）
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -31,9 +30,6 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
   <div class="moonshot-gradient" aria-hidden="true"></div>
 </div>
 
-<!-- 文字带字体 NotoSans-Latin（vendor 化，Astro 会自动提升到 <head>） -->
-<link rel="stylesheet" href="/vendor/notosans-latin.css" />
-
 <!-- 场景数据：引擎原生从 <script id="hero-scene-data"> 读取 innerText -->
 <script id="hero-scene-data" type="application/json" is:inline set:html={sceneJson}></script>
 
@@ -42,6 +38,7 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
      被重置为新对象（scenes 清空、旧 WebGL context 泄漏），多次切换后 context 超限黑屏。 -->
 <script is:inline>
   (function () {
+    if (window.matchMedia('(max-width: 768px)').matches) return; // 移动端跳过 WebGL
     if (window.UnicornStudio || window.__pyaiEngineLoading) return;
     window.__pyaiEngineLoading = true;
     var s = document.createElement('script');
@@ -54,6 +51,7 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
 
 <script is:inline>
   (function () {
+    if (window.matchMedia('(max-width: 768px)').matches) return; // 移动端跳过 WebGL
     // 引擎现在动态注入（全局唯一加载），主逻辑需等待引擎就绪。
     // 轮询等待 window.UnicornStudio 出现后再初始化。
     var engineWaits = 0;
