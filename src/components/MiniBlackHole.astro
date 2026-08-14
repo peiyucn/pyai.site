@@ -1,0 +1,231 @@
+---
+// 内页左侧迷你黑洞：首页黑洞的「像素风」缩小版（16×16 栅格手绘 SVG，无 WebGL 开销）
+// 也是「与 pyai 分身聊天」的入口按钮（当前为占位空按钮，点击弹出像素风提示）。
+// 固定在左侧空白区、偏上位置；随滚动平滑阻尼跟随（指数平滑滞后），并带缓慢浮动。
+// 仅在大屏（≥1024px，存在左右空白区）显示，避免窄屏遮挡正文。
+import type { Locale } from '../i18n/ui';
+import { t } from '../i18n/utils';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const label = t(locale, 'chat.label');
+const comingSoon = t(locale, 'chat.comingSoon');
+---
+
+<div class="mini-bh-wrap">
+  <div class="mini-bh-float">
+    <button type="button" class="mini-bh" aria-label={label} data-toast={comingSoon}>
+      <svg class="mini-bh-art" viewBox="0 0 17 16" width="85" height="80" shape-rendering="crispEdges" aria-hidden="true">
+        <rect x="6" y="1" width="5" height="1" fill="#a06a22"/>
+        <rect x="4" y="2" width="2" height="1" fill="#a06a22"/>
+        <rect x="6" y="2" width="5" height="1" fill="#f0b95e"/>
+        <rect x="11" y="2" width="2" height="1" fill="#a06a22"/>
+        <rect x="3" y="3" width="2" height="1" fill="#a06a22"/>
+        <rect x="5" y="3" width="1" height="1" fill="#f0b95e"/>
+        <rect x="6" y="3" width="5" height="1" fill="#000000"/>
+        <rect x="11" y="3" width="1" height="1" fill="#f0b95e"/>
+        <rect x="12" y="3" width="2" height="1" fill="#a06a22"/>
+        <rect x="3" y="4" width="1" height="1" fill="#a06a22"/>
+        <rect x="4" y="4" width="1" height="1" fill="#f0b95e"/>
+        <rect x="5" y="4" width="7" height="1" fill="#000000"/>
+        <rect x="12" y="4" width="1" height="1" fill="#f0b95e"/>
+        <rect x="13" y="4" width="1" height="1" fill="#a06a22"/>
+        <rect x="2" y="5" width="1" height="1" fill="#a06a22"/>
+        <rect x="3" y="5" width="1" height="1" fill="#f0b95e"/>
+        <rect x="4" y="5" width="9" height="1" fill="#000000"/>
+        <rect x="13" y="5" width="1" height="1" fill="#f0b95e"/>
+        <rect x="14" y="5" width="1" height="1" fill="#a06a22"/>
+        <rect x="2" y="6" width="1" height="1" fill="#a06a22"/>
+        <rect x="3" y="6" width="1" height="1" fill="#f0b95e"/>
+        <rect x="4" y="6" width="9" height="1" fill="#000000"/>
+        <rect x="13" y="6" width="1" height="1" fill="#f0b95e"/>
+        <rect x="14" y="6" width="1" height="1" fill="#a06a22"/>
+        <rect x="0" y="7" width="1" height="1" fill="#a06a22"/>
+        <rect x="1" y="7" width="5" height="1" fill="#ffd48a"/>
+        <rect x="6" y="7" width="5" height="1" fill="#fff3d8"/>
+        <rect x="11" y="7" width="5" height="1" fill="#ffd48a"/>
+        <rect x="16" y="7" width="1" height="1" fill="#a06a22"/>
+        <rect x="0" y="8" width="1" height="1" fill="#a06a22"/>
+        <rect x="1" y="8" width="5" height="1" fill="#ffd48a"/>
+        <rect x="6" y="8" width="5" height="1" fill="#fff3d8"/>
+        <rect x="11" y="8" width="5" height="1" fill="#ffd48a"/>
+        <rect x="16" y="8" width="1" height="1" fill="#a06a22"/>
+        <rect x="2" y="9" width="1" height="1" fill="#a06a22"/>
+        <rect x="3" y="9" width="1" height="1" fill="#f0b95e"/>
+        <rect x="4" y="9" width="9" height="1" fill="#000000"/>
+        <rect x="13" y="9" width="1" height="1" fill="#f0b95e"/>
+        <rect x="14" y="9" width="1" height="1" fill="#a06a22"/>
+        <rect x="3" y="10" width="1" height="1" fill="#a06a22"/>
+        <rect x="4" y="10" width="1" height="1" fill="#f0b95e"/>
+        <rect x="5" y="10" width="7" height="1" fill="#000000"/>
+        <rect x="12" y="10" width="1" height="1" fill="#f0b95e"/>
+        <rect x="13" y="10" width="1" height="1" fill="#a06a22"/>
+        <rect x="3" y="11" width="2" height="1" fill="#a06a22"/>
+        <rect x="5" y="11" width="1" height="1" fill="#f0b95e"/>
+        <rect x="6" y="11" width="5" height="1" fill="#000000"/>
+        <rect x="11" y="11" width="1" height="1" fill="#f0b95e"/>
+        <rect x="12" y="11" width="2" height="1" fill="#a06a22"/>
+        <rect x="4" y="12" width="2" height="1" fill="#a06a22"/>
+        <rect x="6" y="12" width="5" height="1" fill="#f0b95e"/>
+        <rect x="11" y="12" width="2" height="1" fill="#a06a22"/>
+        <rect x="6" y="13" width="5" height="1" fill="#a06a22"/>
+      </svg>
+    </button>
+    <div class="mini-bh-toast" role="status" aria-live="polite"></div>
+  </div>
+</div>
+
+<style>
+  .mini-bh-wrap {
+    position: fixed;
+    top: 30%;
+    left: clamp(0.75rem, 5vw, 4rem);
+    z-index: 70;
+    will-change: transform;
+  }
+  /* 内层浮动：CSS 关键帧上下轻浮，与滚动阻尼 transform 分离，互不冲突 */
+  .mini-bh-float {
+    position: relative;
+    width: 85px;
+    height: 80px;
+    animation: mini-bh-float 9s ease-in-out infinite;
+  }
+  .mini-bh {
+    position: absolute;
+    inset: 0;
+    width: 85px;
+    height: 80px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: filter 0.15s ease;
+  }
+  .mini-bh-art {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .mini-bh:hover .mini-bh-art {
+    filter: brightness(1.15);
+  }
+  .mini-bh:focus-visible {
+    outline: 2px solid rgba(255, 212, 138, 0.7);
+    outline-offset: 5px;
+  }
+  /* 像素风提示框：从黑洞上方弹出，缝合像素字体 + 金色粗描边 + 硬阴影（无圆角） */
+  .mini-bh-toast {
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 16px);
+    transform: translateY(-6px);
+    min-width: 200px;
+    max-width: min(88vw, 340px);
+    padding: 9px 11px 8px 11px;
+    background: #0c0905;
+    color: #f4ecd9;
+    border: 2px solid #e8a24a;
+    font-family: 'Fusion Pixel Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 16px;
+    line-height: 1.6;
+    box-shadow: 4px 4px 0 0 #000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+  .mini-bh-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  /* 指向下方小黑洞的三角形尾巴（与描边同色） */
+  .mini-bh-toast::before {
+    content: '';
+    position: absolute;
+    left: 34px;
+    bottom: -7px;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 7px solid #e8a24a;
+  }
+  @keyframes mini-bh-float {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+    50% {
+      transform: translate3d(0, -8px, 0);
+    }
+  }
+  /* 窄屏无左右空白区：隐藏按钮与提示 */
+  @media (max-width: 1023px) {
+    .mini-bh-wrap {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  // 滚动平滑阻尼跟随 + 点击提示
+  (() => {
+    // VT 后 inline script 会重跑：若已初始化过，只唤醒滚动循环，不再重复绑定
+    if (window.__pyaiBhBound) {
+      if (window.__pyaiBhStart) window.__pyaiBhStart();
+      return;
+    }
+    const FACTOR = 0.05; // 滚动跟随幅度（向下滚动 → 黑洞缓慢下移）
+    const DAMP = 2.5; // 阻尼系数：越小越"黏"、滞后越明显
+    let smooth = 0;
+    let rafId = 0;
+    let lastT = 0;
+
+    function loop(now) {
+      const el = document.querySelector('.mini-bh-wrap');
+      if (!el) {
+        rafId = 0; // 已离开内容页（首页无此元素），停止空转
+        return;
+      }
+      const dt = lastT ? Math.min(0.1, (now - lastT) / 1000) : 0.016;
+      lastT = now;
+      const alpha = 1 - Math.exp(-DAMP * dt); // 帧率无关的指数平滑
+      const y = window.scrollY || 0;
+      const target = y * FACTOR;
+      smooth += (target - smooth) * alpha;
+      el.style.transform = `translate3d(0, ${smooth.toFixed(1)}px, 0)`;
+      // 收敛后停止 rAF，滚动事件再唤醒
+      if (Math.abs(target - smooth) < 0.05) {
+        rafId = 0;
+        return;
+      }
+      rafId = requestAnimationFrame(loop);
+    }
+
+    function start() {
+      if (rafId) return;
+      lastT = 0;
+      rafId = requestAnimationFrame(loop);
+    }
+
+    window.__pyaiBhBound = true;
+    window.__pyaiBhStart = start;
+    window.addEventListener('scroll', start, { passive: true });
+    window.addEventListener('resize', start);
+
+    // 点击入口：事件委托到 document，VT 切换后无需重绑
+    let toastTimer = 0;
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.mini-bh');
+      if (!btn) return;
+      const toast = document.querySelector('.mini-bh-toast');
+      if (!toast) return;
+      toast.textContent = btn.getAttribute('data-toast') || '';
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+    });
+
+    start();
+  })();
+</script>

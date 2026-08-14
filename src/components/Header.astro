@@ -2,6 +2,7 @@
 import type { Locale, UIKey } from '../i18n/ui';
 import { t } from '../i18n/utils';
 import LanguageSwitcher from './LanguageSwitcher.astro';
+import GitHubLink from './GitHubLink.astro';
 
 interface Props {
   locale: Locale;
@@ -54,7 +55,10 @@ function isActive(href: string): boolean {
         ))
       }
     </nav>
-    <LanguageSwitcher locale={locale} pathname={pathname} dark />
+    <div class="flex items-center gap-2">
+      <GitHubLink />
+      <LanguageSwitcher locale={locale} pathname={pathname} dark />
+    </div>
   </div>
 </header>
 

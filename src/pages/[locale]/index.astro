@@ -4,6 +4,7 @@ import Base from '../../layouts/Base.astro';
 import MoonshotHero from '../../components/MoonshotHero.astro'; // 月食动画（文字带 + 光弧跟随）
 import ParticleBackground from '../../components/ParticleBackground.astro'; // 深色星点粒子
 import LanguageSwitcher from '../../components/LanguageSwitcher.astro';
+import GitHubLink from '../../components/GitHubLink.astro';
 import DeepSeekLogo from '../../components/DeepSeekLogo.astro';
 import type { Locale, UIKey } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
@@ -83,7 +84,10 @@ const pills: { key: UIKey; href: string }[] = [
             ))
           }
         </div>
-        <LanguageSwitcher locale={locale} pathname={pathname} dark />
+        <div class="hero-nav-bottom">
+          <GitHubLink />
+          <LanguageSwitcher locale={locale} pathname={pathname} dark />
+        </div>
       </nav>
     </div>
   </section>
@@ -364,6 +368,11 @@ const pills: { key: UIKey; href: string }[] = [
     flex-direction: column;
     align-items: center;
     gap: 1rem;
+  }
+  .hero-nav-bottom {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
   }
   .hero-pills {
     display: flex;

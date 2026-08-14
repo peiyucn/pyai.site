@@ -70,7 +70,10 @@ export type UIKey =
   | 'footer.rights'
   | 'footer.poweredBy'
   // 首页
-  | 'hero.workingWith';
+  | 'hero.workingWith'
+  // 聊天入口（内页迷你黑洞按钮）
+  | 'chat.label'
+  | 'chat.comingSoon';
 
 // 各语言 UI 文案
 export const ui: Record<Locale, Record<UIKey, string>> = {
@@ -132,6 +135,8 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'footer.rights': '保留所有权利',
     'footer.poweredBy': 'Powered by',
     'hero.workingWith': 'working with',
+    'chat.label': '与 pyai 分身聊天',
+    'chat.comingSoon': '真身炼化中，pyai chat 不一定啥时候有。',
   },
   en: {
     'nav.home': 'Home',
@@ -191,5 +196,7 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'footer.rights': 'All rights reserved',
     'footer.poweredBy': 'Powered by',
     'hero.workingWith': 'working with',
+    'chat.label': 'Chat with pyai',
+    'chat.comingSoon': 'Still refining the real me — pyai chat has no ETA yet.',
   },
 };

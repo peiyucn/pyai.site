@@ -1,6 +1,16 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* 像素字体「缝合像素」（Fusion Pixel，OFL 开源，vendor 化）：
+   内页迷你黑洞的像素提示用；12px 栅格，字号用 12 的整数倍最清晰 */
+@font-face {
+  font-family: 'Fusion Pixel Mono';
+  src: url('/vendor/fonts/fusion-pixel-12px-mono-zh-hans.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ===== Tailwind 4 主题定制 ===== */
 @theme {
   /* 深空「月食」强调色：与首页黑+金宇宙语言统一，金色三档 */

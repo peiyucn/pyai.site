@@ -18,14 +18,12 @@ const status = statusText[project.data.status];
 
 <article
   class:list={[
-    'group flex flex-col gap-2.5 rounded-xl border border-white/10 bg-white/5 p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-accent hover:shadow-md',
+    'project-card group',
     project.data.status === 'archived' && 'project-archived',
   ]}
 >
   <div class="flex items-center justify-between gap-3">
-    <h2
-      class="text-lg font-bold text-zinc-50 group-hover:text-accent"
-    >
+    <h2 class="text-lg font-bold text-zinc-50 group-hover:text-accent">
       {project.data.title}
     </h2>
     <span class:list={['rounded-full px-2.5 py-0.5 text-xs font-semibold', status.class]}>
@@ -62,3 +60,80 @@ const status = statusText[project.data.status];
     }
   </div>
 </article>
+
+<style>
+  .project-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    will-change: transform;
+  }
+  /* hover：透明边框 + 金色光弧扫过（conic 边框，同首页按钮） */
+  .project-card:hover {
+    border-color: transparent;
+    background:
+      linear-gradient(#14121a, #14121a) padding-box,
+      conic-gradient(
+        from var(--card-angle, 0deg),
+        transparent 0deg,
+        rgba(255, 212, 138, 0.22) 40deg,
+        rgba(255, 255, 255, 0.9) 85deg,
+        rgba(255, 212, 138, 0.35) 115deg,
+        transparent 145deg,
+        transparent 360deg
+      ) border-box;
+    animation: card-sweep 3s linear infinite;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  }
+  /* 已归档卡片：保持虚线边框，不做光弧 */
+  .project-card:global(.project-archived):hover {
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.05);
+    animation: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+  @property --card-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }
+  @keyframes card-sweep {
+    to {
+      --card-angle: 360deg;
+    }
+  }
+</style>
+
+<script>
+  // 3D 角度变换：鼠标在卡片上移动时轻微倾斜（跟随鼠标），离开时平滑复位
+  function setupTilt() {
+    document.querySelectorAll('.project-card').forEach((card) => {
+      if (card.__tiltBound) return;
+      card.__tiltBound = true;
+      card.addEventListener('mousemove', (e) => {
+        card.style.transition = 'transform 0.08s ease-out';
+        const rect = card.getBoundingClientRect();
+        const px = (e.clientX - rect.left) / rect.width;
+        const py = (e.clientY - rect.top) / rect.height;
+        const rx = (0.5 - py) * 10; // 上仰 / 下俯，最大 5deg
+        const ry = (px - 0.5) * 12; // 左 / 右，最大 6deg
+        card.style.transform = `perspective(900px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transition = 'transform 0.45s cubic-bezier(0.2, 0.8, 0.3, 1)';
+        card.style.transform = '';
+      });
+    });
+  }
+  setupTilt();
+  if (!window.__pyaiTiltBound) {
+    window.__pyaiTiltBound = true;
+    document.addEventListener('astro:page-load', setupTilt);
+  }
+</script>

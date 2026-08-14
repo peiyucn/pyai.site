@@ -4,6 +4,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import CursorAtom from '../components/CursorAtom.astro';
 import SpaceBackdrop from '../components/SpaceBackdrop.astro';
+import MiniBlackHole from '../components/MiniBlackHole.astro';
 import { ClientRouter } from 'astro:transitions';
 import type { Locale } from '../i18n/ui';
 
@@ -76,6 +77,8 @@ const og = {
   <body>
     {/* 深空背景层（星点 + 金色光晕）：负 z-index，浮于 html 底之上、内容之下 */}
     <SpaceBackdrop />
+    {/* 内页左侧迷你黑洞：仅内容页显示（首页有自己的全屏黑洞），固定在左侧空白区 */}
+    {!isHome && <MiniBlackHole locale={locale} />}
     {/* 客户端路由：页面切换走 View Transitions 平滑过渡，不再整页刷新白屏 */}
     <ClientRouter />
     {!hideHeader && <Header locale={locale} pathname={pathname} />}
