@@ -9,16 +9,13 @@ export type Locale = keyof typeof languages;
 // 站点所有 UI 文案的 key
 export type UIKey =
   // 导航
-  | 'nav.home'
   | 'nav.records'
   | 'nav.projects'
   | 'nav.movies'
   | 'nav.about'
   // 通用
-  | 'common.readMore'
   | 'common.publishedAt'
   | 'common.updatedAt'
-  | 'common.tags'
   | 'common.noContent'
   | 'common.allTags'
   // 记录
@@ -34,30 +31,16 @@ export type UIKey =
   | 'movies.watched'
   | 'movies.watching'
   | 'movies.wishlist'
-  | 'movies.rating'
-  | 'movies.date'
-  | 'movies.comment'
-  | 'movies.year'
-  | 'movies.years'
   | 'movies.byYear'
   | 'movies.byRating'
-  | 'movies.byStatus'
-  | 'movies.byDirector'
   | 'movies.byGenre'
-  | 'movies.byReleaseYear'
   | 'movies.total'
-  | 'movies.doubanRating'
-  | 'movies.myRating'
-  | 'movies.country'
   | 'movies.prevPage'
   | 'movies.nextPage'
-  | 'movies.cardNav'
-  | 'movies.mine'
   | 'movies.douban'
   | 'movies.viewStats'
   | 'movies.backToList'
   | 'movies.byRatingGap'
-  | 'movies.myVsDouban'
   | 'movies.gap'
   | 'movies.filterAll'
   | 'movies.filterMovie'
@@ -78,15 +61,12 @@ export type UIKey =
 // 各语言 UI 文案
 export const ui: Record<Locale, Record<UIKey, string>> = {
   zh: {
-    'nav.home': '首页',
     'nav.records': '记录',
     'nav.projects': '项目',
     'nav.movies': '观影',
     'nav.about': '关于',
-    'common.readMore': '阅读全文',
     'common.publishedAt': '发布于',
     'common.updatedAt': '更新于',
-    'common.tags': '标签',
     'common.noContent': '暂无内容',
     'common.allTags': '全部',
     'records.title': '记录',
@@ -101,30 +81,16 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'movies.watched': '看过',
     'movies.watching': '在看',
     'movies.wishlist': '想看',
-    'movies.rating': '评分',
-    'movies.date': '标记日期',
-    'movies.comment': '短评',
-    'movies.year': '年',
-    'movies.years': '年',
     'movies.byYear': '按标记年份',
     'movies.byRating': '按评分',
-    'movies.byStatus': '状态',
-    'movies.byDirector': '导演 Top',
     'movies.byGenre': '类型 Top',
-    'movies.byReleaseYear': '按上映年份',
     'movies.total': '共',
-    'movies.doubanRating': '豆瓣评分',
-    'movies.myRating': '我的评分',
-    'movies.country': '制片地区',
     'movies.prevPage': '上一页',
     'movies.nextPage': '下一页',
-    'movies.cardNav': '统计卡片',
-    'movies.mine': '我的',
     'movies.douban': '豆瓣',
     'movies.viewStats': '查看统计',
     'movies.backToList': '返回明细',
     'movies.byRatingGap': '并不觉得好的电影 Top 10',
-    'movies.myVsDouban': '我的 / 豆瓣',
     'movies.gap': '差距',
     'movies.filterAll': '全部',
     'movies.filterMovie': '电影',
@@ -139,15 +105,12 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'chat.comingSoon': '真身炼化中，pyai chat 不一定啥时候有。',
   },
   en: {
-    'nav.home': 'Home',
     'nav.records': 'Records',
     'nav.projects': 'Projects',
     'nav.movies': 'Movies',
     'nav.about': 'About',
-    'common.readMore': 'Read more',
     'common.publishedAt': 'Published',
     'common.updatedAt': 'Updated',
-    'common.tags': 'Tags',
     'common.noContent': 'No content yet',
     'common.allTags': 'All',
     'records.title': 'Records',
@@ -162,30 +125,16 @@ export const ui: Record<Locale, Record<UIKey, string>> = {
     'movies.watched': 'Watched',
     'movies.watching': 'Watching',
     'movies.wishlist': 'Wishlist',
-    'movies.rating': 'Rating',
-    'movies.date': 'Marked',
-    'movies.comment': 'Comment',
-    'movies.year': '',
-    'movies.years': 'yrs',
     'movies.byYear': 'By marked year',
     'movies.byRating': 'By rating',
-    'movies.byStatus': 'Status',
-    'movies.byDirector': 'Top directors',
     'movies.byGenre': 'Top genres',
-    'movies.byReleaseYear': 'By release year',
     'movies.total': 'Total',
-    'movies.doubanRating': 'Douban rating',
-    'movies.myRating': 'My rating',
-    'movies.country': 'Country',
     'movies.prevPage': 'Prev',
     'movies.nextPage': 'Next',
-    'movies.cardNav': 'Stat cards',
-    'movies.mine': 'Mine',
     'movies.douban': 'Douban',
     'movies.viewStats': 'View stats',
     'movies.backToList': 'Back to list',
     'movies.byRatingGap': "Top 10 movies I didn't think were good",
-    'movies.myVsDouban': 'Mine / Douban',
     'movies.gap': 'Gap',
     'movies.filterAll': 'All',
     'movies.filterMovie': 'Films',

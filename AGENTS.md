@@ -43,6 +43,7 @@ AI 开发需关注的路径如下：
 - `src/content.config.ts` — 内容集合 schema（records / projects / movies）
 - `src/content/records/` — 记录（zh/en 双语，用 tags 区分类型）
 - `src/data/hero-scene.json` — 首页黑洞 WebGL 场景数据（shader 内嵌，标题字体为 Fusion Pixel 像素字体）
+- `src/data/stars.ts` — 星空坐标数据（内页 SpaceBackdrop 与首页 Hero 共用，逐点 alpha 差异保留）
 - `src/i18n/` — UI 文案字典（新增文案先加 ui.ts 的 zh/en）
 - `src/utils/` — douban.ts（观影数据）/ content.ts（内容工具）
 - `public/vendor/` — 引擎（unicornstudio.js）与字体（fonts/fusion-pixel-…otf）

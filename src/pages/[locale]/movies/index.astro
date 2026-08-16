@@ -4,6 +4,7 @@ import MovieList from '../../../components/MovieList.astro';
 import type { Locale } from '../../../i18n/ui';
 import { t } from '../../../i18n/utils';
 import { getMovies, getMoviesMeta } from '../../../utils/douban';
+import { formatSyncTimeUTC8 } from '../../../utils/date';
 
 export function getStaticPaths() {
   return [{ params: { locale: 'zh' } }, { params: { locale: 'en' } }];
@@ -19,19 +20,9 @@ const totalPages = Math.max(1, Math.ceil(movies.length / PER_PAGE));
 const pageMovies = movies.slice(0, PER_PAGE);
 
 // 最近一次 GitHub Action 同步成功时间（meta.json 由 douban-sync workflow 写入）
-// 格式：2026-8-12 14:30:22（北京时间，含时分秒）
-function formatSyncTime(iso: string): string {
-  // meta.updatedAt 为 UTC，固定转北京时间（UTC+8），避免构建机时区差异
-  const d = new Date(new Date(iso).getTime() + 8 * 3600 * 1000);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getUTCFullYear()}-${d.getUTCMonth() + 1}-${d.getUTCDate()} ${pad(
-    d.getUTCHours(),
-  )}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
-}
-
 const meta = getMoviesMeta();
 const syncNote = meta.updatedAt
-  ? t(locale, 'movies.syncedAt', { date: formatSyncTime(meta.updatedAt) })
+  ? t(locale, 'movies.syncedAt', { date: formatSyncTimeUTC8(meta.updatedAt) })
   : undefined;
 ---
 

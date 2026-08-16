@@ -1,4 +1,5 @@
 import rss from '@astrojs/rss';
+import type { APIContext } from 'astro';
 import { getCollection } from 'astro:content';
 import type { Locale } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
@@ -9,7 +10,7 @@ export function getStaticPaths() {
   return [{ params: { locale: 'zh' } }, { params: { locale: 'en' } }];
 }
 
-export async function GET(context: { site: any; params: any }) {
+export async function GET(context: APIContext) {
   const { locale } = context.params as { locale: Locale };
   const records = await getCollection('records', (record) => {
     return record.data.locale === locale && !record.data.draft;

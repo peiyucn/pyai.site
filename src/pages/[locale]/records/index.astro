@@ -78,75 +78,52 @@ const allTags = [...tagCounts.entries()]
 </ListLayout>
 
 <script is:inline>
-  // 记录页标签筛选：仅顶部标签栏（nav[aria-label="tags"]）参与。
+  // 记录页标签筛选：仅顶部标签栏（nav[aria-label="tags"]）参与；
   // 卡片内标签是纯展示（无 data-records-tag），不参与筛选。
-  // 立即执行一次（首次加载），并在 astro:page-load 时重新执行（VT 导航后）。
-  function initRecordsFilter() {
-    const list = document.getElementById('records-list');
-    if (!list) return;
-    const items = Array.from(list.querySelectorAll('.record-item'));
-    const tagBtns = Array.from(document.querySelectorAll('nav[aria-label="tags"] [data-records-tag]'));
-    if (!tagBtns.length) return;
+  // VT 后 inline script 重跑：用全局标志防重复绑定（幂等），状态重置交给 page-load 兜底。
+  (() => {
+    if (window.__pyaiRecordsFilterBound) return;
+    window.__pyaiRecordsFilterBound = true;
 
-    const setActive = (tag) => {
-      tagBtns.forEach((b) => {
-        const isActive = (b.dataset.recordsTag ?? '') === tag;
-        b.className = 'record-tag rounded-full border px-2.5 py-1 text-xs transition-colors' +
-          (isActive
-            ? ' border-accent bg-accent font-semibold text-[#2a1a06]'
-            : ' border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-100');
-      });
-    };
+    const BTN_BASE = 'record-tag rounded-full border px-2.5 py-1 text-xs transition-colors';
+    const BTN_ACTIVE = ' border-accent bg-accent font-semibold text-[#2a1a06]';
+    const BTN_IDLE = ' border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-100';
 
-    const filter = (tag) => {
-      items.forEach((el) => {
+    // 每次执行都重新抓取最新 DOM（VT 后 body 已被替换）
+    function applyFilter(tag) {
+      const list = document.getElementById('records-list');
+      const tagBtns = document.querySelectorAll('nav[aria-label="tags"] [data-records-tag]');
+      if (!list || !tagBtns.length) return;
+      list.querySelectorAll('.record-item').forEach((el) => {
         const tags = (el.dataset.recordTags ?? '').split(',').filter(Boolean);
         el.style.display = !tag || tags.includes(tag) ? '' : 'none';
       });
-      setActive(tag);
-    };
+      tagBtns.forEach((b) => {
+        const isActive = (b.dataset.recordsTag ?? '') === tag;
+        b.className = BTN_BASE + (isActive ? BTN_ACTIVE : BTN_IDLE);
+      });
+    }
 
-    // 事件委托绑定在 window 上（VT 导航不销毁 window，监听永不丢失），
-    // 点击时检查目标是否在当前 document 的 tags 栏内。每次 init 都绑（重复无害，filter 幂等）。
+    // 事件委托绑在 window 上（VT 导航不销毁 window，监听永不丢失）
     window.addEventListener('click', (e) => {
       const target = e.target;
-      if (!target || !target.closest) return;
+      if (!(target instanceof Element)) return;
       const nav = target.closest('nav[aria-label="tags"]');
       if (!nav) return;
       const btn = target.closest('[data-records-tag]');
       if (!btn) return;
-      // 用最新的列表数据过滤（每次点击都重新抓，DOM 重建后也正确）
-      const listEl = document.getElementById('records-list');
-      if (!listEl) return;
-      const itemsEl = Array.from(listEl.querySelectorAll('.record-item'));
-      const tag = btn.dataset.recordsTag ?? '';
-      itemsEl.forEach((el) => {
-        const tags = (el.dataset.recordTags ?? '').split(',').filter(Boolean);
-        el.style.display = !tag || tags.includes(tag) ? '' : 'none';
-      });
-      const btns = Array.from(document.querySelectorAll('nav[aria-label="tags"] [data-records-tag]'));
-      btns.forEach((b) => {
-        const isActive = (b.dataset.recordsTag ?? '') === tag;
-        b.className = 'record-tag rounded-full border px-2.5 py-1 text-xs transition-colors' +
-          (isActive
-            ? ' border-accent bg-accent font-semibold text-[#2a1a06]'
-            : ' border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-100');
-      });
+      applyFilter(btn.dataset.recordsTag ?? '');
     });
-    // 初始状态：显示全部
-    filter('');
-  }
 
-  // 多时机执行：直接调用 + DOMContentLoaded + load + VT 导航后。
-  // 某些环境（dev HMR / 脚本注入时机）下直接调用可能不生效，轮询兜底。
-  function safeInit() {
-    try { initRecordsFilter(); } catch (e) { /* 忽略 */ }
-  }
-  safeInit();
-  document.addEventListener('DOMContentLoaded', safeInit);
-  window.addEventListener('load', safeInit);
-  document.addEventListener('astro:page-load', safeInit);
-  // 轮询兜底：确保 2 秒内必然执行一次（脚本注入延迟场景）
-  setTimeout(safeInit, 500);
-  setTimeout(safeInit, 1500);
+    // 多时机执行：直接调用 + DOMContentLoaded + load + VT 导航后；轮询兜底
+    function safeInit() {
+      try { applyFilter(''); } catch { /* 忽略 */ }
+    }
+    safeInit();
+    document.addEventListener('DOMContentLoaded', safeInit);
+    window.addEventListener('load', safeInit);
+    document.addEventListener('astro:page-load', safeInit);
+    setTimeout(safeInit, 500);
+    setTimeout(safeInit, 1500);
+  })();
 </script>

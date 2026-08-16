@@ -3,9 +3,9 @@ import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 import fs from 'node:fs';
 import path from 'node:path';
-import { parseMoviesCsv, ratingToNumber, subjectIdFromUrl } from './utils/douban';
+import { subjectIdFromUrl } from './utils/douban';
 
-// 读取豆瓣全量数据（JSON 含导演/年份/类型；CSV 为 fallback）
+// 读取豆瓣全量数据（JSON 含导演/年份/类型）
 // 由 scripts/douban-sync 定时同步生成
 type MovieJson = {
   title: string;

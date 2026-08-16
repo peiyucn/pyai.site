@@ -1,14 +1,14 @@
 ---
-// DeepSeek logo锛堝浘鏍?+ 鏂囧瓧锛夛紝棣栭〉 "working with" 涓?Footer "Powered by" 鍏辩敤
-// 娉ㄦ剰锛欰stro 澶氭牴缁勪欢涓嶈兘浼?class锛堜細鑷姩搴旂敤鍒版墍鏈夋牴鍏冪礌锛夛紝灏哄鐢辩埗瀹瑰櫒 CSS 鎺у埗
+// DeepSeek logo（图标 + 文字），首页 "working with" 与 Footer "Powered by" 共用
+// 注意：Astro 多根组件不能传 class（会自动应用到所有根元素），尺寸由父容器 CSS 控制
 interface Props {
-  /** 鏄惁鏄剧ず鏂囧瓧鐗?logo锛?DeepSeek" 瀛楁爣锛?*/
+  /** 是否显示文字版 logo（"DeepSeek" 字标） */
   text?: boolean;
-  /** 鏄剧ず鍦ㄦ枃瀛楀墠闈㈢殑灏忓浘鏍囷紙deepseek 鍥炬爣锛夛紱text 妯″紡涓嬮粯璁や笉鏄剧ず锛岄渶鏄惧紡 icon */
+  /** 显示在文字前面的小图标（deepseek 图标）；text 模式下默认不显示，需显式 icon */
   icon?: boolean;
 }
 
-// icon 榛樿浠呭湪绾浘鏍囨ā寮忥紙text 缂虹渷锛変笅涓?true
+// icon 默认仅在纯图标模式（text 缺省）下为 true
 const { text = false, icon = !text } = Astro.props;
 ---
 
@@ -38,13 +38,13 @@ const { text = false, icon = !text } = Astro.props;
 )}
 
 <style>
-  /* DeepSeek 鍥炬爣锛氶粯璁や笌鏂囧瓧瑙嗚绛夐珮 */
+  /* DeepSeek 图标：默认与文字视觉等高 */
   .ds-logo {
     width: 1.28em;
     height: 1.28em;
     flex: none;
   }
-  /* DeepSeek 鏂囧瓧 logo锛氫笌鍥炬爣鍚岃壊锛涢珮搴﹁ˉ鍋?viewBox 鍐呭瓧褰㈢暀鐧?*/
+  /* DeepSeek 文字 logo：与图标同色；高度补偿 viewBox 内字形留白 */
   .ds-text {
     height: 1.17em;
     width: auto;

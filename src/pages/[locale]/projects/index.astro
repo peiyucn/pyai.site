@@ -4,6 +4,7 @@ import ProjectCard from '../../../components/ProjectCard.astro';
 import type { Locale } from '../../../i18n/ui';
 import { t } from '../../../i18n/utils';
 import { getProjects, getProjectsMeta } from '../../../utils/content';
+import { formatSyncTimeUTC8 } from '../../../utils/date';
 
 export function getStaticPaths() {
   return [{ params: { locale: 'zh' } }, { params: { locale: 'en' } }];
@@ -14,14 +15,9 @@ const pathname = Astro.url.pathname;
 const projects = await getProjects(locale);
 
 // 最近一次 GitHub Action 同步时间（data/projects/meta.json 由 projects-sync workflow 写入）
-function formatSyncTime(iso: string): string {
-  const d = new Date(new Date(iso).getTime() + 8 * 3600 * 1000);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getUTCFullYear()}-${d.getUTCMonth() + 1}-${d.getUTCDate()} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
-}
 const meta = getProjectsMeta();
 const syncNote = meta.updatedAt
-  ? t(locale, 'projects.lastUpdated', { date: formatSyncTime(meta.updatedAt) })
+  ? t(locale, 'projects.lastUpdated', { date: formatSyncTimeUTC8(meta.updatedAt) })
   : undefined;
 ---
 

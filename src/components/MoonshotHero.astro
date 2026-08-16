@@ -33,7 +33,7 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
 <!-- 场景数据：引擎原生从 <script id="hero-scene-data"> 读取 innerText -->
 <script id="hero-scene-data" type="application/json" is:inline set:html={sceneJson}></script>
 
-<!-- UnicornStudio 引擎（vendor UMD）：用动态注入 + 全局标志，确保整个会话只加载一次。
+<!-- 引擎加载（vendor UMD）：动态注入 + 全局标志，整个会话只加载一次。
      若用 <script src> 直挂 body，VT 后 script 重跑会重新执行 UMD → window.UnicornStudio
      被重置为新对象（scenes 清空、旧 WebGL context 泄漏），多次切换后 context 超限黑屏。 -->
 <script is:inline>
@@ -52,76 +52,35 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
 <script is:inline>
   (function () {
     if (window.matchMedia('(max-width: 768px)').matches) return; // 移动端跳过 WebGL
-    // 引擎现在动态注入（全局唯一加载），主逻辑需等待引擎就绪。
-    // 轮询等待 window.UnicornStudio 出现后再初始化。
-    var engineWaits = 0;
-    function waitEngine() {
-      if (window.UnicornStudio) { initHero(); return; }
-      if (engineWaits++ < 200) setTimeout(waitEngine, 50);
-    }
-    setTimeout(waitEngine, 0);
 
-    function initHero() {
-    // VT 后 inline script 会重新执行（新 body 的新 script 标签）。
-    // 引擎 UMD 若也重跑会重置 window.UnicornStudio（新对象、scenes 清空、旧 context 泄漏）。
-    // 用全局标志：首次执行时接管；后续重跑只补 boot/事件监听，不再重复初始化逻辑。
-    var firstRun = !window.__pyaiHeroBooted;
-    window.__pyaiHeroBooted = true;
     var TWO_PI = Math.PI * 2;
     var MIN_ARC = Math.PI * 0.5;
 
-    // 手动创建场景（替代 UnicornStudio.init() 的 Promise 机制）：
-    // init() 的 ye() 依赖 requestIdleCallback 且 Promise 在场景数组推入后才 resolve，
-    // VT 后/后台标签下可能永不 resolve → 黑洞无法恢复。addScene（ye）直接创建。
-    // 场景 JSON 已内联在 <script id="hero-scene-data">，引擎原生从该元素读取。
-    function ensureScene(el) {
-      if (typeof UnicornStudio.addScene !== 'function') return null;
-      var existing = sceneForElement(el);
-      if (existing && !existing.destroyed) return existing;
-      // 移除引擎的"已初始化"标记，否则引擎内部会跳过（虽然 addScene 不检查它，
-      // 但销毁残留场景时 destroy() 会清除它，这里保险起见）
-      el.removeAttribute('data-us-initialized');
-      var params = {
-        projectId: null,
-        filePath: el.getAttribute('data-us-project-src'),
-        element: el,
-        dpi: +el.getAttribute('data-us-dpi'),
-        scale: +el.getAttribute('data-us-scale'),
-        fps: +el.getAttribute('data-us-fps'),
-        lazyLoad: el.getAttribute('data-us-lazyload'),
-        altText: el.getAttribute('data-us-alttext'),
-        ariaLabel: el.getAttribute('data-us-arialabel'),
-        fixed: el.getAttribute('data-us-fixed'),
-      };
-      try {
-        UnicornStudio.addScene(params);
-        return null; // 异步创建，返回 null，调用方需轮询
-      } catch (e) {
-        return null;
-      }
-    }
+    /* ============ 场景生命周期 ============
+     * 不用 UnicornStudio.init() 的 Promise 机制：它依赖 requestIdleCallback，
+     * VT 后/后台标签下可能永不 resolve → 黑洞无法恢复。
+     * 场景创建走 addScene（引擎内部 ye），由 boot() 轮询兜底。
+     */
 
-    // 查找"当前元素对应"的场景：元素必须与场景 element 完全一致
-    function sceneForElement(el) {
+    /** 查找"绑定到指定元素"的场景（元素必须与 scene.element 完全一致） */
+    function sceneFor(el) {
       var scenes = UnicornStudio.scenes || [];
       for (var i = 0; i < scenes.length; i++) {
         var s = scenes[i];
-        if (!s || s.destroyed) continue;
-        if (s.element === el) return s;
+        if (s && !s.destroyed && s.element === el) return s;
       }
       return null;
     }
 
-    // 找到"活的"场景：优先当前 DOM 中、未销毁、元素在文档里的 scene。
-    // View Transitions 返回首页时 scenes 数组可能残留旧 scene（元素已被移除），
-    // 直接取 scenes[0] 会拿到死场景 → 黑洞消失的根因。
-    function findLiveScene() {
+    /** 找"活的"场景：元素仍在文档中的未销毁 scene。
+     *  VT 返回首页时 scenes 数组可能残留旧 scene（元素已被移除），
+     *  直接取 scenes[0] 会拿到死场景 → 黑洞消失的根因。 */
+    function liveScene() {
       var scenes = UnicornStudio.scenes || [];
       var els = document.querySelectorAll('[data-us-project-src]');
       for (var i = 0; i < scenes.length; i++) {
         var s = scenes[i];
-        if (!s || s.destroyed) continue;
-        if (s.element && document.body.contains(s.element)) return s;
+        if (s && !s.destroyed && s.element && document.body.contains(s.element)) return s;
       }
       // 有元素但无匹配 scene（首次或 VT 后引擎未重建）：取最后一个元素对应的新 scene
       if (els.length && scenes.length) {
@@ -131,9 +90,8 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
       return scenes.length ? scenes[0] : null;
     }
 
-    // 找"活的" hero 元素：优先返回已绑定活场景的元素（scene.element 还在 body）；
-    // 否则取 DOM 中最后一个 .moonshot-scene（VT 过渡期间新元素通常挂载在后，
-    // 避免 querySelector 取到即将被移除的旧元素）。
+    /** 找"活的" hero 元素：优先返回已绑定活场景的元素（scene.element 还在 body）；
+     *  否则取 DOM 中最后一个 .moonshot-scene（VT 过渡期间新元素通常挂载在后）。 */
     function liveEl() {
       var els = document.querySelectorAll('.moonshot-scene[data-us-project-src]');
       if (!els.length) return null;
@@ -146,47 +104,64 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
       return els[els.length - 1];
     }
 
-    // 清理引擎中已不在 DOM 的死场景（VT 后旧 body 已移除）。
-    // 仅当元素确实不在文档且非当前激活场景时才销毁，避免 VT 过渡瞬间误杀。
+    /** 为元素创建场景（已有活场景则跳过；创建是异步的，boot 轮询等待） */
+    function ensureScene(el) {
+      if (typeof UnicornStudio.addScene !== 'function') return;
+      var existing = sceneFor(el);
+      if (existing && !existing.destroyed) return;
+      // 移除引擎的"已初始化"标记（虽然 addScene 不检查它，但保险起见）
+      el.removeAttribute('data-us-initialized');
+      try {
+        UnicornStudio.addScene({
+          projectId: null,
+          filePath: el.getAttribute('data-us-project-src'),
+          element: el,
+          dpi: +el.getAttribute('data-us-dpi'),
+          scale: +el.getAttribute('data-us-scale'),
+          fps: +el.getAttribute('data-us-fps'),
+          lazyLoad: el.getAttribute('data-us-lazyload'),
+          altText: el.getAttribute('data-us-alttext'),
+          ariaLabel: el.getAttribute('data-us-arialabel'),
+          fixed: el.getAttribute('data-us-fixed'),
+        });
+      } catch (e) { /* 忽略 */ }
+    }
+
+    /** 清理引擎中已不在 DOM 的死场景（VT 后旧 body 已移除），防 context 泄漏 */
     function disposeDeadScenes() {
       var scenes = UnicornStudio.scenes || [];
-      var els = document.querySelectorAll('[data-us-project-src]');
-      var liveEls = [];
-      for (var k = 0; k < els.length; k++) liveEls.push(els[k]);
       for (var i = scenes.length - 1; i >= 0; i--) {
         var s = scenes[i];
         if (!s || s.destroyed) continue;
         var el = s.element;
-        // 元素在 DOM（含当前激活）→ 不销毁
-        if (el && document.body.contains(el)) continue;
-        // 元素已被移除（旧页面残留）→ 销毁释放
+        if (el && document.body.contains(el)) continue; // 在 DOM（含当前激活）→ 不销毁
         if (el) {
           try { s.destroy(); } catch (e) {}
         }
       }
     }
 
-    // 初始化兜底：引擎 init 可能早于布局完成（offsetWidth=0 → canvas 1px → 卡 initializing）。
-    // 轮询等待元素有真实尺寸后再 resize + initializePlanes；并处理 initializing 卡死。
-    // 用 setTimeout 串行轮询（无互斥锁，靠 bootTries 计数防无限递归）。
+    /* ============ 启动引导 ============
+     * 兜底三连：元素尺寸未就绪 / 场景未创建 / 初始化卡死，
+     * 都用串行 setTimeout 轮询，上限 MAX_TRIES（15s）。 */
     var bootTries = 0;
-    var MAX_TRIES = 150;   // 15s 上限（100ms × 150）
+    var MAX_TRIES = 150; // 100ms × 150 ≈ 15s
+
     function elSize() {
       var el = document.querySelector('.moonshot-scene[data-us-project-src]');
       if (!el) return null;
       var r = el.getBoundingClientRect();
       return { w: r.width || el.offsetWidth, h: r.height || el.offsetHeight };
     }
-    // 强制完成初始化：引擎 checkIfReady 依赖 rAF 递归等 planes.isReady，
-    // 后台标签/某些环境下 rAF 不驱动 → initializing 永远卡 true。
-    // 手动完成 planes 创建 + 纹理绑定，并直接标记 isReady 跳过 rAF 等待。
+
+    /** 强制完成初始化：引擎 checkIfReady 依赖 rAF 递归等 planes.isReady，
+     *  后台标签/某些环境下 rAF 不驱动 → initializing 永远卡 true。
+     *  手动完成 planes 创建 + 纹理绑定，直接标记 isReady 跳过 rAF 等待。 */
     function forceInit(scene) {
       if (scene.initialized) return true;
       try {
-        // 重置卡死状态
         scene.initializing = false;
         scene.initialized = false;
-        // 已建过 planes 则跳过创建（避免重复）
         var hasPlanes = scene.curtain && scene.curtain.planes && scene.curtain.planes.length > 0;
         if (!hasPlanes) {
           if (scene.handleItemPlanes) {
@@ -198,13 +173,11 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
         } else if (scene.createTextures) {
           try { scene.createTextures(); } catch (e) {}
         }
-        // 标记所有 plane ready（跳过 rAF 等 isReady）
         if (scene.curtain && scene.curtain.planes) {
           scene.curtain.planes.forEach(function (p) {
             if (p.userData) p.userData.isReady = true;
           });
         }
-        // 完成初始化收尾
         if (scene.handlePlaneCreation) {
           try { scene.handlePlaneCreation(); } catch (e) {}
         }
@@ -216,17 +189,16 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
         return false;
       }
     }
+
+    /** 幂等引导：场景就绪后挂 beam hook 并淡入 Hero */
     function boot() {
-      // 用 bootTries 计数防止无限轮询；setTimeout 天然串行
       try {
-        // 先清理死场景（即使当前页无 hero，也要释放旧页残留，防 context 泄漏）
         disposeDeadScenes();
         var el = liveEl();
         if (!el) return; // 页面无 hero（内容页），无需初始化
-        var scene = sceneForElement(el);
+        var scene = sceneFor(el);
         if (!scene) {
-          // 场景不存在（VT 后新 DOM 元素 / 首次引擎未创建）：手动 addScene 创建
-          ensureScene(el);
+          ensureScene(el); // 场景不存在（首次 / VT 后新 DOM）：创建并等待
           if (bootTries++ < MAX_TRIES) setTimeout(boot, 150);
           return;
         }
@@ -237,7 +209,6 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
           return;
         }
         // 卡死兜底：initializing 卡住超过阈值（约 4s）→ 强制销毁重建
-        // （persist 移除后不会发生，但防御引擎自身初始化中断的场景）
         if (scene.initializing && !scene.initialized && bootTries > 40) {
           try { scene.destroy(); } catch (e) {}
           ensureScene(el);
@@ -252,43 +223,22 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
         if (!ok && bootTries++ < MAX_TRIES) setTimeout(boot, 100);
         else if (ok) {
           installBeamHook(); // 场景就绪后（重）挂载 beam hook
-          // 黑洞就绪：淡入（配合 index.astro 的 .hero-anim opacity 过渡，避免突然弹出）
           var heroAnimEl = document.querySelector('.hero-anim');
-          if (heroAnimEl) heroAnimEl.classList.add('hero-anim-ready');
+          if (heroAnimEl) heroAnimEl.classList.add('hero-anim-ready'); // 淡入，避免突然弹出
         }
       } catch (e) {}
     }
 
-    // 启动 boot：首次加载直接启动；VT 后 inline script 重跑（新 body）也会再次启动。
-    // ⚠️ 不能只依赖 astro:page-load 事件：VT 完成时新 body 的 script 最后执行，
-    //    此时 page-load 可能已触发过，监听注册后不再触发 → boot 永不跑 → 黑洞黑屏。
-    //    boot 幂等（场景已初始化则跳过），每次 script 执行都直接跑最可靠。
-    // ⚠️ 不依赖 UnicornStudio.init() 的 Promise：它用 requestIdleCallback，VT 后/
-    //    后台标签可能永不 resolve。首次尝试 init()（快速路径），失败/超时由 boot 兜底。
-    if (firstRun && window.UnicornStudio) {
-      try { UnicornStudio.init(); } catch (e) {}
-    }
-    setTimeout(boot, 60);
-    // View Transitions：每次页面切换（含返回/中英切换）后重新 boot，恢复黑洞。
-    // 监听器只在首次注册（全局标志），避免 VT 重跑堆积重复监听。
-    if (!window.__pyaiHeroPageLoadBound) {
-      window.__pyaiHeroPageLoadBound = true;
-      document.addEventListener('astro:page-load', function () {
-        bootTries = 0;
-        setTimeout(boot, 60);
-      });
-    }
-
-    // beam 动态参数：黑洞吸积盘"太阳在后面移动"效果
-    //   - 鼠标在中心 → uBeamArc=TWO_PI 满圈（完整日全食圆环）
-    //   - 鼠标偏移 → 弧长线性缩短（太阳被遮挡），弧变粗（吸积盘增亮）
-    //   - 光弧缺口方向跟随鼠标方向（uBeamAngle = 鼠标方向）
-    //   - 圆心轻微跟随鼠标位移（shader 内 0.12 系数，已内置，无需 JS）
-    // ⚠️ 独立成函数：VT 后场景可能重建（新 scene/新 beamPlane），
-    //    旧的 onRender hook 随旧 plane 销毁，必须由 boot 在场景就绪后重挂。
-    //    幂等：已 hook 的 plane 直接跳过，避免 onRender 堆积。
+    /* ============ 光束参数（跟随鼠标） ============
+     * - 鼠标在中心 → uBeamArc=TWO_PI 满圈（完整日全食圆环）
+     * - 鼠标偏移 → 弧长线性缩短（太阳被遮挡），弧变粗（吸积盘增亮）
+     * - 光弧缺口方向跟随鼠标方向（uBeamAngle = 鼠标方向）
+     * - 圆心轻微跟随鼠标位移（shader 内 0.12 系数，已内置，无需 JS）
+     * ⚠️ 独立成函数：VT 后场景可能重建（新 scene/新 beamPlane），
+     *    旧 onRender hook 随旧 plane 销毁，必须由 boot 在场景就绪后重挂。
+     *    幂等：已 hook 的 plane 直接跳过，避免 onRender 堆积。 */
     function installBeamHook() {
-      var scene = findLiveScene();
+      var scene = liveScene();
       if (!scene || !scene.curtain || !scene.curtain.planes) return;
       var beamPlane = null;
       // 收集所有 shader 里声明/引用了 uBHOffset 的 plane（beam/ripple/chromab），
@@ -321,88 +271,90 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
       beamPlane.uniforms.beamStrength.value = 0.62;
       if (beamPlane._pyaiBeamHook) return;
       beamPlane._pyaiBeamHook = true;
-        // 平滑角度/弧长/粗细：三者同 alpha 插值避免撕裂；角度走最短角差防跨 π 跳变
-        var smoothAngle = 0.0;
-        var smoothArc = TWO_PI;
-        var smoothThickness = 0.2;
-        // 黑洞圆心延迟跟随：smoothBH 是平滑后的偏移（UV，中心为 0）。
-        // alpha=1-exp(-k·dt)，k=2 → 时间常数 ~0.5s，黑洞慵懒地追鼠标
-        //（之前直接读 uMousePos 即时跟随，用户反馈"移动有点快"）。
-        var smoothBH = { x: 0, y: 0 };
-        var lastT = null;
-        beamPlane.onRender(function () {
-          try {
-            var mu = beamPlane.uniforms.mousePos && beamPlane.uniforms.mousePos.value;
-            if (!mu) return;
-            var mx = mu._x !== undefined ? mu._x : mu.x;
-            var my = mu._y !== undefined ? mu._y : mu.y;
-            // 鼠标离中心 (0.5, 0.5) 的偏移（上=+y，右=+x，与 shader 角度空间一致）
-            var dx = mx - 0.5;
-            var dy = my - 0.5;
-            var dist = Math.sqrt(dx * dx + dy * dy);
-            // 黑洞圆心延迟跟随：目标偏移（x 0.22 / y 0.12，与 shader clamp 前一致），
-            // 指数平滑后写入所有 uBHOffset plane + 全局 __pyaiBH（粒子挖洞同步延迟）。
-            var targetBHX = Math.min(0.38, Math.max(-0.38, dx * 0.18));
-            var targetBHY = Math.min(0.18, Math.max(-0.18, dy * 0.12));
-            var now = performance.now();
-            var dt = lastT !== null ? (now - lastT) / 1000 : 0.016;
-            if (dt > 0.1) dt = 0.1;
-            var bhAlpha = 1 - Math.exp(-2 * dt); // 延迟强度：2 更慵懒（时间常数 ~0.5s），调大更快
-            smoothBH.x += (targetBHX - smoothBH.x) * bhAlpha;
-            smoothBH.y += (targetBHY - smoothBH.y) * bhAlpha;
-            // 写入所有 uBHOffset plane（beam/ripple/chromab 同步延迟）
-            for (var pi = 0; pi < bhPlanes.length; pi++) {
-              var bp = bhPlanes[pi];
-              if (bp.uniforms && bp.uniforms.uBHOffset) {
-                var v = bp.uniforms.uBHOffset.value;
-                v.x = smoothBH.x;
-                v.y = smoothBH.y;
-              }
-            }
-            // 全局供 canvas 粒子（ParticleBackground）同步吸入中心（含 clamp 后 UV 坐标）
-            var bhX = Math.min(0.88, Math.max(0.12, 0.5 + smoothBH.x));
-            var bhY = Math.min(0.68, Math.max(0.32, 0.5 + smoothBH.y));
-            window.__pyaiBH = { x: bhX, y: bhY };
-            // CSS 星点层（.hero-stars）的挖洞蒙版圆心：写 CSS 变量（屏幕百分比坐标，
-            // x=bhX、y=1-bhY 因为 CSS y 向下为正、UV y 向上为正），供 mask radial-gradient 跟随黑洞
-            var heroSec = document.querySelector('.hero-section');
-            if (heroSec) {
-              heroSec.style.setProperty('--bh-x', (bhX * 100).toFixed(2) + '%');
-              heroSec.style.setProperty('--bh-y', ((1 - bhY) * 100).toFixed(2) + '%');
-            }
-            var offset = Math.min(1.0, dist * 2.0); // 灵敏度：边角 dist≈0.707 → offset≈1
-            // 目标弧长（中心满圈 → 偏移线性缩短）、粗细（克制：0.2 → 0.36，原 0.3 → 0.65 太粗）
-            var targetArc = TWO_PI - offset * (TWO_PI - MIN_ARC);
-            var targetThickness = 0.2 + offset * 0.12;
-            // 缺口方向 = 鼠标方向
-            var target = Math.atan2(dy, dx);
-            if (target < 0) target += TWO_PI;
-            // 同步平滑（dt 统一计算，黑洞延迟 + 弧长/角度/粗细共用）
-            lastT = now;
-            var alpha = 1 - Math.exp(-12 * dt);
-            var diff = target - smoothAngle;
-            diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-            smoothAngle += diff * alpha;
-            smoothAngle = (smoothAngle + TWO_PI) % TWO_PI;
-            smoothArc += (targetArc - smoothArc) * alpha;
-            smoothThickness += (targetThickness - smoothThickness) * alpha;
-            beamPlane.uniforms.beamAngle.value = smoothAngle;
-            beamPlane.uniforms.beamArc.value = smoothArc;
-            beamPlane.uniforms.beamThickness.value = smoothThickness;
-          } catch (e) {}
-        });
-    }
-    // 首次尝试挂载（场景未就绪时静默返回，等 boot 在场景就绪后调用）
-    installBeamHook();
 
-    // resize 兜底：窗口尺寸变化时手动 resize 场景，并强制文字层重绘复位。
-    // 引擎的 resize 只更新 canvas 尺寸，text 层的 canvas 纹理需要额外刷新
-    //（否则 pyai.site 文字在窗口变化后停在旧尺寸/位置——"不能复位"的根因）。
-    // 用防抖 50ms 确保在引擎 debounce(16ms) 之后修正尺寸。
-    (function () {
+      // 平滑角度/弧长/粗细：三者同 alpha 插值避免撕裂；角度走最短角差防跨 π 跳变
+      var smoothAngle = 0.0;
+      var smoothArc = TWO_PI;
+      var smoothThickness = 0.2;
+      // 黑洞圆心延迟跟随：smoothBH 是平滑后的偏移（UV，中心为 0）。
+      // alpha=1-exp(-k·dt)，k=2 → 时间常数 ~0.5s，黑洞慵懒地追鼠标
+      //（之前直接读 uMousePos 即时跟随，用户反馈"移动有点快"）。
+      var smoothBH = { x: 0, y: 0 };
+      var lastT = null;
+      beamPlane.onRender(function () {
+        try {
+          var mu = beamPlane.uniforms.mousePos && beamPlane.uniforms.mousePos.value;
+          if (!mu) return;
+          var mx = mu._x !== undefined ? mu._x : mu.x;
+          var my = mu._y !== undefined ? mu._y : mu.y;
+          // 鼠标离中心 (0.5, 0.5) 的偏移（上=+y，右=+x，与 shader 角度空间一致）
+          var dx = mx - 0.5;
+          var dy = my - 0.5;
+          var dist = Math.sqrt(dx * dx + dy * dy);
+          // 黑洞圆心延迟跟随：目标偏移（x 0.22 / y 0.12，与 shader clamp 前一致），
+          // 指数平滑后写入所有 uBHOffset plane + 全局 __pyaiBH（粒子挖洞同步延迟）。
+          var targetBHX = Math.min(0.38, Math.max(-0.38, dx * 0.18));
+          var targetBHY = Math.min(0.18, Math.max(-0.18, dy * 0.12));
+          var now = performance.now();
+          var dt = lastT !== null ? (now - lastT) / 1000 : 0.016;
+          if (dt > 0.1) dt = 0.1;
+          var bhAlpha = 1 - Math.exp(-2 * dt); // 延迟强度：2 更慵懒（时间常数 ~0.5s），调大更快
+          smoothBH.x += (targetBHX - smoothBH.x) * bhAlpha;
+          smoothBH.y += (targetBHY - smoothBH.y) * bhAlpha;
+          // 写入所有 uBHOffset plane（beam/ripple/chromab 同步延迟）
+          for (var pi = 0; pi < bhPlanes.length; pi++) {
+            var bp = bhPlanes[pi];
+            if (bp.uniforms && bp.uniforms.uBHOffset) {
+              var v = bp.uniforms.uBHOffset.value;
+              v.x = smoothBH.x;
+              v.y = smoothBH.y;
+            }
+          }
+          // 全局供 canvas 粒子（ParticleBackground）同步吸入中心（含 clamp 后 UV 坐标）
+          var bhX = Math.min(0.88, Math.max(0.12, 0.5 + smoothBH.x));
+          var bhY = Math.min(0.68, Math.max(0.32, 0.5 + smoothBH.y));
+          window.__pyaiBH = { x: bhX, y: bhY };
+          // CSS 星点层（.hero-stars）的挖洞蒙版圆心：写 CSS 变量（屏幕百分比坐标，
+          // x=bhX、y=1-bhY 因为 CSS y 向下为正、UV y 向上为正），供 mask radial-gradient 跟随黑洞
+          var heroSec = document.querySelector('.hero-section');
+          if (heroSec) {
+            heroSec.style.setProperty('--bh-x', (bhX * 100).toFixed(2) + '%');
+            heroSec.style.setProperty('--bh-y', ((1 - bhY) * 100).toFixed(2) + '%');
+          }
+          var offset = Math.min(1.0, dist * 2.0); // 灵敏度：边角 dist≈0.707 → offset≈1
+          // 目标弧长（中心满圈 → 偏移线性缩短）、粗细（克制：0.2 → 0.36，原 0.3 → 0.65 太粗）
+          var targetArc = TWO_PI - offset * (TWO_PI - MIN_ARC);
+          var targetThickness = 0.2 + offset * 0.12;
+          // 缺口方向 = 鼠标方向
+          var target = Math.atan2(dy, dx);
+          if (target < 0) target += TWO_PI;
+          // 同步平滑（dt 统一计算，黑洞延迟 + 弧长/角度/粗细共用）
+          lastT = now;
+          var alpha = 1 - Math.exp(-12 * dt);
+          var diff = target - smoothAngle;
+          diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+          smoothAngle += diff * alpha;
+          smoothAngle = (smoothAngle + TWO_PI) % TWO_PI;
+          smoothArc += (targetArc - smoothArc) * alpha;
+          smoothThickness += (targetThickness - smoothThickness) * alpha;
+          beamPlane.uniforms.beamAngle.value = smoothAngle;
+          beamPlane.uniforms.beamArc.value = smoothArc;
+          beamPlane.uniforms.beamThickness.value = smoothThickness;
+        } catch (e) {}
+      });
+    }
+
+    /* ============ resize 兜底 ============
+     * 引擎的 resize 只更新 canvas 尺寸，text 层的 canvas 纹理需要额外刷新
+     *（否则 pyai.site 文字在窗口变化后停在旧尺寸/位置——"不能复位"的根因）。
+     * 防抖 50ms 确保在引擎 debounce(16ms) 之后修正尺寸。
+     * 监听器只注册一次（doResize 每次动态找活场景，跨 VT 有效）。 */
+    function installResizeHook() {
+      if (window.__pyaiHeroResizeBound) return;
+      window.__pyaiHeroResizeBound = true;
       var resizeTimer = null;
       function doResize() {
-        var scene = findLiveScene();
+        var scene = liveScene();
         if (!scene || !scene.resize) return;
         try { scene.resize(); } catch (e) {}
         // 强制文字层纹理重绘：text 层本地 canvas 尺寸跟随 canvasWidth/Height，
@@ -420,8 +372,44 @@ const sceneJson = readFileSync(path.join(process.cwd(), 'src', 'data', 'hero-sce
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(doResize, 50);
       });
-    })();
-    } // end initHero
+    }
+
+    /* ============ 入口 ============
+     * 等引擎就绪后初始化（轮询上限 10s）。
+     * VT 后 inline script 会重新执行（新 body 的新 script 标签）；
+     * 引擎 UMD 若也重跑会重置 window.UnicornStudio（新对象、scenes 清空、旧 context 泄漏），
+     * 故引擎注入已加全局标志防重载；本脚本用 __pyaiHeroBooted 标记首次接管，
+     * 后续重跑只补 boot/事件监听，不再重复初始化逻辑。 */
+    var engineWaits = 0;
+    function waitEngine() {
+      if (window.UnicornStudio) { initHero(); return; }
+      if (engineWaits++ < 200) setTimeout(waitEngine, 50);
+    }
+    setTimeout(waitEngine, 0);
+
+    function initHero() {
+      var firstRun = !window.__pyaiHeroBooted;
+      window.__pyaiHeroBooted = true;
+
+      // 首次加载快速路径（init() 内部仍可能不 resolve，boot 会兜底）
+      if (firstRun && window.UnicornStudio) {
+        try { UnicornStudio.init(); } catch (e) {}
+      }
+      setTimeout(boot, 60);
+      // View Transitions：每次页面切换（含返回/中英切换）后重新 boot，恢复黑洞。
+      // 监听器只在首次注册（全局标志），避免 VT 重跑堆积重复监听。
+      if (!window.__pyaiHeroPageLoadBound) {
+        window.__pyaiHeroPageLoadBound = true;
+        document.addEventListener('astro:page-load', function () {
+          bootTries = 0;
+          setTimeout(boot, 60);
+        });
+      }
+
+      // 场景未就绪时静默返回，等 boot 在场景就绪后调用
+      installBeamHook();
+      installResizeHook();
+    }
   })();
 </script>
 
