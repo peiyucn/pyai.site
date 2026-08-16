@@ -1,11 +1,17 @@
 #!/usr/bin/env node
 /**
- * 项目状态同步：读取每个项目的 repo 地址，查 GitHub 的 archived 状态，回写 frontmatter 的 status。
+ * 项目状态 + 简介同步：
+ *   1. 读取每个项目的 repo 地址，查 GitHub 的 archived 状态，回写 frontmatter 的 status。
+ *   2. 读取 GitHub 的 description（仓库简介），回写英文版 frontmatter 的 description。
  *
- * 映射规则：
+ * status 映射规则：
  *   - GitHub archived=true          → status: archived
  *   - GitHub archived=false 且当前是 archived → status: active（解除归档）
  *   - 其余（active / wip）保持不变（wip 是手动维护的状态，不被覆盖）
+ *
+ * description 规则：
+ *   - GitHub description 为英文单一来源，只回写 en/*.md；zh/*.md 为手动翻译，保持不动
+ *   - GitHub description 为空时跳过，避免把简介清空
  *
  * 同时写 data/projects/meta.json（updatedAt），供项目页展示"最后更新时间"。
  * 用法：node scripts/projects-sync/projects-sync.mjs
@@ -19,7 +25,7 @@ const META_PATH = path.join(ROOT, 'data', 'projects', 'meta.json');
 
 const GH_TOKEN = process.env.GITHUB_TOKEN || '';
 
-/** 从 frontmatter 里提取 repo 与 status */
+/** 从 frontmatter 里提取 repo / status */
 function parseFrontmatter(content) {
   const repo = content.match(/^repo:\s*(.+)$/m)?.[1]?.trim() || '';
   const status = content.match(/^status:\s*(.+)$/m)?.[1]?.trim() || '';
@@ -32,19 +38,19 @@ function repoOwnerName(repoUrl) {
   return m ? { owner: m[1], name: m[2] } : null;
 }
 
-/** 查 GitHub API 的 archived 状态 */
-async function fetchArchived(owner, name) {
+/** 查 GitHub API：archived 状态 + description（仓库简介） */
+async function fetchRepo(owner, name) {
   const url = `https://api.github.com/repos/${owner}/${name}`;
   const headers = { 'User-Agent': 'pyai-site-projects-sync', Accept: 'application/vnd.github+json' };
   if (GH_TOKEN) headers.Authorization = `Bearer ${GH_TOKEN}`;
   const resp = await fetch(url, { headers });
   if (!resp.ok) throw new Error(`HTTP ${resp.status} for ${owner}/${name}`);
   const data = await resp.json();
-  return !!data.archived;
+  return { archived: !!data.archived, description: data.description || '' };
 }
 
 async function main() {
-  const repoMap = new Map(); // repoUrl -> { files: string[], status: string }
+  const repoMap = new Map(); // repoUrl -> { files: {path, lang}[], status: string }
 
   for (const lang of ['zh', 'en']) {
     const dir = path.join(PROJECTS_DIR, lang);
@@ -59,35 +65,59 @@ async function main() {
         continue;
       }
       if (!repoMap.has(repo)) repoMap.set(repo, { files: [], status });
-      repoMap.get(repo).files.push(filePath);
+      repoMap.get(repo).files.push({ path: filePath, lang });
     }
   }
 
   const changed = [];
   for (const [repo, info] of repoMap) {
     const { owner, name } = repoOwnerName(repo);
-    let archived;
+    let repoInfo;
     try {
-      archived = await fetchArchived(owner, name);
+      repoInfo = await fetchRepo(owner, name);
     } catch (err) {
       console.error(`Failed to fetch ${repo}: ${err.message}. Skipping.`);
       continue;
     }
 
     // archived=false 且当前是 archived → 解除归档回 active；其余不动（保留 wip/active）
-    const newStatus = archived
+    const newStatus = repoInfo.archived
       ? 'archived'
       : info.status === 'archived'
         ? 'active'
         : info.status;
 
-    if (newStatus !== info.status) {
-      for (const filePath of info.files) {
-        const content = fs.readFileSync(filePath, 'utf8');
-        const updated = content.replace(/^status:\s*\S+/m, `status: ${newStatus}`);
-        fs.writeFileSync(filePath, updated, 'utf8');
+    let descChanged = false;
+    for (const { path: filePath, lang } of info.files) {
+      let content = fs.readFileSync(filePath, 'utf8');
+      let fileChanged = false;
+
+      if (newStatus !== info.status) {
+        content = content.replace(/^status:\s*\S+/m, `status: ${newStatus}`);
+        fileChanged = true;
       }
-      changed.push(`${repo}: ${info.status} -> ${newStatus}`);
+
+      // 简介：GitHub 英文描述回写 en；zh 保持手动翻译不动
+      if (lang === 'en' && repoInfo.description) {
+        const quoted = JSON.stringify(repoInfo.description);
+        const next = content.replace(/^description:\s*[^\r\n]*/m, `description: ${quoted}`);
+        if (next !== content) {
+          content = next;
+          fileChanged = true;
+          descChanged = true;
+        }
+      }
+
+      if (fileChanged) {
+        fs.writeFileSync(filePath, content, 'utf8');
+      }
+    }
+
+    if (newStatus !== info.status) {
+      changed.push(`${repo}: status ${info.status} -> ${newStatus}`);
+    }
+    if (descChanged) {
+      changed.push(`${repo}: description -> ${repoInfo.description}`);
     }
   }
 
@@ -99,9 +129,9 @@ async function main() {
   );
 
   if (changed.length) {
-    console.log(`Updated ${changed.length} repo(s):\n  ${changed.join('\n  ')}`);
+    console.log(`Updated ${changed.length} item(s):\n  ${changed.join('\n  ')}`);
   } else {
-    console.log('No status changes.');
+    console.log('No changes.');
   }
 }
 

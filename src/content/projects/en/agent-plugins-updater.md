@@ -1,6 +1,6 @@
 ---
 title: agent-plugins-updater
-description: One-click update of VS Code agent plugins from the Agent Plugins view — no more digging through the command palette, no uninstall/reinstall.
+description: "One-click update of VS Code agent plugins from the Agent Plugins view - no more digging through the command palette, no uninstall/reinstall."
 locale: en
 repo: https://github.com/peiyucn/agent-plugins-updater
 status: archived

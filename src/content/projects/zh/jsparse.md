@@ -1,6 +1,6 @@
 ---
 title: JSParse
-description: 基于 JavaScript 的逻辑表达式计算器组件。
+description: JS 逻辑表达式计算器组件。
 locale: zh
 repo: https://github.com/peiyucn/JSParse
 status: archived

@@ -1,6 +1,6 @@
 ---
 title: epytor
-description: A Webview-based Markdown editor extension for VS Code with i18n support.
+description: "WYSIWYG Markdown editor for VS Code, powered by Milkdown."
 locale: en
 repo: https://github.com/peiyucn/epytor
 status: active

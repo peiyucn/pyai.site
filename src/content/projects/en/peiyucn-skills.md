@@ -1,6 +1,6 @@
 ---
 title: peiyucn-skills
-description: note2md — an agent-native Markdown note management skill (Notebook → Section → Page).
+description: "Agent-native Markdown note management — Notebook→Section→Page hierarchy with slash commands for Copilot, Claude Code, and Codex."
 locale: en
 repo: https://github.com/peiyucn/peiyucn-skills
 status: active

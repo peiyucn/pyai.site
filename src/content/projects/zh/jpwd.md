@@ -1,6 +1,6 @@
 ---
 title: JPwd
-description: 基于 JavaScript 的密码输入组件，提供安全的密码交互体验。
+description: JS 密码输入组件。
 locale: zh
 repo: https://github.com/peiyucn/JPwd
 status: archived

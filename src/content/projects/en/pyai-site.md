@@ -1,6 +1,6 @@
 ---
 title: pyai.site
-description: A bilingual (Chinese/English) personal blog built with Astro and Tailwind CSS, with particle-aurora background, auto-deployed to GitHub Pages.
+description: "My blog"
 locale: en
 repo: https://github.com/peiyucn/pyai.site
 status: active

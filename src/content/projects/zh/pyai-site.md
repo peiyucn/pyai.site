@@ -1,6 +1,6 @@
 ---
 title: pyai.site
-description: 基于 Astro 与 Tailwind CSS 的中英双语个人博客，粒子极光背景，自动部署到 GitHub Pages。
+description: 我的博客。
 locale: zh
 repo: https://github.com/peiyucn/pyai.site
 status: active

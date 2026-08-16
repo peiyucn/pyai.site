@@ -1,6 +1,6 @@
 ---
 title: JPwd
-description: A JavaScript password input component.
+description: "The JS password input components."
 locale: en
 repo: https://github.com/peiyucn/JPwd
 status: archived

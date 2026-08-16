@@ -1,6 +1,6 @@
 ---
 title: JSParse
-description: A JS logical expressions calculator component.
+description: "A JS Logical expressions calculator components."
 locale: en
 repo: https://github.com/peiyucn/JSParse
 status: archived

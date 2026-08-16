@@ -1,6 +1,6 @@
 ---
 title: epytor
-description: 基于 Webview 的 VS Code Markdown 编辑器扩展，支持 i18n 与自定义渲染。
+description: 基于 Milkdown 的所见即所得（WYSIWYG）Markdown 编辑器，适用于 VS Code。
 locale: zh
 repo: https://github.com/peiyucn/epytor
 status: active

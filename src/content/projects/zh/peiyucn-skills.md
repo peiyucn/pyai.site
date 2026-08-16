@@ -1,6 +1,6 @@
 ---
 title: peiyucn-skills
-description: note2md —— Agent 原生的 Markdown 笔记管理技能（Notebook → Section → Page）。
+description: Agent 原生的 Markdown 笔记管理——Notebook→Section→Page 层级，通过斜杠命令支持 Copilot、Claude Code 与 Codex。
 locale: zh
 repo: https://github.com/peiyucn/peiyucn-skills
 status: active
