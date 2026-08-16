@@ -19,12 +19,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
 
       # 豆瓣：列表页增量同步（秒级）
       - name: Sync Douban (incremental)
@@ -51,7 +51,7 @@ jobs:
       # 一次性提交所有按天更新的产物
       - name: Commit changes
         id: commit
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: 'chore(daily-sync): sync douban & projects'
           file_pattern: 'data/** src/content/projects/**'

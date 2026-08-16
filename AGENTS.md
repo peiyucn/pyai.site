@@ -64,7 +64,7 @@ AI 开发需关注的路径如下：
 
 ### 部署
 
-- push `master` 自动触发 GitHub Pages 部署（`.github/workflows/deploy.yml`，Node 22）
+- push `master` 自动触发 GitHub Pages 部署（`.github/workflows/deploy.yml`，Node 24）
 - 自定义域名 `pyai.site` 由仓库根目录 `CNAME` 文件指定
 - 首次配置：GitHub 仓库 Settings → Pages → Source 选择 "GitHub Actions"
 
