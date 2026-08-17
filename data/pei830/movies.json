@@ -31963,5 +31963,20 @@
     "doubanRating": 8.5,
     "isTv": false,
     "subtype": "movie"
+  },
+  {
+    "title": "奥德赛",
+    "url": "https://movie.douban.com/subject/36808876/",
+    "date": "2026-08-16",
+    "rating": 4,
+    "status": "看过",
+    "comment": "",
+    "director": "克里斯托弗·诺兰",
+    "country": "美国",
+    "year": "2026",
+    "genre": "",
+    "doubanRating": 8.4,
+    "isTv": false,
+    "subtype": "movie"
   }
 ]
