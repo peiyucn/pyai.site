@@ -1,15 +1,13 @@
 ---
 title: agent-plugins-updater
-description: 在 VS Code 的 Agent Plugins 视图中一键更新 Agent 插件，无需翻找命令面板或反复卸载重装。
+description: "One-click update of VS Code agent plugins from the Agent Plugins view - no more digging through the command palette, no uninstall/reinstall."
 locale: zh
 repo: https://github.com/peiyucn/agent-plugins-updater
+topics: ["agent-plugins","copilot","update","vscode","vscode-extension"]
+updated: 2026-08-12
+link: https://marketplace.visualstudio.com/items?itemName=peiyucn.agent-plugins-updater
+language: JavaScript
+forks: 0
+stars: 0
 status: archived
-order: 4
-featured: true
 ---
-
-为 VS Code Agent Plugins 设计的更新工具。
-
-- 一键更新所有 Agent 插件
-- 支持中英文（nls）
-- 无需卸载重装，直接覆盖升级

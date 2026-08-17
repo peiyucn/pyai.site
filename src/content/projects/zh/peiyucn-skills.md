@@ -1,15 +1,13 @@
 ---
 title: peiyucn-skills
-description: Agent 原生的 Markdown 笔记管理——Notebook→Section→Page 层级，通过斜杠命令支持 Copilot、Claude Code 与 Codex。
+description: "Agent-native Markdown note management — Notebook→Section→Page hierarchy with slash commands for Copilot, Claude Code, and Codex."
 locale: zh
 repo: https://github.com/peiyucn/peiyucn-skills
+topics: ["claude-code","codex","copilot","markdown","note-taking","onenote"]
+updated: 2026-08-10
+link: https://github.com/peiyucn/note2md
+language: PowerShell
+forks: 0
+stars: 0
 status: active
-order: 2
-featured: true
 ---
-
-为 AI 编码助手设计的 Markdown 笔记管理插件。
-
-- Notebook / Section / Page 三级层级
-- 每日笔记、会议纪要等模板
-- 支持从 OneNote 导入与归档

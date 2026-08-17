@@ -1,15 +1,13 @@
 ---
 title: epytor
-description: 基于 Milkdown 的所见即所得（WYSIWYG）Markdown 编辑器，适用于 VS Code。
+description: "WYSIWYG Markdown editor for VS Code, powered by Milkdown."
 locale: zh
 repo: https://github.com/peiyucn/epytor
+topics: ["markdown","vscode","vscode-extension"]
+updated: 2026-08-05
+link: https://marketplace.visualstudio.com/items?itemName=peiyucn.epytor-vscode
+language: TypeScript
+forks: 1
+stars: 2
 status: active
-order: 3
-featured: true
 ---
-
-在 VS Code 中提供更强大的 Markdown 编辑体验。
-
-- Webview 编辑器，实时预览
-- 中英双语（l10n）
-- 可定制的渲染组件

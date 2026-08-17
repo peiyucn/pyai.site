@@ -2,7 +2,7 @@
 /**
  * 项目状态 + 简介同步：
  *   1. 读取每个项目的 repo 地址，查 GitHub 的 archived 状态，回写 frontmatter 的 status。
- *   2. 读取 GitHub 的 description（仓库简介），回写英文版 frontmatter 的 description。
+ *   2. 读取 GitHub 的 description（仓库简介），中英同源不翻译，直接回写 zh/en frontmatter 的 description。
  *
  * status 映射规则：
  *   - GitHub archived=true          → status: archived
@@ -10,7 +10,7 @@
  *   - 其余（active / wip）保持不变（wip 是手动维护的状态，不被覆盖）
  *
  * description 规则：
- *   - GitHub description 为英文单一来源，只回写 en/*.md；zh/*.md 为手动翻译，保持不动
+ *   - GitHub description 为单一来源，中英同源不翻译，直接回写 zh/*.md 与 en/*.md
  *   - GitHub description 为空时跳过，避免把简介清空
  *
  * 同时写 data/projects/meta.json（updatedAt），供项目页展示"最后更新时间"。
@@ -38,7 +38,7 @@ function repoOwnerName(repoUrl) {
   return m ? { owner: m[1], name: m[2] } : null;
 }
 
-/** 查 GitHub API：archived 状态 + description（仓库简介） */
+/** 查 GitHub API：archived / description / pushed_at / stars / forks / language / topics / homepage */
 async function fetchRepo(owner, name) {
   const url = `https://api.github.com/repos/${owner}/${name}`;
   const headers = { 'User-Agent': 'pyai-site-projects-sync', Accept: 'application/vnd.github+json' };
@@ -46,11 +46,28 @@ async function fetchRepo(owner, name) {
   const resp = await fetch(url, { headers });
   if (!resp.ok) throw new Error(`HTTP ${resp.status} for ${owner}/${name}`);
   const data = await resp.json();
-  return { archived: !!data.archived, description: data.description || '' };
+  return {
+    archived: !!data.archived,
+    description: data.description || '',
+    updatedAt: data.pushed_at || '',
+    stars: data.stargazers_count ?? 0,
+    forks: data.forks_count ?? 0,
+    language: data.language || '',
+    topics: data.topics || [],
+    homepage: data.homepage || '',
+  };
+}
+
+/** 把 frontmatter 字段 upsert（存在则更新值，不存在则在 repo 行后插入） */
+function upsertField(content, key, value) {
+  const line = `${key}: ${value}`;
+  const re = new RegExp(`^${key}:\\s*[^\\r\\n]*`, 'm');
+  if (re.test(content)) return content.replace(re, line);
+  return content.replace(/^repo:\s*[^\r\n]*/m, (m) => `${m}\n${line}`);
 }
 
 async function main() {
-  const repoMap = new Map(); // repoUrl -> { files: {path, lang}[], status: string }
+  const repoMap = new Map(); // repoUrl -> { files: {path}[], status: string }
 
   for (const lang of ['zh', 'en']) {
     const dir = path.join(PROJECTS_DIR, lang);
@@ -65,7 +82,7 @@ async function main() {
         continue;
       }
       if (!repoMap.has(repo)) repoMap.set(repo, { files: [], status });
-      repoMap.get(repo).files.push({ path: filePath, lang });
+      repoMap.get(repo).files.push({ path: filePath });
     }
   }
 
@@ -88,7 +105,8 @@ async function main() {
         : info.status;
 
     let descChanged = false;
-    for (const { path: filePath, lang } of info.files) {
+    let metaChanged = false;
+    for (const { path: filePath } of info.files) {
       let content = fs.readFileSync(filePath, 'utf8');
       let fileChanged = false;
 
@@ -97,14 +115,33 @@ async function main() {
         fileChanged = true;
       }
 
-      // 简介：GitHub 英文描述回写 en；zh 保持手动翻译不动
-      if (lang === 'en' && repoInfo.description) {
+      // 简介：GitHub 描述为准，中英同源不翻译
+      if (repoInfo.description) {
         const quoted = JSON.stringify(repoInfo.description);
         const next = content.replace(/^description:\s*[^\r\n]*/m, `description: ${quoted}`);
         if (next !== content) {
           content = next;
           fileChanged = true;
           descChanged = true;
+        }
+      }
+
+      // GitHub 元数据：created / stars / forks / language
+      const metaFields = [
+        ['updated', repoInfo.updatedAt ? repoInfo.updatedAt.slice(0, 10) : ''],
+        ['stars', repoInfo.stars != null ? String(repoInfo.stars) : ''],
+        ['forks', repoInfo.forks != null ? String(repoInfo.forks) : ''],
+        ['language', repoInfo.language],
+        ['topics', repoInfo.topics?.length ? JSON.stringify(repoInfo.topics) : ''],
+        ['link', repoInfo.homepage],
+      ];
+      for (const [key, value] of metaFields) {
+        if (!value) continue;
+        const next = upsertField(content, key, value);
+        if (next !== content) {
+          content = next;
+          fileChanged = true;
+          metaChanged = true;
         }
       }
 
@@ -118,6 +155,9 @@ async function main() {
     }
     if (descChanged) {
       changed.push(`${repo}: description -> ${repoInfo.description}`);
+    }
+    if (metaChanged) {
+      changed.push(`${repo}: stars ${repoInfo.stars} / forks ${repoInfo.forks} / lang ${repoInfo.language || '-'}`);
     }
   }
 

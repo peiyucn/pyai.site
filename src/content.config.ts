@@ -65,9 +65,13 @@ const projects = defineCollection({
     // 在线演示 / 官网
     link: z.url().optional(),
     status: z.enum(['active', 'wip', 'archived']).default('active'),
-    // 首页展示优先级（越大越靠前）
-    order: z.number().default(0),
-    featured: z.boolean().default(false),
+    // GitHub 最近推送时间（用于「最近更新在前」排序）
+    updated: z.coerce.date().optional(),
+    // GitHub 星标 / fork 数 / 主语言 / 主题标签
+    stars: z.number().default(0),
+    forks: z.number().default(0),
+    language: z.string().optional(),
+    topics: z.array(z.string()).default([]),
   }),
 });
 

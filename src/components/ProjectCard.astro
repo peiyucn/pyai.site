@@ -14,6 +14,14 @@ const statusText: Record<string, { label: string; class: string }> = {
   archived: { label: locale === 'zh' ? '已归档' : 'Archived', class: 'status-archived' },
 };
 const status = statusText[project.data.status];
+
+// GitHub 语言色点
+const languageColors: Record<string, string> = {
+  TypeScript: '#3178c6',
+  JavaScript: '#f1e05a',
+  PowerShell: '#012456',
+  Astro: '#ff5d01',
+};
 ---
 
 <article
@@ -33,6 +41,30 @@ const status = statusText[project.data.status];
   <p class="flex-1 text-sm leading-relaxed text-zinc-400">
     {project.data.description}
   </p>
+  <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500">
+    <span>⭐ {project.data.stars}</span>
+    <span>🍴 {project.data.forks}</span>
+    {
+      project.data.language && (
+        <span class="flex items-center gap-1.5">
+          <span
+            class="inline-block h-2.5 w-2.5 rounded-full"
+            style={{ backgroundColor: languageColors[project.data.language] ?? '#8b949e' }}
+          />
+          {project.data.language}
+        </span>
+      )
+    }
+  </div>
+  {
+    project.data.topics?.length > 0 && (
+      <div class="flex flex-wrap gap-1.5">
+        {project.data.topics.map((topic) => (
+          <span class="rounded-full bg-white/5 px-2 py-0.5 text-xs text-zinc-500">{topic}</span>
+        ))}
+      </div>
+    )
+  }
   <div class="flex gap-4 text-sm font-medium">
     {
       project.data.repo && (

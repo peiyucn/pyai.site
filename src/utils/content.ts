@@ -22,7 +22,7 @@ const PROJECT_STATUS_ORDER: Record<string, number> = {
   archived: 2,
 };
 
-/** 取指定语言的项目：先按状态分组（维护中→开发中→已归档），组内按 order 降序 */
+/** 取指定语言的项目：先按状态分组（维护中→开发中→已归档），组内按最近推送时间倒序（最近更新在前） */
 export async function getProjects(locale: Locale): Promise<Project[]> {
   const projects = await getCollection('projects', (project) => {
     return project.data.locale === locale;
@@ -31,7 +31,8 @@ export async function getProjects(locale: Locale): Promise<Project[]> {
     const pa = PROJECT_STATUS_ORDER[a.data.status] ?? 1;
     const pb = PROJECT_STATUS_ORDER[b.data.status] ?? 1;
     if (pa !== pb) return pa - pb;
-    return b.data.order - a.data.order;
+    // 同状态下按最近推送时间倒序（最近更新在前）
+    return (b.data.updated?.valueOf() ?? 0) - (a.data.updated?.valueOf() ?? 0);
   });
 }
 
