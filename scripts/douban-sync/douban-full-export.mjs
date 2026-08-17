@@ -2,7 +2,7 @@
 /**
  * 豆瓣观影记录全量抓取（HTTP，无需登录）
  * 来源：movie.douban.com/people/{USER}/collect 列表页（公开可访问）
- * 输出：data/{USER}/影视.csv（兼容 douban-sync 格式）+ data/{USER}/movies.json（含导演/年份/类型）
+ * 输出：data/{USER}/movies.json（含导演/年份/类型）
  *
  * 用法：DOUBAN_USER=pei830 node scripts/douban-sync/douban-full-export.mjs
  */
@@ -209,24 +209,6 @@ async function main() {
     `Enriched: ${withData.length} items | rating ${withRating} | director ${withDirector} | country ${withCountry}`,
   );
 
-  // 写入 CSV（兼容 douban-sync：title,url,date,rating,status,comment）
-  const csvLines = ['title,url,date,rating,status,comment'];
-  for (const it of withData) {
-    const stars = '★'.repeat(parseInt(it.rating) || 0);
-    const line = [
-      csvEscape(it.title),
-      csvEscape(it.url),
-      csvEscape(it.date),
-      stars,
-      '看过',
-      csvEscape(it.comment),
-    ].join(',');
-    csvLines.push(line);
-  }
-  const csvPath = path.join(OUTPUT_DIR, '影视.csv');
-  fs.writeFileSync(csvPath, csvLines.join('\n') + '\n', 'utf8');
-  console.log(`Written ${csvLines.length - 1} rows to ${csvPath}`);
-
   // 写入完整 JSON（含导演/年份/类型/国籍/豆瓣评分）
   const jsonPath = path.join(OUTPUT_DIR, 'movies.json');
   const output = withData.map((it) => ({
@@ -245,14 +227,6 @@ async function main() {
   fs.writeFileSync(jsonPath, JSON.stringify(output, null, 2), 'utf8');
   fs.writeFileSync(path.join(OUTPUT_DIR, 'meta.json'), JSON.stringify({ updatedAt: new Date().toISOString(), type: 'douban-sync' }, null, 2), 'utf8');
   console.log(`Written ${output.length} records to ${jsonPath}`);
-}
-
-function csvEscape(str) {
-  if (!str) return '';
-  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-    return '"' + str.replace(/"/g, '""') + '"';
-  }
-  return str;
 }
 
 main().catch((err) => {
