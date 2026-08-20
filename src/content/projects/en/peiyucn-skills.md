@@ -8,6 +8,6 @@ updated: 2026-08-10
 link: https://github.com/peiyucn/note2md
 language: PowerShell
 forks: 0
-stars: 0
+stars: 1
 status: active
 ---
