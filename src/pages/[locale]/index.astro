@@ -151,8 +151,19 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
     .hero-anim {
       opacity: 1;
     }
+    /* 移动端：静态标题与底部内容都改为文档流 flex 项（标题占据上方弹性空间、
+       内容自然高度贴底），避免在矮视口（横屏/小屏）下居中标题与底部内容重叠 */
     .hero-static-title {
       display: flex;
+      position: relative;
+      inset: auto;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .hero-content {
+      position: relative;
+      inset: auto;
+      flex: 0 0 auto;
     }
   }
   /* 星点层：星点数据源与内页共用 src/data/stars.ts，
