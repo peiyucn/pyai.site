@@ -146,26 +146,6 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
     letter-spacing: 0.02em;
     color: #edebe4;
   }
-  /* 移动端：跳过 WebGL，显示静态标题 + 底部渐变 */
-  @media (max-width: 768px) {
-    .hero-anim {
-      opacity: 1;
-    }
-    /* 移动端：静态标题与底部内容都改为文档流 flex 项（标题占据上方弹性空间、
-       内容自然高度贴底），避免在矮视口（横屏/小屏）下居中标题与底部内容重叠 */
-    .hero-static-title {
-      display: flex;
-      position: relative;
-      inset: auto;
-      flex: 1 1 auto;
-      min-height: 0;
-    }
-    .hero-content {
-      position: relative;
-      inset: auto;
-      flex: 0 0 auto;
-    }
-  }
   /* 星点层：星点数据源与内页共用 src/data/stars.ts，
      mask 径向挖洞让黑洞中心保持纯黑（跟随 --bh-x/--bh-y CSS 变量，
      由 MoonshotHero 的 beam hook 每帧写入） */
@@ -391,6 +371,30 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
   @media (max-width: 640px) {
     .hero-tagline {
       font-size: 1.1rem;
+    }
+  }
+
+  /* 移动端：静态标题与底部内容都改为文档流 flex 项（标题占据上方弹性空间、
+     内容自然高度贴底），避免在矮视口（横屏/小屏）下居中标题与内容重叠。
+     ⚠️ 必须放在组件全部基础规则之后：本组件 .hero-content 基础规则是
+     position:absolute，若本块写在它之前会被覆盖 → 内容层仍是绝对定位、
+     标题独占 flex 区 → 移动端重叠。 */
+  @media (max-width: 768px) {
+    .hero-anim {
+      opacity: 1;
+    }
+    .hero-static-title {
+      display: flex;
+      position: relative;
+      inset: auto;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden; /* 空间不足时裁剪标题文字，而不是溢出压到内容上 */
+    }
+    .hero-content {
+      position: relative;
+      inset: auto;
+      flex: 0 0 auto;
     }
   }
 </style>
