@@ -31978,5 +31978,20 @@
     "doubanRating": 8.4,
     "isTv": false,
     "subtype": "movie"
+  },
+  {
+    "title": "海市蜃楼",
+    "url": "https://movie.douban.com/subject/36382628/",
+    "date": "2026-08-24",
+    "rating": 0,
+    "status": "看过",
+    "comment": "",
+    "director": "李洪绸 / 车志刚 / 邢冬冬",
+    "country": "中国大陆",
+    "year": "2025",
+    "genre": "",
+    "doubanRating": 8.3,
+    "isTv": true,
+    "subtype": "tv"
   }
 ]
