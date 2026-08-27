@@ -3,7 +3,7 @@ title: pyai.site
 description: "My blog"
 locale: en
 repo: https://github.com/peiyucn/pyai.site
-updated: 2026-08-25
+updated: 2026-08-26
 link: https://pyai.site/
 language: Astro
 forks: 0
