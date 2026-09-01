@@ -1,5 +1,5 @@
-# 站点 CI：七过程清单（typecheck/test/build/package/publish/deploy/sync），
-# 全串行链；push master 即构建部署；deploy 为独立 job（官方 Pages artifact 交接）。
+# 站点 CI：真实过程 typecheck → build → deploy（push master 即构建部署）。
+# deploy 为独立 job（官方 Pages artifact 交接）。
 name: CI
 
 on:
@@ -37,17 +37,9 @@ jobs:
       - name: Check (astro check)
         run: pnpm run check
 
-  test:
-    name: test
-    needs: typecheck
-    runs-on: ubuntu-latest
-    steps:
-      - name: No-op
-        run: echo "test 空跑（静态站点无单元测试）"
-
   build:
     name: build
-    needs: test
+    needs: typecheck
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -72,25 +64,9 @@ jobs:
         with:
           path: ./dist
 
-  package:
-    name: package
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: No-op
-        run: echo "package 空跑（静态站点无发布包）"
-
-  publish:
-    name: publish
-    needs: package
-    runs-on: ubuntu-latest
-    steps:
-      - name: No-op
-        run: echo "publish 空跑（无市场/npm 发布，上线即部署）"
-
   deploy:
     name: deploy
-    needs: publish
+    needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -99,11 +75,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
-
-  sync:
-    name: sync
-    needs: deploy
-    runs-on: ubuntu-latest
-    steps:
-      - name: No-op
-        run: echo "sync 空跑（实际数据同步在 daily-sync.yml 定时执行）"
