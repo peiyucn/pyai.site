@@ -181,8 +181,8 @@ const comingSoon = t(locale, 'chat.comingSoon');
     let rafId = 0;
     let lastT = 0;
 
-    function loop(now) {
-      const el = document.querySelector('.mini-bh-wrap');
+    function loop(now: number) {
+      const el = document.querySelector<HTMLElement>('.mini-bh-wrap');
       if (!el) {
         rafId = 0; // 已离开内容页（首页无此元素），停止空转
         return;
@@ -215,15 +215,15 @@ const comingSoon = t(locale, 'chat.comingSoon');
 
     // 点击入口：事件委托到 document，VT 切换后无需重绑
     let toastTimer = 0;
-    document.addEventListener('click', (e) => {
-      const btn = e.target.closest('.mini-bh');
+    document.addEventListener('click', (e: MouseEvent) => {
+      const btn = (e.target as HTMLElement | null)?.closest('.mini-bh');
       if (!btn) return;
       const toast = document.querySelector('.mini-bh-toast');
       if (!toast) return;
       toast.textContent = btn.getAttribute('data-toast') || '';
       toast.classList.add('show');
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+      toastTimer = window.setTimeout(() => toast.classList.remove('show'), 2800);
     });
 
     start();

@@ -85,7 +85,7 @@ const nearShadows = starShadows(siteNear, '255, 255, 255');
     let rafId = 0;
     let lastT = 0;
 
-    function loop(now) {
+    function loop(now: number) {
       const dt = lastT ? Math.min(0.1, (now - lastT) / 1000) : 0.016;
       lastT = now;
       const alpha = 1 - Math.exp(-DAMP * dt); // 帧率无关的指数平滑
@@ -93,7 +93,7 @@ const nearShadows = starShadows(siteNear, '255, 255, 255');
       let settled = true;
       for (let i = 0; i < LAYERS.length; i++) {
         const { selector, factor } = LAYERS[i];
-        const el = document.querySelector(selector);
+        const el = document.querySelector<HTMLElement>(selector);
         if (!el) continue;
         const target = y * factor;
         smooth[i] += (target - smooth[i]) * alpha;

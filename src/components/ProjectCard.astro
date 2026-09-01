@@ -145,10 +145,10 @@ const languageColors: Record<string, string> = {
 <script>
   // 3D 角度变换：鼠标在卡片上移动时轻微倾斜（跟随鼠标），离开时平滑复位
   function setupTilt() {
-    document.querySelectorAll('.project-card').forEach((card) => {
+    document.querySelectorAll<HTMLElement>('.project-card').forEach((card) => {
       if (card.__tiltBound) return;
       card.__tiltBound = true;
-      card.addEventListener('mousemove', (e) => {
+      card.addEventListener('mousemove', (e: MouseEvent) => {
         card.style.transition = 'transform 0.08s ease-out';
         const rect = card.getBoundingClientRect();
         const px = (e.clientX - rect.left) / rect.width;

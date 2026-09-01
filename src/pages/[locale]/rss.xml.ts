@@ -20,7 +20,7 @@ export async function GET(context: APIContext) {
   return rss({
     title: `pyai.site · ${t(locale, 'records.title')}`,
     description: t(locale, 'records.description'),
-    site: context.site,
+    site: context.site ?? new URL('https://pyai.site'),
     items: sorted.map((record) => ({
       title: record.data.title,
       description: record.data.description,

@@ -419,7 +419,7 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       for (const { selector, factor } of LAYERS) {
-        const el = document.querySelector(selector);
+        const el = document.querySelector<HTMLElement>(selector);
         if (!el) continue;
         if (!bh) {
           el.style.transform = '';

@@ -18,10 +18,11 @@ const { variant = 'light' } = Astro.props;
   //    本组件只负责光晕 + 粒子 + 黑洞吸入，不再生成噪点纹理。
 
   function startParticleBg() {
-    const canvas = document.getElementById('particle-canvas');
+    const canvas = document.getElementById('particle-canvas') as HTMLCanvasElement | null;
     if (!canvas || canvas.dataset.started) return;
     canvas.dataset.started = '1';
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
     // 性能与数量配置（移动端减少粒子数）
     const isMobile = window.matchMedia('(max-width: 768px)').matches;
@@ -36,21 +37,25 @@ const { variant = 'light' } = Astro.props;
     const BH_RADIUS = 0.08; // 重生半径（视口短边比例）
     const FADE_RANGE = 0.35; // 渐隐起始半径（视口短边比例，提前淡，进入黑洞圆前已半透明）
 
-    const variant = canvas.closest('.particle-bg')?.dataset.variant || 'light';
+    const wrap = canvas.closest('.particle-bg') as HTMLElement | null;
+    const variant: 'light' | 'dark' = (wrap?.dataset.variant as 'light' | 'dark' | undefined) ?? 'light';
     const COLORS = {
       light: { particle: '99, 102, 241' }, // indigo-500
       dark: { particle: '237, 237, 237' }, // 灰白 #EDEDED，星点氛围（光弧保持金色）
     };
 
-    let particles = [];
-    let mouse = { x: null, y: null };
+    interface Particle { x: number; y: number; vx: number; vy: number; size: number }
+    let particles: Particle[] = [];
+    let mouse: { x: number | null; y: number | null } = { x: null, y: null };
     let width = 0, height = 0, dpr = 1;
-    let rafId = null;
-    let fallbackTimer = null;
+    let rafId: number | null = null;
+    let fallbackTimer: number | null = null;
 
     function resize() {
+      if (!canvas || !ctx) return;
       dpr = Math.min(window.devicePixelRatio || 1, 2);
       const parent = canvas.parentElement;
+      if (!parent) return;
       width = parent.clientWidth || window.innerWidth || 800;
       height = parent.clientHeight || window.innerHeight || 600;
       canvas.width = width * dpr;
@@ -72,7 +77,7 @@ const { variant = 'light' } = Astro.props;
     }
 
     // 粒子被黑洞吃掉后，重生到画布边缘（形成持续吸入流）
-    function respawnAtEdge(p) {
+    function respawnAtEdge(p: Particle) {
       const edge = Math.floor(Math.random() * 4);
       const m = 24;
       if (edge === 0) { p.x = Math.random() * width; p.y = m; }
@@ -84,6 +89,7 @@ const { variant = 'light' } = Astro.props;
     }
 
     function draw() {
+      if (!ctx) return;
       if (width === 0 || height === 0) return;
       ctx.clearRect(0, 0, width, height);
       const color = COLORS[variant] || COLORS.light;
@@ -100,7 +106,7 @@ const { variant = 'light' } = Astro.props;
 
       // 鼠标离黑洞的归一化距离 → 吸入速度系数（近快、远慢）
       let pullFactor = 1.0;
-      if (mouse.x !== null) {
+      if (mouse.x !== null && mouse.y !== null) {
         const mdx = mouse.x - bhx, mdy = mouse.y - bhy;
         const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
         const maxD = Math.sqrt(bhx * bhx + bhy * bhy) || 1;
@@ -119,7 +125,7 @@ const { variant = 'light' } = Astro.props;
         p.y += p.vy;
 
         // 鼠标扰动：鼠标附近粒子轻微绕开（保留原互动，力度降低避免抖动）
-        if (mouse.x !== null) {
+        if (mouse.x !== null && mouse.y !== null) {
           const mdx = mouse.x - p.x, mdy = mouse.y - p.y;
           const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
           if (mdist < MOUSE_RADIUS && mdist > 0.01) {
@@ -150,7 +156,8 @@ const { variant = 'light' } = Astro.props;
       }
     }
 
-    function onMouseMove(e) {
+    function onMouseMove(e: MouseEvent) {
+      if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
       mouse.x = e.clientX - rect.left;
       mouse.y = e.clientY - rect.top;
@@ -176,17 +183,13 @@ const { variant = 'light' } = Astro.props;
       }
       draw();
       let rafFailed = false;
-      if (window.requestAnimationFrame) {
-        try {
-          rafId = requestAnimationFrame(loop);
-        } catch {
-          rafFailed = true;
-        }
-      } else {
+      try {
+        rafId = requestAnimationFrame(loop);
+      } catch {
         rafFailed = true;
       }
       if (rafFailed) {
-        fallbackTimer = setInterval(draw, 1000 / 30);
+        fallbackTimer = window.setInterval(draw, 1000 / 30);
       }
 
       window.addEventListener('resize', resize);
@@ -195,8 +198,8 @@ const { variant = 'light' } = Astro.props;
 
       // 把本次动画的清理逻辑登记到模块级数组，由唯一的 before-swap 监听器统一执行
       cleanupFns.push(() => {
-        cancelAnimationFrame(rafId);
-        if (fallbackTimer) clearInterval(fallbackTimer);
+        if (rafId !== null) cancelAnimationFrame(rafId);
+        if (fallbackTimer !== null) clearInterval(fallbackTimer);
         window.removeEventListener('resize', resize);
         window.removeEventListener('mousemove', onMouseMove);
         window.removeEventListener('mouseleave', onMouseLeave);
@@ -207,7 +210,7 @@ const { variant = 'light' } = Astro.props;
   }
 
   // 模块级清理登记表 + 唯一的 before-swap 监听器（跨导航持久，避免切换多次后监听器堆积）
-  const cleanupFns = [];
+  const cleanupFns: (() => void)[] = [];
   document.addEventListener('astro:before-swap', () => {
     for (const fn of cleanupFns) fn();
     cleanupFns.length = 0;

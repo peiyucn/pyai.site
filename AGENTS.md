@@ -30,7 +30,7 @@
 
 1. 改动前先读懂相关文件（布局、组件、集合、i18n）
 2. 遵循官方模式：页面用 `ListLayout`/`PostLayout`/`Base` 布局，组件用 `.astro` 单文件组件
-3. 改动后必须 `pnpm build` 验证构建通过（exit=0），且不出现新的错误
+3. 改动后必须 `pnpm run verify`（= check + build）验证通过（exit=0），且不出现新的错误
 4. 中英双语都要验证（`/zh/` 与 `/en/`）
 
 ## 二、项目结构（摘要）
@@ -57,14 +57,14 @@ AI 开发需关注的路径如下：
 - **i18n**：`prefixDefaultLocale: true`（zh/en 都带前缀）、`redirectToDefaultLocale: true`
 - **Content Layer**：movies 用自定义 loader 读 `data/pei830/movies.json`，注意函数式 loader 返回扁平结构（id 与 data 字段平级）
 - **Tailwind 4**：主题在 `src/styles/global.css` 的 `@theme`，新增颜色/动画在此处定义
-- **构建**：`pnpm build`（= `pnpm run verify`；`astro build`，静态输出 `dist/`），改动后必须验证 exit=0
+- **构建**：`pnpm build`（`astro build`，静态输出 `dist/`），改动后必须验证 exit=0；类型检查 = `pnpm run check`（`astro check`）；一键验证 = `pnpm run verify`（check + build）
 - **首页 Hero（WebGL）**：`MoonshotHero.astro` 用 UnicornStudio 引擎渲染黑洞场景（`src/data/hero-scene.json`，shader 内嵌）。改 shader 直接改 `hero-scene.json` 里对应图层的 `compiledFragmentShaders` 字符串。**移动端（≤768px）跳过 WebGL**，用 `index.astro` 的 `.hero-static-title` 静态标题回退
 
 ## 四、部署与数据同步（维护细节）
 
 ### 部署
 
-- push `master` 自动触发 GitHub Pages 部署（`.github/workflows/deploy.yml`，Node 24）
+- push `master` 自动触发 GitHub Pages 部署（`.github/workflows/deploy.yml`：`typecheck`（astro check）→ `build`（astro build + Pages 发布），Node 24）
 - 自定义域名 `pyai.site` 由仓库根目录 `CNAME` 文件指定
 - 首次配置：GitHub 仓库 Settings → Pages → Source 选择 "GitHub Actions"
 

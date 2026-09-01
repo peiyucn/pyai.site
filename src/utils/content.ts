@@ -16,7 +16,8 @@ export async function getRecords(locale: Locale): Promise<Record[]> {
 }
 
 /** 项目状态排序优先级：维护中 > 开发中 > 已归档 */
-const PROJECT_STATUS_ORDER: Record<string, number> = {
+// 注意：本文件导出的 Record 类型别名会遮蔽全局 Record 工具类型，这里用索引签名写法
+const PROJECT_STATUS_ORDER: { [key: string]: number } = {
   active: 0,
   wip: 1,
   archived: 2,
