@@ -1,5 +1,5 @@
 # 站点 CI：七过程清单（typecheck/test/build/package/publish/deploy/sync），
-# push master 即构建部署；deploy 为独立 job（官方 Pages artifact 交接）。
+# 全串行链；push master 即构建部署；deploy 为独立 job（官方 Pages artifact 交接）。
 name: CI
 
 on:
@@ -47,7 +47,7 @@ jobs:
 
   build:
     name: build
-    needs: [typecheck, test]
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -82,7 +82,7 @@ jobs:
 
   publish:
     name: publish
-    needs: build
+    needs: package
     runs-on: ubuntu-latest
     steps:
       - name: No-op
@@ -90,7 +90,7 @@ jobs:
 
   deploy:
     name: deploy
-    needs: build
+    needs: publish
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -102,7 +102,7 @@ jobs:
 
   sync:
     name: sync
-    needs: build
+    needs: deploy
     runs-on: ubuntu-latest
     steps:
       - name: No-op
