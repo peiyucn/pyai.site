@@ -64,7 +64,7 @@ AI 开发需关注的路径如下：
 
 ### 部署
 
-- push `master` 自动触发验证与部署：`ci.yml` = `typecheck`（astro check）→ `build`（astro build）；`publish.yml` = `build`（astro build + Pages artifact）→ `deploy`（Pages 发布），Node 24
+- push `master` 自动触发验证与部署：`ci.yml` = `typecheck`（astro check，build 与部署同由 publish.yml 承担，不在 CI 重复构建）；`publish.yml` = `build`（astro build + Pages artifact）→ `deploy`（Pages 发布），Node 24
 - 自定义域名 `pyai.site` 由仓库根目录 `CNAME` 文件指定
 - 首次配置：GitHub 仓库 Settings → Pages → Source 选择 "GitHub Actions"
 
