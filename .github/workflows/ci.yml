@@ -1,6 +1,6 @@
-# Auto deploy to GitHub Pages.
-# Build output goes to ./dist, published via actions/deploy-pages.
-name: Deploy to GitHub Pages
+# 站点 CI：七过程清单（typecheck/test/build/package/publish/deploy/sync），
+# push master 即构建部署；deploy 为独立 job（官方 Pages artifact 交接）。
+name: CI
 
 on:
   push:
@@ -37,13 +37,18 @@ jobs:
       - name: Check (astro check)
         run: pnpm run check
 
-  build:
-    name: build
+  test:
+    name: test
     needs: typecheck
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: No-op
+        run: echo "test 空跑（静态站点无单元测试）"
+
+  build:
+    name: build
+    needs: [typecheck, test]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -66,6 +71,39 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: ./dist
+
+  package:
+    name: package
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: No-op
+        run: echo "package 空跑（静态站点无发布包）"
+
+  publish:
+    name: publish
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: No-op
+        run: echo "publish 空跑（无市场/npm 发布，上线即部署）"
+
+  deploy:
+    name: deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+  sync:
+    name: sync
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: No-op
+        run: echo "sync 空跑（实际数据同步在 daily-sync.yml 定时执行）"

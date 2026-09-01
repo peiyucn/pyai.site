@@ -64,7 +64,7 @@ AI 开发需关注的路径如下：
 
 ### 部署
 
-- push `master` 自动触发 GitHub Pages 部署（`.github/workflows/deploy.yml`：`typecheck`（astro check）→ `build`（astro build + Pages 发布），Node 24）
+- push `master` 自动触发七过程 CI 与部署（`.github/workflows/ci.yml`：`typecheck`（astro check）→ `test` 空跑 → `build`（astro build + Pages artifact）→ `package`/`publish`/`sync` 空跑 → `deploy`（Pages 发布），Node 24）
 - 自定义域名 `pyai.site` 由仓库根目录 `CNAME` 文件指定
 - 首次配置：GitHub 仓库 Settings → Pages → Source 选择 "GitHub Actions"
 
@@ -89,7 +89,7 @@ DOUBAN_USER=pei830 DOUBAN_OUTPUT_DIR=data node scripts/douban-sync/douban-full-e
 
 `projects-sync.mjs` 读取 `src/content/projects/` 各项目的 GitHub 仓库 `archived` 状态，映射到项目 frontmatter 的 `status`（active/wip/archived），并总是写 `data/projects/meta.json`（`updatedAt` 决定项目页「最后更新于」）。
 
-同步提交后若检测到变更（`git-auto-commit-action`），用 `gh workflow run deploy.yml` 触发部署（GITHUB_TOKEN 的 push 不会自动触发其他 workflow）。
+同步提交后若检测到变更（`git-auto-commit-action`），用 `gh workflow run ci.yml` 触发部署（GITHUB_TOKEN 的 push 不会自动触发其他 workflow）。
 
 ## 五、内容发布工作流
 
