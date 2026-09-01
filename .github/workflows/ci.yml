@@ -1,5 +1,4 @@
-# 站点 CI：真实过程 typecheck → build → deploy（push master 即构建部署）。
-# deploy 为独立 job（官方 Pages artifact 交接）。
+# 站点 CI：真实过程 typecheck → build（push master 即验证；部署在 publish.yml）。
 name: CI
 
 on:
@@ -9,12 +8,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
 
 jobs:
   typecheck:
@@ -57,21 +50,5 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Build
         run: pnpm build
-      - name: Setup Pages
-        uses: actions/configure-pages@v6
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: ./dist
-
-  deploy:
-    name: deploy
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
+      - name: Verify output
+        run: test -n "$(ls -A dist)" || (echo "dist 为空" && exit 1)
