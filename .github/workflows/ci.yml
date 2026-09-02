@@ -1,10 +1,10 @@
-# 站点 CI：真实过程 typecheck（push master 即验证；构建与部署由 publish.yml 承担——
+# 站点 CI：真实过程 typecheck（push main 即验证；构建与部署由 publish.yml 承担——
 # 二者同触发，build 不在 CI 里重复跑）。
 name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   workflow_dispatch:
 
 permissions:

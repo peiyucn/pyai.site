@@ -1,10 +1,10 @@
-# 站点发布：真实过程 build → deploy（GitHub Pages；push master 即部署）。
+# 站点发布：真实过程 build → deploy（GitHub Pages；push main 即部署）。
 # Pages 的 artifact 只能在同一 workflow run 内交接，故 build 在 publish.yml 内自含。
 name: Publish
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   workflow_dispatch:
 
 permissions:

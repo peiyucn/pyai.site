@@ -64,10 +64,10 @@ Astro 中英双语静态博客（GitHub Pages）。导航板块：首页 / 记�
 
 ## 工程管线（本仓库自含）
 
-* **开发**：日常改动直接在 master（无 dev 分支）
+* **开发**：日常改动直接在 main（无 dev 分支）
 * **验证**：`pnpm run verify`（= check + build，exit=0）；push 前必须通过
 * **提交**：逐项提交，中文描述 + 英文类型前缀（feat:/fix:/refactor:/chore:/docs:）；不确定的事直接说"不确定"，禁止编造事实性信息
-* **推送与部署**：push master 即触发 publish.yml（build + Pages 部署）自动上线，无需打 tag；`git push/fetch` 需要代理 127.0.0.1:7897
+* **推送与部署**：push main 即触发 publish.yml（build + Pages 部署）自动上线，无需打 tag；`git push/fetch` 需要代理 127.0.0.1:7897
 * **运维**：依赖升级统一手动（security updates 与 dependabot.yml 关闭）；收到警报 → 判断影响面（运行时/产物依赖才影响用户）→ 手动升级；本站无 CHANGELOG（站点内容本身双语）
 * 仓库专属：自定义域名 `pyai.site` 由根目录 `CNAME` 文件指定；首次配置时 GitHub 仓库 Pages Source 需手动设为 "GitHub Actions"
 
