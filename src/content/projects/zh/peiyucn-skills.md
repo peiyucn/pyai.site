@@ -4,7 +4,7 @@ description: "Agent-native Markdown note management — Notebook→Section→Pag
 locale: zh
 repo: https://github.com/peiyucn/peiyucn-skills
 topics: ["claude-code","codex","copilot","markdown","note-taking","onenote"]
-updated: 2026-09-01
+updated: 2026-09-02
 link: https://github.com/peiyucn/note2md
 language: PowerShell
 forks: 0

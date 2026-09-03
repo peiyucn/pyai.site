@@ -4,10 +4,10 @@ description: "WYSIWYG Markdown editor for VS Code, powered by Milkdown."
 locale: en
 repo: https://github.com/peiyucn/epytor
 topics: ["markdown","vscode","vscode-extension"]
-updated: 2026-09-01
+updated: 2026-09-02
 link: https://marketplace.visualstudio.com/items?itemName=peiyucn.epytor-vscode
 language: TypeScript
-forks: 1
-stars: 11
+forks: 2
+stars: 12
 status: active
 ---
