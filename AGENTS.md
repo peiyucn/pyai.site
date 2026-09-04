@@ -69,7 +69,7 @@ Astro 中英双语静态博客（GitHub Pages）。导航板块：首页 / 记�
 * **提交**：逐项提交，中文描述 + 英文类型前缀（feat:/fix:/refactor:/chore:/docs:）；不确定的事直接说"不确定"，禁止编造事实性信息
 * **推送与部署**：push main 即触发 publish.yml（build + Pages 部署）自动上线，无需打 tag；`git push/fetch` 需要代理 127.0.0.1:7897
 * **运维**：依赖升级统一手动（security updates 与 dependabot.yml 关闭）；收到警报 → 判断影响面（运行时/产物依赖才影响用户）→ 手动升级；本站无 CHANGELOG（站点内容本身双语）
-* 仓库专属：自定义域名 `pyai.site` 由根目录 `CNAME` 文件指定；首次配置时 GitHub 仓库 Pages Source 需手动设为 "GitHub Actions"
+* 仓库专属：自定义域名 `pyai.site` 由根目录 `CNAME` 文件指定；首次配置时 GitHub 仓库 Pages Source 需手动设为 "GitHub Actions"；**默认分支改名后**要同步改 Pages 环境（`github-pages`）的部署分支策略（Settings → Environments → github-pages → Deployment branches，或 `gh api` 改 deployment-branch-policies），否则 deploy job 报 "Branch is not allowed to deploy" 直接失败（2026-09 曾因此停更）
 
 ## 其他
 
