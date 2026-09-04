@@ -4,7 +4,7 @@ description: "A collection of small DeepSeek Harness (DSH) web plugins: chat inp
 locale: en
 repo: https://github.com/peiyucn/dsh-sparrow
 status: active
-updated: 2026-09-03
+updated: 2026-09-04
 stars: 0
 forks: 0
 language: TypeScript
