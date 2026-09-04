@@ -92,7 +92,7 @@ DOUBAN_USER=pei830 DOUBAN_OUTPUT_DIR=data node scripts/douban-sync/douban-full-e
 
 **项目**（脚本在 `scripts/projects-sync/`）：
 
-`projects-sync.mjs` 读取 `src/content/projects/` 各项目的 GitHub 仓库 `archived` 状态，映射到项目 frontmatter 的 `status`（active/wip/archived），并总是写 `data/projects/meta.json`（`updatedAt` 决定项目页「最后更新于」）。
+`projects-sync.mjs` 先列出 GitHub 上 `peiyucn` 的公开、非 fork 仓库，为站点还没有条目的仓库自动生成 `src/content/projects/{zh,en}/<name>.md` 骨架（title/description/topics 等取 GitHub 仓库数据，description 中英同源不翻译）；随后读取各条目的 GitHub 仓库 `archived` 状态，映射到项目 frontmatter 的 `status`（active/wip/archived），并总是写 `data/projects/meta.json`（`updatedAt` 决定项目页「最后更新于」）。注意：只自动发现公开仓库——私有仓库与 GitLab（evo_time）需手动添加条目；`wip` 是手动状态，新项目默认 `active`。
 
 同步提交后若检测到变更（`git-auto-commit-action`），用 `gh workflow run publish.yml` 触发部署（GITHUB_TOKEN 的 push 不会自动触发其他 workflow）。
 
