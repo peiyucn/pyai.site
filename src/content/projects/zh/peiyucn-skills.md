@@ -1,10 +1,10 @@
 ---
 title: peiyucn-skills
-description: "Agent-native Markdown note management — Notebook→Section→Page hierarchy with slash commands for Copilot, Claude Code, and Codex."
+description: "Agent-native skills marketplace for Copilot, Claude Code, and Codex."
 locale: zh
 repo: https://github.com/peiyucn/peiyucn-skills
-topics: ["claude-code","codex","copilot","markdown","note-taking","onenote"]
-updated: 2026-09-05
+topics: ["ai-agents","claude-code","codex","copilot","marketplace","skills"]
+updated: 2026-09-07
 link: https://github.com/peiyucn/note2md
 language: PowerShell
 forks: 0
