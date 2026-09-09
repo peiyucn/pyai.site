@@ -4,8 +4,8 @@ description: "A collection of small DeepSeek Harness (DSH) web plugins."
 locale: en
 repo: https://github.com/peiyucn/dsh-sparrow
 status: active
-updated: 2026-09-07
-stars: 2
+updated: 2026-09-09
+stars: 3
 forks: 0
 language: TypeScript
 topics: ["deepseek","deepseek-harness","dsh","dsh-plugin","npm"]
