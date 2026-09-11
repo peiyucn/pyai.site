@@ -58,8 +58,8 @@ Astro 中英双语静态博客（GitHub Pages）。导航板块：首页 / 记�
 
 ## 安全基线（本仓库自含要点）
 
-* 已开启：secret scanning + push protection、根 `SECURITY.md`；检查命令 `gh api repos/peiyucn/pyai.site --jq .security_and_analysis`
-* 未开启（与统一安全基线有出入，2026-09 查证）：Dependabot alerts、CodeQL default setup、Dependabot 自动升级——依赖升级按手动口径执行
+* 已开启：Dependabot alerts（仅报警）、CodeQL default setup（weekly，JS/TS + actions）、secret scanning + push protection、Private vulnerability reporting、根 `SECURITY.md`；检查命令 `gh api repos/peiyucn/pyai.site/code-scanning/default-setup` 与 `gh api repos/peiyucn/pyai.site --jq .security_and_analysis`
+* 未开启（与统一安全基线有出入，2026-09 查证）：Dependabot 自动升级（security updates，仓库无 `dependabot.yml`）——依赖升级按手动口径执行
 * 分支保护：main 无经典保护（owner 直推即部署）；活跃 ruleset「默认分支轻保护」= 禁删/禁强推/禁建（另有一条「protect master」遗留 ruleset，禁删/禁强推）；**CI 会跑但不设硬门禁**
 
 ## CI 与自动发布
