@@ -25,8 +25,26 @@ const UA =
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/** 把豆瓣字段当纯文本：先剥标签，再清掉残余尖括号（半截标签如裸 `<script` 只有第二步能拦住） */
-const stripTags = (s) => s.replace(/<[^>]+>/g, '').replace(/[<>]/g, '').trim();
+/**
+ * 把豆瓣字段当纯文本：丢掉每个 `<` 到其后首个 `>` 之间的内容（含两端）。
+ * 不用 `/<[^>]+>/g` 剥标签——那对裸 `<script` 这类没有闭合 `>` 的半截标签无效，
+ * 正是 CodeQL 的 js/incomplete-multi-character-sanitization 抓的写法。
+ */
+const stripTags = (s) => {
+  let out = '';
+  let i = 0;
+  while (i < s.length) {
+    if (s[i] === '<') {
+      const end = s.indexOf('>', i);
+      i = end === -1 ? i + 1 : end + 1;
+    } else if (s[i] === '>') {
+      i++;
+    } else {
+      out += s[i++];
+    }
+  }
+  return out.trim();
+};
 
 /** 从 HTML 提取单页列表项 */
 export function parseListPage(html) {
