@@ -33,6 +33,9 @@ function subjectId(url) {
   return m ? m[1] : '';
 }
 
+/** 把豆瓣字段当纯文本：先剥标签，再清掉残余尖括号（半截标签如裸 `<script` 只有第二步能拦住） */
+const stripTags = (s) => s.replace(/<[^>]+>/g, '').replace(/[<>]/g, '').trim();
+
 /** 解析列表页条目（与 douban-full-export 相同逻辑） */
 function parseListPage(html) {
   const items = [];
@@ -41,7 +44,7 @@ function parseListPage(html) {
     const titleMatch = block.match(/<div class="title">\s*<a href="([^"]+)">\s*([\s\S]*?)\s*<\/a>/);
     if (!titleMatch) continue;
     const url = titleMatch[1].trim();
-    const rawTitle = titleMatch[2].replace(/<[^>]+>/g, '').trim();
+    const rawTitle = stripTags(titleMatch[2]);
     const title = rawTitle.split(' / ')[0].trim();
     const dateMatch = block.match(/(\d{4}-\d{2}-\d{2})/);
     const date = dateMatch ? dateMatch[1] : '';

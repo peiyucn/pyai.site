@@ -25,6 +25,9 @@ const UA =
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/** 把豆瓣字段当纯文本：先剥标签，再清掉残余尖括号（半截标签如裸 `<script` 只有第二步能拦住） */
+const stripTags = (s) => s.replace(/<[^>]+>/g, '').replace(/[<>]/g, '').trim();
+
 /** 从 HTML 提取单页列表项 */
 export function parseListPage(html) {
   const items = [];
@@ -34,7 +37,7 @@ export function parseListPage(html) {
     const titleMatch = block.match(/<div class="title">\s*<a href="([^"]+)">\s*([\s\S]*?)\s*<\/a>/);
     if (!titleMatch) continue;
     const url = titleMatch[1].trim();
-    const rawTitle = titleMatch[2].replace(/<[^>]+>/g, '').trim();
+    const rawTitle = stripTags(titleMatch[2]);
     // 标题可能是 "中文名 / English Name" 或只有中文名
     const title = rawTitle.split(' / ')[0].trim();
 
@@ -46,11 +49,11 @@ export function parseListPage(html) {
 
     // 短评（grid 区域）
     const commentMatch = block.match(/<span class="comment">([\s\S]*?)<\/span>/);
-    const comment = commentMatch ? commentMatch[1].replace(/<[^>]+>/g, '').trim() : '';
+    const comment = commentMatch ? stripTags(commentMatch[1]) : '';
 
     // intro：导演 / 年份 / 类型
     const introMatch = block.match(/<span class="intro">([\s\S]*?)<\/span>/);
-    let intro = introMatch ? introMatch[1].replace(/<[^>]+>/g, '').trim() : '';
+    let intro = introMatch ? stripTags(introMatch[1]) : '';
 
     items.push({ title, url, date, rating, comment, intro });
   }
