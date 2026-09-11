@@ -39,7 +39,7 @@ Astro 中英双语静态博客（GitHub Pages）。导航板块：首页 / 记�
 * **验证**：`pnpm run verify`（= check + build，exit=0）；push 前必须通过
 * **提交**：逐项提交，中文描述 + 英文类型前缀（feat:/fix:/refactor:/chore:/docs:）；不确定的事直接说"不确定"，禁止编造事实性信息
 * **推送与部署**：push main 即触发 publish.yml（build + Pages 部署）自动上线，无需打 tag
-* **发布确认（硬门禁，owner 当次点头）**：push `main` 触发 Pages 部署 / 部署上线等**不可逆的对外发布动作**，执行前必须由 owner **当次明确确认**——「之前批准了整条发布流程」「评审时说按你建议走」「继续」一律**不构成**发布许可；agent 做完审计 / 定版 / verify / 合并后**停在发布动作之前**，一句话报出「要发什么、版本号、目标通道、影响范围」等 owner 回话，未回话即视为未批准（总规范《发布（定版）》第 5 步）
+* **发布确认（硬门禁，owner 当次点头）**：push `main` 触发 Pages 部署 / 部署上线等**不可逆的对外发布动作**，执行前必须由 owner **当次明确确认**——「之前批准了整条发布流程」「评审时说按你建议走」「继续」一律**不构成**发布许可；agent 做完审计 / 定版 / verify / 合并后**停在发布动作之前**，一句话报出「要发什么、版本号、目标通道、影响范围」等 owner 回话，未回话即视为未批准（总规范《发布（定版）》step5）
 * **运维**：依赖升级统一手动（security updates 与 dependabot.yml 关闭）；收到警报 → 手动升级 → 提交并推 main（本仓库 main 即部署、无版本号与 CHANGELOG，升级一律照办，不需要判断影响面）
 * 仓库专属：自定义域名 `pyai.site` 由根目录 `CNAME` 文件指定；首次配置时 GitHub 仓库 Pages Source 需手动设为 "GitHub Actions"；**默认分支改名后**要同步改 Pages 环境（`github-pages`）的部署分支策略（Settings → Environments → github-pages → Deployment branches，或 `gh api` 改 deployment-branch-policies），否则 deploy job 报 "Branch is not allowed to deploy" 直接失败（2026-09 曾因此停更）
 
