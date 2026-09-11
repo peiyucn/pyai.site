@@ -29,7 +29,7 @@ Astro 中英双语静态博客（GitHub Pages）。导航板块：首页 / 记�
 > 三份文档各司其职、各有读者：AGENTS 给开发 agent、README 给用户、CHANGELOG 给用户——写错读者是文档事故。
 
 * `AGENTS.md`：中文一份（面向开发 agent；唯一 agent 指令文件，不保留 CLAUDE.md 等其它厂商指令文件）
-* `README.md`：单份英文——站点定位与本地开发说明；功能变更时更新
+* `README.md`：单份英文——站点定位与本地开发说明；功能变更时更新。**面向用户**：只写用法与行为，不写实现细节、私有 seam、开发历史（归本文件）
 * 无 CHANGELOG（站点内容本身双语、发布无版本语义）、无 CONTRIBUTING
 * 站点内容本身即用户文档：records 中英成对（`translationOf` 互指）；UI 文案先加 `src/i18n/ui.ts` 的 zh/en 两档
 
@@ -59,9 +59,9 @@ Astro 中英双语静态博客（GitHub Pages）。导航板块：首页 / 记�
 ## 安全基线（本仓库自含要点）
 
 * 已开启（2026-09 逐项核验）：Dependabot alerts（仅报警）、CodeQL default setup（weekly，JS/TS + actions）、secret scanning + push protection、Private vulnerability reporting、根 `SECURITY.md`
-* 未开启：Dependabot 自动升级（security updates，仓库无 `dependabot.yml`）；非提供商模式 / validity checks 亦符合基线的「保持关」
-* 分支保护三层（2026-09 逐项核验）：① 经典保护 **未设**——与基线的出入：main 无「要求对话解决 / 不允许绕过」（owner 直推即部署，故未加）② ruleset 轻保护 ✓（「默认分支轻保护」= 禁删/禁强推/禁建；另有一条「protect master」遗留 ruleset，禁删/禁强推）③ 仓库合并设置 **Squash-only** ✓；**CI 会跑但不设硬门禁**
-* **核验别只跑 `.security_and_analysis`**（它只含 secret scanning 项）——逐项命令见根规范《统一安全基线 · 逐项检查命令》
+* 未开启：Dependabot 自动升级（仓库无 `dependabot.yml`）；非提供商模式 / validity checks 符合基线的「保持关」
+* 分支保护三层（2026-09 逐项核验）：① 经典保护 **未设**——与基线的出入：main 无「要求对话解决 / 不允许绕过」（owner 直推即部署，故未加）② ruleset 轻保护 ✓（「默认分支轻保护」；另有「protect master」遗留 ruleset）③ 合并设置 **Squash-only** ✓；**CI 会跑但不设硬门禁**
+* 核验按根规范《统一安全基线 · 逐项检查命令》逐项跑（**别只跑 `.security_and_analysis`**）
 
 ## CI 与自动发布
 
