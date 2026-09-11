@@ -4,7 +4,7 @@ description: "Agent-native skills marketplace for Copilot, Claude Code, and Code
 locale: zh
 repo: https://github.com/peiyucn/peiyucn-skills
 topics: ["ai-agents","claude-code","codex","copilot","marketplace","skills"]
-updated: 2026-09-07
+updated: 2026-09-10
 link: https://github.com/peiyucn/note2md
 language: PowerShell
 forks: 0
