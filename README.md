@@ -1,21 +1,7 @@
 # pyai.site
 
-基于 [Astro](https://astro.build) 的中英双语静态站点，自动部署到 [GitHub Pages](https://pyai.site)。
+[![github-pages deploy](https://img.shields.io/github/actions/workflow/status/peiyucn/pyai.site/publish.yml?branch=main&label=github-pages%20deploy)](https://github.com/peiyucn/pyai.site/actions/workflows/publish.yml) [![daily-sync](https://img.shields.io/github/actions/workflow/status/peiyucn/pyai.site/daily-sync.yml?branch=main&label=daily-sync)](https://github.com/peiyucn/pyai.site/actions/workflows/daily-sync.yml) [![website](https://img.shields.io/badge/website-pyai.site-blue)](https://pyai.site)
 
-## 技术栈
+Personal blog and knowledge base — records, projects and movies, bilingual (zh / en).
 
-TypeScript
-
-pnpm
-
-Astro 7
-
-Tailwind CSS 4
-
-UnicornStudio（WebGL）
-
-GitHub Pages
-
-## AI开发规范
-
-[`AGENTS.md`](AGENTS.md)
+Powered by [Astro](https://astro.build).
