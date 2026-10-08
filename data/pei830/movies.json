@@ -31993,5 +31993,35 @@
     "doubanRating": 8.3,
     "isTv": true,
     "subtype": "tv"
+  },
+  {
+    "title": "坠落2：死点",
+    "url": "https://movie.douban.com/subject/36318704/",
+    "date": "2026-10-08",
+    "rating": 1,
+    "status": "看过",
+    "comment": "",
+    "director": "迈克尔·斯派瑞 / 彼得·斯派瑞",
+    "country": "美国",
+    "year": "2026",
+    "genre": "",
+    "doubanRating": 5.4,
+    "isTv": false,
+    "subtype": "movie"
+  },
+  {
+    "title": "潜伏6",
+    "url": "https://movie.douban.com/subject/37525017/",
+    "date": "2026-10-07",
+    "rating": 3,
+    "status": "看过",
+    "comment": "",
+    "director": "雅各布·蔡斯",
+    "country": "美国",
+    "year": "2026",
+    "genre": "",
+    "doubanRating": 6.6,
+    "isTv": false,
+    "subtype": "movie"
   }
 ]
