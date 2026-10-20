@@ -84,7 +84,7 @@ Astro 中英双语静态博客（GitHub Pages）。导航板块：首页 / 记�
 
 ### 开发 / 构建
 
-* **官方规范铁律**：所有页面 / 组件 / 集合 / 路由 / i18n 一律以 Astro 官方文档为准；禁止这些做法——`getStaticPaths` 里依赖顶层 `const` 或「碰巧能跑」的作用域技巧；用内联 `<script>` 绕过框架的 SSR 能力（除非确需客户端交互）；为规避编译错误改源码结构去「适配」编译器；手写 HTML 字符串拼装替代 Astro 组件语法（`{Pagination()}` 这类在 frontmatter 返回 JSX 的写法会触发编译器崩溃，用独立 `.astro` 组件）
+* **具体禁令**（对应顶部首要原则）：`getStaticPaths` 里依赖顶层 `const` 或「碰巧能跑」的作用域技巧；用内联 `<script>` 绕过框架的 SSR 能力（除非确需客户端交互）；为规避编译错误改源码结构去「适配」编译器；手写 HTML 字符串拼装替代 Astro 组件语法（`{Pagination()}` 这类在 frontmatter 返回 JSX 的写法会触发编译器崩溃，用独立 `.astro` 组件）
 * **遇错先查根因**：编译错误 / 构建崩溃先看错误日志、官方文档、issue；禁止用删功能、绕过校验、改默认行为等方式糊弄
 * **`[locale]` 方括号陷阱**：PowerShell 的 `Get-ChildItem` / `Set-Content` 等（非 `-LiteralPath`）会把方括号当通配符，写文件会跑到错误位置；涉及 `[locale]` 必须用 `-LiteralPath` 或绝对路径 + `[System.IO.File]::WriteAllText`
 * **Astro 顶层 `const` 陷阱**：`[page].astro` 的 `getStaticPaths` 引用顶层 `const` 会导致构建静默崩溃；用内联数字或模块级函数（如 `getMoviesCount()`）
