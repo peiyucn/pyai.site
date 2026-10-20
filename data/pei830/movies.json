@@ -32023,5 +32023,20 @@
     "doubanRating": 6.6,
     "isTv": false,
     "subtype": "movie"
+  },
+  {
+    "title": "封锁蛛楼",
+    "url": "https://movie.douban.com/subject/36886420/",
+    "date": "2026-10-19",
+    "rating": 2,
+    "status": "看过",
+    "comment": "",
+    "director": "安格尔·戈麦斯·埃尔南德斯 / Ángel Gómez",
+    "country": "美国",
+    "year": "2026",
+    "genre": "",
+    "doubanRating": 0,
+    "isTv": false,
+    "subtype": "movie"
   }
 ]
