@@ -9,5 +9,5 @@ stars: 3
 forks: 0
 language: TypeScript
 topics: ["deepseek","deepseek-harness","dsh","dsh-plugin","npm"]
-link: https://dsh.pyai.site/market/index.json
+link: https://dsh.pyai.site/
 ---
