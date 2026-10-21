@@ -4,7 +4,7 @@ description: "Start DeepSeek Harness (dsh) inside VS Code and open its web UI in
 locale: en
 repo: https://github.com/peiyucn/dsh-launcher-panel
 topics: ["ai","coding-agent","deepseek","deepseek-harness","dsh","vscode","vscode-extension"]
-updated: 2026-10-01
+updated: 2026-10-20
 language: TypeScript
 forks: 0
 stars: 11
