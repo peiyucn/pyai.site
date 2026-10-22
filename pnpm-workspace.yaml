@@ -5,3 +5,16 @@ packages:
 allowBuilds:
   esbuild: true
   sharp: true
+
+overrides:
+  # 安全（Dependabot 告警，2026-10-22）：以下均不进站点产物，升级只为告警清零。
+  # 1.2.2 修 GHSA-68fv-2mgg-jv7q（索引节偏移导致事件循环 DoS）。
+  # 多个上游（@tailwindcss/node / css-tree / postcss）各自声明旧范围，故用 override 统一。
+  source-map-js: ^1.2.2
+  # 修 PostCSS 选择器解析的二次方复杂度（CPU 耗尽）。**必须 ≥ 7.1.6**——
+  # advisory 的 patched 就是 7.1.6，6.x 全在风险范围内。
+  # @tailwindcss/typography 声明 6.x，这里跨大版本；该包只用于选择器解析，
+  # 7.x 的 API 对解析用途兼容（由 build 验证兜底）。
+  postcss-selector-parser: ^7.1.6
+  # 3.1.7 修 GHSA-hrr3-gc8f-f4qj（百分号编码八位组导致主机名大小写归一不一致）。
+  fast-uri: ^3.1.7
