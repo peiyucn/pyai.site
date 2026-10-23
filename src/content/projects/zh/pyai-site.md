@@ -3,7 +3,7 @@ title: pyai.site
 description: "Personal blog and knowledge base — records, projects and movies, bilingual (zh / en)."
 locale: zh
 repo: https://github.com/peiyucn/pyai.site
-updated: 2026-10-21
+updated: 2026-10-22
 link: https://pyai.site/
 language: Astro
 forks: 0
