@@ -55,7 +55,7 @@ Astro 中英双语静态博客（GitHub Pages）。导航板块：首页 / 记�
 
 * 已开启（2026-09 逐项核验）：Dependabot alerts（仅报警）、CodeQL default setup（weekly，JS/TS + actions）、secret scanning + push protection、Private vulnerability reporting、根 `SECURITY.md`
 * 未开启：Dependabot 自动升级（无 `dependabot.yml`）；非提供商模式 / validity checks 保持关
-* 分支保护三层（2026-09 逐项核验）：经典保护 **未设**——与基线的出入：main 无「要求对话解决 / 不允许绕过」；ruleset 轻保护 ✓（「默认分支轻保护」，另有「protect master」遗留）；合并设置 **Squash-only** ✓；**CI 会跑但不设硬门禁**
+* 分支保护三层（2026-10-23 逐项核验）：经典保护 ✅（main：禁删除 + 禁强推 + enforce_admins，**不设** required status checks）；ruleset 轻保护 ✅（「默认分支轻保护」一条，规则为禁删除 / 禁强推 / 禁重建）；合并设置 **Squash-only** ✅；**CI 会跑但不设硬门禁**
 * 核验按根规范《统一安全基线 · 逐项检查命令》逐项跑
 
 ## CI 与自动发布
