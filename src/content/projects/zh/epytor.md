@@ -8,6 +8,6 @@ updated: 2026-11-02
 link: https://marketplace.visualstudio.com/items?itemName=peiyucn.epytor-vscode
 language: TypeScript
 forks: 2
-stars: 12
+stars: 13
 status: active
 ---

@@ -5,7 +5,7 @@ locale: en
 repo: https://github.com/peiyucn/dsh-sparrow
 status: active
 updated: 2026-10-31
-stars: 3
+stars: 4
 forks: 0
 language: TypeScript
 topics: ["deepseek","deepseek-harness","dsh","dsh-plugin","npm"]
