@@ -7,7 +7,7 @@ topics: ["ai","coding-agent","deepseek","deepseek-harness","dsh","vscode","vscod
 updated: 2026-11-05
 language: TypeScript
 forks: 0
-stars: 12
+stars: 13
 link: https://marketplace.visualstudio.com/items?itemName=peiyucn.dsh-launcher-panel
 status: active
 ---
