@@ -4,10 +4,10 @@ description: "Desk One (同桌) — one desk for you and harness. Notes, tasks, 
 locale: zh
 repo: https://github.com/peiyucn/dsh-sparrow
 status: active
-updated: 2026-11-15
-stars: 5
+updated: 2026-11-16
+stars: 8
 forks: 0
 language: TypeScript
-topics: ["calendar","deepseek-harness","desk-one","dsh","notes","plugin","tasks"]
+topics: ["annotations","calendar","deepseek-harness","desk-one","dsh","dsh-plugin","notes","plugin","tasks"]
 link: https://dsh.pyai.site
 ---
