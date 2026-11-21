@@ -6,9 +6,9 @@ const PAGE_SIZE = 100;
 const REQUEST_TIMEOUT_MS = 30_000;
 
 const ALERT_TYPES = [
-  { name: 'Dependabot', path: 'dependabot/alerts', tokenKey: 'alerts' },
-  { name: 'Code scanning', path: 'code-scanning/alerts', tokenKey: 'alerts' },
-  { name: 'Secret scanning', path: 'secret-scanning/alerts', tokenKey: 'secretScan' },
+  { name: 'Dependabot', path: 'dependabot/alerts' },
+  { name: 'Code scanning', path: 'code-scanning/alerts' },
+  { name: 'Secret scanning', path: 'secret-scanning/alerts' },
 ];
 
 function evaluateAlertsResponse(status, body) {
@@ -44,26 +44,22 @@ async function fetchOpenAlerts(fetchImpl, repository, type, token) {
   return evaluateAlertsResponse(response.status, body);
 }
 
-async function runGate({ fetchImpl = fetch, repository, alertsToken, secretScanToken }) {
+async function runGate({ fetchImpl = fetch, repository, alertsToken }) {
   if (!repository) {
     return { pass: false, reason: 'GITHUB_REPOSITORY is not set', results: [] };
   }
   if (!alertsToken) {
-    return { pass: false, reason: 'GITHUB_TOKEN_ALERTS is not set (publish workflow wiring missing)', results: [] };
-  }
-  if (!secretScanToken) {
     return {
       pass: false,
-      reason: 'SECRET_SCAN_TOKEN is not set (environment secret SECURITY_ALERTS_TOKEN is missing)',
+      reason: 'ALERTS_TOKEN is not set (environment secret SECURITY_ALERTS_TOKEN is missing)',
       results: [],
     };
   }
-  const tokens = { alerts: alertsToken, secretScan: secretScanToken };
   const results = [];
   for (const type of ALERT_TYPES) {
     let result;
     try {
-      result = await fetchOpenAlerts(fetchImpl, repository, type, tokens[type.tokenKey]);
+      result = await fetchOpenAlerts(fetchImpl, repository, type, alertsToken);
     } catch (error) {
       result = { ok: false, count: null, reason: 'request failed: ' + (error instanceof Error ? error.message : String(error)) };
     }
@@ -95,14 +91,13 @@ async function runSelfTest() {
     json: async () => (url.includes('code-scanning') ? [{}] : []),
   });
   const forbiddenFetch = async () => ({ status: 403, json: async () => ({ message: 'Resource not accessible by integration' }) });
-  const gate = (fetchImpl, alertsToken = 't', secretScanToken = 't') => ({ fetchImpl, repository: 'o/r', alertsToken, secretScanToken });
+  const gate = (fetchImpl, alertsToken = 't') => ({ fetchImpl, repository: 'o/r', alertsToken });
 
   expect('all zero passes', (await runGate(gate(zeroFetch))).pass, true);
   expect('any open alert blocks', (await runGate(gate(alertFetch))).pass, false);
   expect('forbidden blocks', (await runGate(gate(forbiddenFetch))).pass, false);
-  expect('missing secret scan token blocks', (await runGate(gate(zeroFetch, 't', ''))).pass, false);
-  expect('missing alerts token blocks', (await runGate(gate(zeroFetch, '', 't'))).pass, false);
-  expect('missing repo blocks', (await runGate({ fetchImpl: zeroFetch, repository: '', alertsToken: 't', secretScanToken: 't' })).pass, false);
+  expect('missing token blocks', (await runGate(gate(zeroFetch, ''))).pass, false);
+  expect('missing repo blocks', (await runGate({ fetchImpl: zeroFetch, repository: '', alertsToken: 't' })).pass, false);
 
   for (const testCase of cases) {
     console.log((testCase.ok ? 'PASS' : 'FAIL') + '  ' + testCase.label + (testCase.ok ? '' : '  (' + testCase.detail + ')'));
@@ -119,8 +114,7 @@ async function main() {
   }
   const result = await runGate({
     repository: process.env.GITHUB_REPOSITORY ?? process.env.REPO ?? '',
-    alertsToken: process.env.GITHUB_TOKEN_ALERTS ?? '',
-    secretScanToken: process.env.SECRET_SCAN_TOKEN ?? '',
+    alertsToken: process.env.ALERTS_TOKEN ?? '',
   });
   for (const entry of result.results) {
     const status = entry.ok ? 'PASS' : 'BLOCK';
@@ -129,8 +123,8 @@ async function main() {
   }
   if (!result.pass) {
     console.error('[gate] RELEASE BLOCKED — ' + result.reason);
-    if (!process.env.SECRET_SCAN_TOKEN) {
-      console.error('[gate] configure the environment secret SECURITY_ALERTS_TOKEN with a read-only fine-grained token (Secret scanning alerts: read) — see AGENTS E20.');
+    if (!process.env.ALERTS_TOKEN) {
+      console.error('[gate] configure the environment secret SECURITY_ALERTS_TOKEN with a read-only fine-grained token that can read Dependabot, code scanning and secret scanning alerts — see AGENTS E20.');
     }
     process.exit(1);
   }

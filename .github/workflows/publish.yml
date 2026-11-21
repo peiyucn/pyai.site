@@ -64,8 +64,7 @@ jobs:
         timeout-minutes: 5
         env:
           REPO: ${{ github.repository }}
-          GITHUB_TOKEN_ALERTS: ${{ github.token }}
-          SECRET_SCAN_TOKEN: ${{ secrets.SECURITY_ALERTS_TOKEN }}
+          ALERTS_TOKEN: ${{ secrets.SECURITY_ALERTS_TOKEN }}
         run: node scripts/security-gate.mjs
       - name: Deploy to GitHub Pages
         id: deployment
