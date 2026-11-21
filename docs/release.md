@@ -33,6 +33,7 @@
 - 到 Actions 看 `publish` 的 `deploy` 作业结论，并在页面确认线上内容（C7：`已上线验证` 由 owner 确认）。
 - 部署失败不覆盖「已发布」状态：Pages 保留上一次成功部署；修复后重新合并即重新部署。
 - 回滚用 `git revert` 新提交再部署，不改写历史、不移动已发布内容。
+- 每日数据同步不走 PR：`daily-sync.yml` 用部署密钥 `SYNC_DEPLOY_KEY` 直推 `main`（严格 ruleset 的 DeployKey bypass），推送即触发 `publish.yml`。
 
 ## 与策略的关系
 

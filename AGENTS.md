@@ -84,7 +84,7 @@ Astro 中英双语静态博客，托管在 GitHub Pages，自定义域名 <https
 
 ## 3. 实现
 
-- 分支：单分支 `main`，改动走 PR 合入；严格 PR 门禁 ruleset（required check `typecheck`）由 owner 在 GitHub 上配置，配置前 owner 仍可直推。
+- 分支：单分支 `main`，改动只能经 PR 合入；「严格 PR 门禁」ruleset（required check `typecheck`）已配置，owner bypass = `pull_request`，部署密钥 bypass 只给 `daily-sync`。
 - 包管理器：pnpm；不混用 npm / yarn 安装。
 - 纯逻辑目录：无（`src/utils` 读 `astro:content`，属宿主 API）。
 - ESLint 配置：`meta/lint/project-eslint.mjs`（共享工厂 + eslint-plugin-astro），根目录无 `eslint.config.mjs`（L007）。
@@ -110,7 +110,7 @@ Astro 中英双语静态博客，托管在 GitHub Pages，自定义域名 <https
 - `.github/workflows/publish.yml`：`build` → `deploy`；push `main` 即部署；environment `github-pages`（GitHub 内置）。
 - `deploy` 作业先校验提交在 `main` 上，再跑 `scripts/security-gate.mjs`（fail-closed）；凭据只用环境级 `SECURITY_ALERTS_TOKEN`（Dependabot / Code scanning / Secret scanning 三类告警只读）。
 - 发布确认与回滚见 [docs/release.md](docs/release.md)；无 tag、无版本号（E19 不适用）。
-- `.github/workflows/daily-sync.yml`：`sync` 作业定时同步豆瓣与项目数据，提交后派发 `publish.yml`；启用严格 PR 门禁后，该自动提交需要 GitHub Actions Integration 的 bypass。
+- `.github/workflows/daily-sync.yml`：`sync` 作业定时同步豆瓣与项目数据，用部署密钥 `SYNC_DEPLOY_KEY` 直推 `main`（push 即触发 `publish.yml`）；该部署密钥是严格 ruleset 的 bypass actor（GitHub Actions 无法在个人仓库当 bypass）。
 
 ### 内容与数据
 
@@ -145,9 +145,9 @@ Astro 中英双语静态博客，托管在 GitHub Pages，自定义域名 <https
 - 已开启：Dependabot alerts（仅报警）、CodeQL default setup（weekly，actions + JS/TS）、secret scanning + push protection、私有漏洞报告、根 `SECURITY.md`。
 - 保持关闭：Dependabot 自动升级 / security updates、secret scanning 非提供商模式、validity checks。
 - 未处理告警：Dependabot / Code scanning / Secret scanning 均为 0（升级 astro / zod / fast-xml-parser 后）。
-- 分支保护现状：经典保护（`main` 禁删除、禁强推、enforce_admins，不设 required checks）+「默认分支轻保护」ruleset + 合并仅 squash；**严格 PR 门禁 ruleset 待 owner 配置**（required check `typecheck`）。
+- 分支保护三层（2026-11-22 核验）：经典保护（`main` 禁删除、禁强推、enforce_admins、要求对话解决）+「默认分支轻保护」+「严格 PR 门禁」（required check `typecheck`，owner bypass = `pull_request`，`daily-sync` 部署密钥 bypass = `always`）+「发布 tag 保护」（`refs/tags/v*`）；合并仅 squash、合并后自动删分支。
 - 依赖升级手动执行，理由记 [docs/dependency-notes.md](docs/dependency-notes.md)；机器可读期望值见 meta-repo 的 `github-policy.json`。
-- 发布凭据只放环境级 secret：`SECURITY_ALERTS_TOKEN`（`github-pages` 环境）。
+- 凭据：发布门禁 `SECURITY_ALERTS_TOKEN` 放 `github-pages` 环境级 secret；每日同步推送用仓库级 `SYNC_DEPLOY_KEY`（write 部署密钥，非发布凭据，泄漏即删 key 换新）。
 
 ### GitHub
 
