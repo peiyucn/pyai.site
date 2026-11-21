@@ -1,8 +1,5 @@
 ---
-// 内页左侧迷你黑洞：首页黑洞的「像素风」缩小版（16×16 栅格手绘 SVG，无 WebGL 开销）
-// 也是「与 pyai 分身聊天」的入口按钮（当前为占位空按钮，点击弹出像素风提示）。
-// 固定在左侧空白区、偏上位置；随滚动平滑阻尼跟随（指数平滑滞后），并带缓慢浮动。
-// 仅在大屏（≥1024px，存在左右空白区）显示，避免窄屏遮挡正文。
+
 import type { Locale } from '../i18n/ui';
 import { t } from '../i18n/utils';
 
@@ -86,7 +83,7 @@ const comingSoon = t(locale, 'chat.comingSoon');
     z-index: 70;
     will-change: transform;
   }
-  /* 内层浮动：CSS 关键帧上下轻浮，与滚动阻尼 transform 分离，互不冲突 */
+
   .mini-bh-float {
     position: relative;
     width: 85px;
@@ -116,7 +113,7 @@ const comingSoon = t(locale, 'chat.comingSoon');
     outline: 2px solid rgba(255, 212, 138, 0.7);
     outline-offset: 5px;
   }
-  /* 像素风提示框：从黑洞上方弹出，缝合像素字体 + 金色粗描边 + 硬阴影（无圆角） */
+
   .mini-bh-toast {
     position: absolute;
     left: 0;
@@ -140,7 +137,7 @@ const comingSoon = t(locale, 'chat.comingSoon');
     opacity: 1;
     transform: translateY(0);
   }
-  /* 指向下方小黑洞的三角形尾巴（与描边同色） */
+
   .mini-bh-toast::before {
     content: '';
     position: absolute;
@@ -159,7 +156,7 @@ const comingSoon = t(locale, 'chat.comingSoon');
       transform: translate3d(0, -8px, 0);
     }
   }
-  /* 窄屏无左右空白区：隐藏按钮与提示 */
+
   @media (max-width: 1023px) {
     .mini-bh-wrap {
       display: none;
@@ -168,15 +165,15 @@ const comingSoon = t(locale, 'chat.comingSoon');
 </style>
 
 <script>
-  // 滚动平滑阻尼跟随 + 点击提示
+
   (() => {
-    // VT 后 inline script 会重跑：若已初始化过，只唤醒滚动循环，不再重复绑定
+
     if (window.__pyaiBhBound) {
       if (window.__pyaiBhStart) window.__pyaiBhStart();
       return;
     }
-    const FACTOR = 0.05; // 滚动跟随幅度（向下滚动 → 黑洞缓慢下移）
-    const DAMP = 2.5; // 阻尼系数：越小越"黏"、滞后越明显
+    const FACTOR = 0.05;
+    const DAMP = 2.5;
     let smooth = 0;
     let rafId = 0;
     let lastT = 0;
@@ -184,17 +181,17 @@ const comingSoon = t(locale, 'chat.comingSoon');
     function loop(now: number) {
       const el = document.querySelector<HTMLElement>('.mini-bh-wrap');
       if (!el) {
-        rafId = 0; // 已离开内容页（首页无此元素），停止空转
+        rafId = 0;
         return;
       }
       const dt = lastT ? Math.min(0.1, (now - lastT) / 1000) : 0.016;
       lastT = now;
-      const alpha = 1 - Math.exp(-DAMP * dt); // 帧率无关的指数平滑
+      const alpha = 1 - Math.exp(-DAMP * dt);
       const y = window.scrollY || 0;
       const target = y * FACTOR;
       smooth += (target - smooth) * alpha;
       el.style.transform = `translate3d(0, ${smooth.toFixed(1)}px, 0)`;
-      // 收敛后停止 rAF，滚动事件再唤醒
+
       if (Math.abs(target - smooth) < 0.05) {
         rafId = 0;
         return;
@@ -213,7 +210,6 @@ const comingSoon = t(locale, 'chat.comingSoon');
     window.addEventListener('scroll', start, { passive: true });
     window.addEventListener('resize', start);
 
-    // 点击入口：事件委托到 document，VT 切换后无需重绑
     let toastTimer = 0;
     document.addEventListener('click', (e: MouseEvent) => {
       const btn = (e.target as HTMLElement | null)?.closest('.mini-bh');

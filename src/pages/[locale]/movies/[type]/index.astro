@@ -21,7 +21,6 @@ const { locale, type } = Astro.params as { locale: Locale; type: MovieFilter };
 const pathname = Astro.url.pathname;
 const movies = await getMovies();
 
-/** 按影/剧过滤（type 由路径参数决定，静态生成时即生效） */
 const filtered = movies.filter((m) => (type === 'series' ? m.data.isTv : !m.data.isTv));
 
 const PER_PAGE = 50;

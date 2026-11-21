@@ -23,11 +23,9 @@ const byYear = statsByYear(movies);
 const byRating = statsByRating(movies);
 const byRatingGap = statsByRatingGap(movies);
 
-const maxGenre = Math.max(1, ...byGenre.map((d) => d.count));
 const maxYear = Math.max(1, ...byYear.map((d) => d.count));
 const maxRating = Math.max(1, ...byRating.map((d) => d.count));
 
-// 中文星级标签
 const ratingLabel = (rating: number) =>
   locale === 'zh' ? '★'.repeat(rating) : rating + '/5';
 ---
@@ -53,7 +51,6 @@ const ratingLabel = (rating: number) =>
   {
     movies.length > 0 ? (
       <>
-        {/* 类型 Top */}
         <section class="mb-10">
           <h2 class="mb-4 text-lg font-bold">{t(locale, 'movies.byGenre')}</h2>
           {byGenre.length > 0 ? (
@@ -72,7 +69,6 @@ const ratingLabel = (rating: number) =>
           )}
         </section>
 
-        {/* 按标记年份 */}
         <section class="mb-10">
           <h2 class="mb-4 text-lg font-bold">{t(locale, 'movies.byYear')}</h2>
           <div class="space-y-3">
@@ -92,7 +88,6 @@ const ratingLabel = (rating: number) =>
           </div>
         </section>
 
-        {/* 按评分 */}
         <section class="mb-10">
           <h2 class="mb-4 text-lg font-bold">{t(locale, 'movies.byRating')}</h2>
           {byRating.length > 0 ? (
@@ -116,7 +111,6 @@ const ratingLabel = (rating: number) =>
           )}
         </section>
 
-        {/* 并不觉得好的电影 Top 10（仅电影） */}
         <section>
           <h2 class="mb-4 text-lg font-bold">{t(locale, 'movies.byRatingGap')}</h2>
           {byRatingGap.length > 0 ? (

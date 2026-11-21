@@ -6,20 +6,18 @@ interface Props {
   locale: Locale;
   currentPage: number;
   totalPages: number;
-  /** 影/剧筛选：'all' 用 /movies/ 路径，films/series 用 /movies/{type}/ 前缀 */
+
   filter?: 'all' | 'films' | 'series';
 }
 
 const { locale, currentPage, totalPages, filter = 'all' } = Astro.props;
 
-/** 筛选路径前缀：all → /zh/movies，films → /zh/movies/films */
 function filterPrefix(f: 'all' | 'films' | 'series'): string {
   return f === 'all' ? `/${locale}/movies` : `/${locale}/movies/${f}`;
 }
 
 const prefix = filterPrefix(filter);
 
-/** 生成分页导航（显示当前页前后若干页 + 首尾） */
 function pageLinks(current: number, total: number): (number | 'gap')[] {
   const links: (number | 'gap')[] = [];
   for (let p = 1; p <= total; p++) {

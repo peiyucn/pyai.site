@@ -18,7 +18,6 @@ const navItems: { key: UIKey; href: string }[] = [
   { key: 'nav.about', href: `/${locale}/about/` },
 ];
 
-/** 当前 section 高亮：根路径精确匹配，其余按前缀匹配 */
 function isActive(href: string): boolean {
   if (href === `/${locale}/`) {
     return pathname === href;
@@ -63,7 +62,7 @@ function isActive(href: string): boolean {
 </header>
 
 <style>
-  /* 深色标题栏背景：近黑毛玻璃，金色描边在边框（border-white/10）基础上由下方 active 高亮补足 */
+
   .site-header {
     background: linear-gradient(
       115deg,
@@ -75,7 +74,6 @@ function isActive(href: string): boolean {
     backdrop-filter: blur(8px);
   }
 
-  /* 深色标题栏上的 .site 渐变：金色渐变，呼应首页月食金 */
   .header-logo .text-gradient {
     background-image: linear-gradient(
       135deg,
@@ -85,16 +83,14 @@ function isActive(href: string): boolean {
     );
   }
 
-  /* 导航项基础：未选中为浅灰文字，hover 半透明白底 */
   .nav-item {
-    color: #d4d4d8; /* zinc-300 */
+    color: #d4d4d8;
   }
   .nav-item:hover {
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
   }
 
-  /* 选中态：金色文字 + 淡金底 + 中等字重 */
   .nav-item-active,
   .nav-item-active:hover {
     color: #ffd48a;

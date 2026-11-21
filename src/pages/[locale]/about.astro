@@ -97,12 +97,11 @@ const pathname = Astro.url.pathname;
 
 <script is:inline>
   (() => {
-    // 邮箱反爬：完整地址用 charCode 混淆，运行时才拼接
-    // 爬虫在 HTML 源码中只能看到数字数组，抓不到完整邮箱
+
     const email = String.fromCharCode(
-      112, 101, 105, 121, 117, 99, 110, // peiyucn
-      64, // @
-      111, 117, 116, 108, 111, 111, 107, 46, 99, 111, 109, // outlook.com
+      112, 101, 105, 121, 117, 99, 110,
+      64,
+      111, 117, 116, 108, 111, 111, 107, 46, 99, 111, 109,
     );
     function initEmail() {
       const link = document.querySelector('[data-email-link]');
@@ -110,14 +109,14 @@ const pathname = Astro.url.pathname;
       if (!link || !display) return;
       link.setAttribute('href', 'mailto:' + email);
       link.setAttribute('aria-label', email);
-      // 幂等：已替换过 [at] 就不再重复处理（VT 切换会多次触发）
+
       if (display.dataset.emailInited) return;
       const at = display.querySelector('[aria-hidden]');
       if (at) at.remove();
       display.textContent = email;
       display.dataset.emailInited = '1';
     }
-    // 立即执行一次；VT 导航后 astro:page-load 兜底（监听器挂 document，跨导航持久）
+
     initEmail();
     document.addEventListener('astro:page-load', initEmail);
   })();

@@ -9,17 +9,17 @@ import { ClientRouter } from 'astro:transitions';
 import type { Locale } from '../i18n/ui';
 
 interface Props {
-  /** 页面标题（不含站点名） */
+
   title: string;
-  /** 页面描述，用于 meta description */
+
   description?: string;
-  /** 当前语言 */
+
   locale: Locale;
-  /** 当前路径（用于导航高亮与语言切换） */
+
   pathname: string;
-  /** 是否隐藏顶部导航栏（首页用：导航以药丸形式放在内容区） */
+
   hideHeader?: boolean;
-  /** 是否隐藏页脚（首页全屏 Hero 用） */
+
   hideFooter?: boolean;
 }
 
@@ -35,11 +35,9 @@ const {
 const siteTitle = 'pyai.site';
 const fullTitle = title === siteTitle ? siteTitle : `${title} · ${siteTitle}`;
 
-// 首页判定：路径仅为语言前缀（/zh/ /en/）或根路径
 const normalized = pathname.replace(/\/+$/, '');
 const isHome = normalized === '' || normalized === '/zh' || normalized === '/en';
 
-// Open Graph 基础信息
 const og = {
   locale: locale === 'zh' ? 'zh_CN' : 'en_US',
   type: 'website',
@@ -55,7 +53,6 @@ const og = {
     <meta name="description" content={description ?? ''} />
     <meta name="generator" content={Astro.generator} />
 
-    <!-- Open Graph -->
     <meta property="og:site_name" content={siteTitle} />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description ?? ''} />
@@ -65,28 +62,22 @@ const og = {
 
     <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site).toString()} />
 
-    <!-- 主题色 -->
     <meta name="theme-color" content="#0a0a10" />
 
-    <!-- Favicon（内联 SVG） -->
     <link
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%90%88%3C/text%3E%3C/svg%3E"
     />
   </head>
   <body>
-    {/* 深空背景层（星点 + 金色光晕）：负 z-index，浮于 html 底之上、内容之下 */}
     <SpaceBackdrop />
-    {/* 内页左侧迷你黑洞：仅内容页显示（首页有自己的全屏黑洞），固定在左侧空白区 */}
     {!isHome && <MiniBlackHole locale={locale} />}
-    {/* 客户端路由：页面切换走 View Transitions 平滑过渡，不再整页刷新白屏 */}
     <ClientRouter />
     {!hideHeader && <Header locale={locale} pathname={pathname} />}
     <main>
       <slot />
     </main>
     {!hideFooter && <Footer locale={locale} />}
-    {/* 原子风格自定义鼠标光标：仅首页启用（其他页面用系统指针）；触屏自动禁用 */}
     {isHome && <CursorAtom />}
   </body>
 </html>

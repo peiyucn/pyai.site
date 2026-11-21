@@ -78,9 +78,7 @@ const allTags = [...tagCounts.entries()]
 </ListLayout>
 
 <script is:inline>
-  // 记录页标签筛选：仅顶部标签栏（nav[aria-label="tags"]）参与；
-  // 卡片内标签是纯展示（无 data-records-tag），不参与筛选。
-  // VT 后 inline script 重跑：用全局标志防重复绑定（幂等），状态重置交给 page-load 兜底。
+
   (() => {
     if (window.__pyaiRecordsFilterBound) return;
     window.__pyaiRecordsFilterBound = true;
@@ -89,7 +87,6 @@ const allTags = [...tagCounts.entries()]
     const BTN_ACTIVE = ' border-accent bg-accent font-semibold text-[#2a1a06]';
     const BTN_IDLE = ' border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-100';
 
-    // 每次执行都重新抓取最新 DOM（VT 后 body 已被替换）
     function applyFilter(tag) {
       const list = document.getElementById('records-list');
       const tagBtns = document.querySelectorAll('nav[aria-label="tags"] [data-records-tag]');
@@ -104,7 +101,6 @@ const allTags = [...tagCounts.entries()]
       });
     }
 
-    // 事件委托绑在 window 上（VT 导航不销毁 window，监听永不丢失）
     window.addEventListener('click', (e) => {
       const target = e.target;
       if (!(target instanceof Element)) return;
@@ -115,9 +111,8 @@ const allTags = [...tagCounts.entries()]
       applyFilter(btn.dataset.recordsTag ?? '');
     });
 
-    // 多时机执行：直接调用 + DOMContentLoaded + load + VT 导航后；轮询兜底
     function safeInit() {
-      try { applyFilter(''); } catch { /* 忽略 */ }
+      try { applyFilter(''); } catch {  }
     }
     safeInit();
     document.addEventListener('DOMContentLoaded', safeInit);
