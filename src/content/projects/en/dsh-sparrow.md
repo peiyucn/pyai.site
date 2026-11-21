@@ -4,7 +4,7 @@ description: "Desk One (同桌) — one desk for you and harness. Notes, tasks, 
 locale: en
 repo: https://github.com/peiyucn/dsh-sparrow
 status: active
-updated: 2026-11-19
+updated: 2026-11-21
 stars: 10
 forks: 0
 language: TypeScript
