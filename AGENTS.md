@@ -109,7 +109,7 @@ Astro 中英双语静态博客，托管在 GitHub Pages，自定义域名 <https
 - `.github/workflows/ci.yml`：单个 `typecheck` 作业（本仓库登记的唯一 CI 环节，E24），串行跑 `lint` → `check` → `typecheck:policy` → QG 负例 → 门禁自测 → `build`，并上传 JUnit 报告；push main 与 PR 都触发。
 - `.github/workflows/publish.yml`：`build` → `deploy`；push `main` 即部署；environment `github-pages`（GitHub 内置）。
 - `deploy` 作业先校验提交在 `main` 上，再跑 `scripts/security-gate.mjs`（fail-closed）；凭据只用环境级 `SECURITY_ALERTS_TOKEN`（Dependabot / Code scanning / Secret scanning 三类告警只读）。
-- 发布确认与回滚见 [docs/release.md](docs/release.md)；无 tag、无版本号（E19 不适用）。
+- 发布确认按 C8 每次取得 owner 当次同意；通道、门禁实现与回滚见 [docs/release.md](docs/release.md)；无 tag、无版本号（E19 不适用）。
 - `.github/workflows/daily-sync.yml`：`sync` 作业定时同步豆瓣与项目数据，用部署密钥 `SYNC_DEPLOY_KEY` 直推 `main`（push 即触发 `publish.yml`）；该部署密钥是严格 ruleset 的 bypass actor（GitHub Actions 无法在个人仓库当 bypass）。
 
 ### 内容与数据
