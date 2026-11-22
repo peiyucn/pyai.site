@@ -1,11 +1,11 @@
-// 星空坐标数据：内页（SpaceBackdrop）与首页（Hero）共用同一数据源。
-// 两处星点集合与 alpha 逐点差异均原样保留（首页更亮更密），保证视觉零变化。
-// 由一次性脚本从两处组件的 box-shadow 提取生成，勿手改坐标。
 
-/** 单颗星：[x, y, alpha]（单位 px，alpha 0-1） */
+
+
+
+
 export type StarPoint = readonly [x: number, y: number, a: number];
 
-/** 内页远层：灰白细星 */
+
 export const siteFar: StarPoint[] = [
   [23, 78, 0.38],
   [89, 210, 0.3],
@@ -79,7 +79,7 @@ export const siteFar: StarPoint[] = [
   [1800, 1040, 0.26],
 ];
 
-/** 内页中层：暖金亮星 */
+
 export const siteMid: StarPoint[] = [
   [40, 160, 0.5],
   [180, 40, 0.4],
@@ -114,7 +114,7 @@ export const siteMid: StarPoint[] = [
   [1080, 1000, 0.45],
 ];
 
-/** 内页近层：亮星（2px） */
+
 export const siteNear: StarPoint[] = [
   [60, 120, 0.6],
   [320, 60, 0.55],
@@ -137,7 +137,7 @@ export const siteNear: StarPoint[] = [
   [80, 1000, 0.6],
 ];
 
-/** 首页 Hero 远层：灰白细星 */
+
 export const heroFar: StarPoint[] = [
   [23, 78, 0.48],
   [89, 210, 0.38],
@@ -204,7 +204,7 @@ export const heroFar: StarPoint[] = [
   [1840, 920, 0.35],
 ];
 
-/** 首页 Hero 中层：暖金亮星 */
+
 export const heroMid: StarPoint[] = [
   [40, 160, 0.63],
   [180, 40, 0.5],
@@ -237,7 +237,7 @@ export const heroMid: StarPoint[] = [
   [1800, 900, 0.56],
 ];
 
-/** 首页 Hero 近层：亮星（2px） */
+
 export const heroNear: StarPoint[] = [
   [60, 120, 0.75],
   [320, 60, 0.69],
@@ -268,7 +268,7 @@ export const heroNear: StarPoint[] = [
   [1850, 960, 0.63],
 ];
 
-/** 生成一层星点的 box-shadow 声明（1×1 透明元素铺星点） */
+
 export function starShadows(points: readonly StarPoint[], rgb: string): string {
   return points.map(([x, y, a]) => x + 'px ' + y + 'px rgba(' + rgb + ', ' + a + ')').join(', ');
 }

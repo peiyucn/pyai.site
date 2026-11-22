@@ -1,4 +1,4 @@
-name: Daily Sync
+name: daily-sync
 
 on:
   schedule:
@@ -7,8 +7,6 @@ on:
 
 permissions:
   contents: write
-  # 需要 actions: write 才能在工作流内触发 deploy（GITHUB_TOKEN 的 push 不会触发其他 workflow）
-  actions: write
 
 concurrency:
   group: daily-sync
@@ -16,17 +14,17 @@ concurrency:
 
 jobs:
   sync:
+    name: sync
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Node
-        uses: actions/setup-node@v7
+      - uses: actions/checkout@v7
         with:
-          node-version: 24
+          ssh-key: ${{ secrets.SYNC_DEPLOY_KEY }}
 
-      # 豆瓣：列表页增量同步（秒级）
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
       - name: Sync Douban (incremental)
         id: douban
         env:
@@ -34,7 +32,6 @@ jobs:
           DOUBAN_OUTPUT_DIR: ${{ github.workspace }}/data
         run: node scripts/douban-sync/douban-incremental.mjs
 
-      # 豆瓣：仅新条目补充评分/地区等
       - name: Enrich Douban ratings (new items)
         if: steps.douban.outputs.new_count != '' && steps.douban.outputs.new_count != '0'
         env:
@@ -42,23 +39,13 @@ jobs:
           DOUBAN_OUTPUT_DIR: ${{ github.workspace }}/data
         run: node scripts/douban-sync/douban-enrich.mjs
 
-      # 项目：从 GitHub 同步各仓库 archived 状态
       - name: Sync project statuses from GitHub
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/projects-sync/projects-sync.mjs
 
-      # 一次性提交所有按天更新的产物
       - name: Commit changes
-        id: commit
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: 'chore(daily-sync): sync douban & projects'
           file_pattern: 'data/** src/content/projects/**'
-
-      # 有变动时触发一次部署
-      - name: Trigger deploy
-        if: steps.commit.outputs.changes_detected == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run publish.yml --ref main

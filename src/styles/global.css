@@ -1,8 +1,6 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-/* 像素字体「缝合像素」（Fusion Pixel，OFL 开源，vendor 化）：
-   内页迷你黑洞的像素提示用；12px 栅格，字号用 12 的整数倍最清晰 */
 @font-face {
   font-family: 'Fusion Pixel Mono';
   src: url('/vendor/fonts/fusion-pixel-12px-mono-zh-hans.otf') format('opentype');
@@ -11,9 +9,8 @@
   font-display: swap;
 }
 
-/* ===== Tailwind 4 主题定制 ===== */
 @theme {
-  /* 深空「月食」强调色：与首页黑+金宇宙语言统一，金色三档 */
+
   --color-accent: #e8a24a;
   --color-accent-2: #f0b95e;
   --color-accent-3: #ffd48a;
@@ -24,7 +21,6 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas,
     'Liberation Mono', 'Courier New', monospace;
 
-  /* 深色底下的阴影：更重、更通透 */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
@@ -43,29 +39,24 @@
   }
 }
 
-/* ===== 基础样式 ===== */
 @layer base {
-  /* 全站整体放大 125%：根字号 16px → 20px，所有 rem 单位等比缩放 */
+
   html {
     font-size: 125%;
-    /* 滚动条常驻占位：不同页面内容长短不一导致滚动条出现/消失，
-       视口宽度随之变化 → 标题栏 max-w 容器左右跳动。
-       稳定 gutter 后所有页面内容宽度恒定。 */
+
     scrollbar-gutter: stable;
-    /* 深空底色：放在 html 上，负 z-index 的星空背景层（SpaceBackdrop）
-       才能浮在底色之上、页面内容之下 */
+
     background: #0a0a10;
   }
 
   body {
-    /* 深空底 + 暖白文字（呼应首页 hero 的 #edebe4，此处用 zinc-200 中性白） */
+
     @apply text-zinc-200 antialiased;
     font-family: var(--font-sans);
     background: transparent;
     position: relative;
   }
 
-  /* 全站颗粒感（星尘）：细颗粒叠加层，screen 只增亮深色底 */
   body::after {
     content: '';
     position: fixed;
@@ -88,7 +79,6 @@
     @apply max-w-full h-auto rounded-xl;
   }
 
-  /* 深色正文排版（prose-invert 基础上覆写为金色链接 + 暖白强调） */
   .prose.prose-invert :where(a) {
     color: var(--color-accent-3);
     text-decoration-color: color-mix(in srgb, var(--color-accent-3) 40%, transparent);
@@ -104,9 +94,8 @@
   }
 }
 
-/* ===== 通用工具组件样式 ===== */
 @layer components {
-  /* 渐变文字（金色） */
+
   .text-gradient {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(
@@ -117,7 +106,6 @@
     );
   }
 
-  /* 标签（深色玻璃小胶囊） */
   .tag {
     @apply inline-block rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs font-medium text-zinc-400 transition-colors;
   }
@@ -125,7 +113,6 @@
     @apply border-accent text-accent;
   }
 
-  /* 项目状态徽章（颜色区分：维护中绿 / 开发中蓝 / 已归档暖灰，深色底用高亮前景 + 半透明底） */
   .status-active {
     @apply bg-emerald-500/15 text-emerald-300;
   }
@@ -136,12 +123,10 @@
     @apply bg-white/5 text-zinc-400;
   }
 
-  /* 已归档项目卡片：整体压暗，降低视觉权重 */
   .project-archived {
     @apply border-dashed opacity-70 hover:opacity-100;
   }
 
-  /* 进入动画 */
   .animate-in {
     animation: var(--animate-fade-in-up);
   }

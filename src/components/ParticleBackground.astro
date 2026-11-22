@@ -1,6 +1,5 @@
 ---
-// 粒子网络背景组件（Canvas + 鼠标互动）
-// 纯原生实现，无第三方依赖；variant: light(浅色 indigo) | dark(深色金星星点)
+
 interface Props {
   variant?: 'light' | 'dark';
 }
@@ -12,10 +11,6 @@ const { variant = 'light' } = Astro.props;
 </div>
 
 <script>
-  // 粒子网络动画：光点 + 连线 + 鼠标吸引
-  // 顶层执行（Astro 脚本在 body 末尾，DOM 已就绪）+ DOMContentLoaded 兜底
-  // ⚠️ 星点已移到 CSS（index.astro 的 .hero-stars，SVG 声明式生成），
-  //    本组件只负责光晕 + 粒子 + 黑洞吸入，不再生成噪点纹理。
 
   function startParticleBg() {
     const canvas = document.getElementById('particle-canvas') as HTMLCanvasElement | null;
@@ -24,29 +19,25 @@ const { variant = 'light' } = Astro.props;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // 性能与数量配置（移动端减少粒子数）
     const isMobile = window.matchMedia('(max-width: 768px)').matches;
     const PARTICLE_COUNT = isMobile ? 28 : 50;
     const MOUSE_RADIUS = 140;
-    // 黑洞（吸积盘）参数：粒子默认被慢慢吸向中心；
-    // 鼠标靠近黑洞吸入加速、远离减速；
-    // 粒子进入黑洞视觉圆（光弧环半径）即渐隐，到中心附近被"吃掉"重生到边缘
+
     const BASE_PULL = 0.02;
-    // 黑洞环视觉半径 ≈ 光弧 scale 0.60 的环半径（UV 0.30 × 视口短边）
-    const BH_VISUAL_R = 0.27;
-    const BH_RADIUS = 0.08; // 重生半径（视口短边比例）
-    const FADE_RANGE = 0.35; // 渐隐起始半径（视口短边比例，提前淡，进入黑洞圆前已半透明）
+
+    const BH_RADIUS = 0.08;
+    const FADE_RANGE = 0.35;
 
     const wrap = canvas.closest('.particle-bg') as HTMLElement | null;
     const variant: 'light' | 'dark' = (wrap?.dataset.variant as 'light' | 'dark' | undefined) ?? 'light';
     const COLORS = {
-      light: { particle: '99, 102, 241' }, // indigo-500
-      dark: { particle: '237, 237, 237' }, // 灰白 #EDEDED，星点氛围（光弧保持金色）
+      light: { particle: '99, 102, 241' },
+      dark: { particle: '237, 237, 237' },
     };
 
     interface Particle { x: number; y: number; vx: number; vy: number; size: number }
     let particles: Particle[] = [];
-    let mouse: { x: number | null; y: number | null } = { x: null, y: null };
+    const mouse: { x: number | null; y: number | null } = { x: null, y: null };
     let width = 0, height = 0, dpr = 1;
     let rafId: number | null = null;
     let fallbackTimer: number | null = null;
@@ -76,7 +67,6 @@ const { variant = 'light' } = Astro.props;
       }));
     }
 
-    // 粒子被黑洞吃掉后，重生到画布边缘（形成持续吸入流）
     function respawnAtEdge(p: Particle) {
       const edge = Math.floor(Math.random() * 4);
       const m = 24;
@@ -93,18 +83,14 @@ const { variant = 'light' } = Astro.props;
       if (width === 0 || height === 0) return;
       ctx.clearRect(0, 0, width, height);
       const color = COLORS[variant] || COLORS.light;
-      // 黑洞圆心（像素）：跟随 WebGL 黑洞（MoonshotHero beam hook 每帧写入的归一化 UV 坐标，
-      // x 右=+、y 上=+）。粒子被吞/渐隐的"隐藏区域"必须与黑洞精确同步，
-      // 否则鼠标移动时黑洞移走、粒子隐藏区却留在原地（bug 根因）。
-      // 未就绪（WebGL 场景还没创建 / 无 hero 页面）时回退到画布中心。
+
       const bh = window.__pyaiBH;
       const bhx = width * (bh ? bh.x : 0.5);
-      const bhy = height * (bh ? 1 - bh.y : 0.5); // UV y 向上为正 → 画布 y 向下为正
-      // 黑洞视觉半径（像素）：基于视口短边
+      const bhy = height * (bh ? 1 - bh.y : 0.5);
+
       const bhCore = Math.min(width, height) * BH_RADIUS;
       const fadeStart = Math.min(width, height) * FADE_RANGE;
 
-      // 鼠标离黑洞的归一化距离 → 吸入速度系数（近快、远慢）
       let pullFactor = 1.0;
       if (mouse.x !== null && mouse.y !== null) {
         const mdx = mouse.x - bhx, mdy = mouse.y - bhy;
@@ -114,7 +100,7 @@ const { variant = 'light' } = Astro.props;
       }
 
       for (const p of particles) {
-        // 引力向黑洞（吸积盘吸入）
+
         const dx = bhx - p.x, dy = bhy - p.y;
         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
         p.vx += (dx / dist) * BASE_PULL * pullFactor;
@@ -124,7 +110,6 @@ const { variant = 'light' } = Astro.props;
         p.x += p.vx;
         p.y += p.vy;
 
-        // 鼠标扰动：鼠标附近粒子轻微绕开（保留原互动，力度降低避免抖动）
         if (mouse.x !== null && mouse.y !== null) {
           const mdx = mouse.x - p.x, mdy = mouse.y - p.y;
           const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
@@ -135,19 +120,16 @@ const { variant = 'light' } = Astro.props;
           }
         }
 
-        // 被黑洞吃掉（进入黑洞视觉圆边缘 0.9×fadeStart）→ 重生到边缘。
-        // 用视觉圆作为吞没线（而非中心核），粒子"进入黑洞"即消失，圆内几乎无粒子
         if (dist < fadeStart * 0.9) {
           respawnAtEdge(p);
           continue;
         }
 
-        // 靠近黑洞视觉圆渐隐：进入 fadeStart 内逐渐变淡，越靠近中心越透明
         let alpha = 0.35;
         if (dist < fadeStart) {
           alpha = 0.35 * Math.max(0, (dist - bhCore) / (fadeStart - bhCore));
         }
-        if (alpha <= 0.02) continue; // 完全透明就不画，避免"幽灵"粒子
+        if (alpha <= 0.02) continue;
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
@@ -168,8 +150,6 @@ const { variant = 'light' } = Astro.props;
       mouse.y = null;
     }
 
-    // rAF 驱动主循环；仅在 rAF 不可用（无头浏览器等）时降级为 30fps 定时器，
-    // 二者互斥，避免双重绘制浪费
     const loop = () => {
       draw();
       rafId = requestAnimationFrame(loop);
@@ -196,7 +176,6 @@ const { variant = 'light' } = Astro.props;
       window.addEventListener('mousemove', onMouseMove);
       window.addEventListener('mouseleave', onMouseLeave);
 
-      // 把本次动画的清理逻辑登记到模块级数组，由唯一的 before-swap 监听器统一执行
       cleanupFns.push(() => {
         if (rafId !== null) cancelAnimationFrame(rafId);
         if (fallbackTimer !== null) clearInterval(fallbackTimer);
@@ -209,14 +188,12 @@ const { variant = 'light' } = Astro.props;
     start();
   }
 
-  // 模块级清理登记表 + 唯一的 before-swap 监听器（跨导航持久，避免切换多次后监听器堆积）
   const cleanupFns: (() => void)[] = [];
   document.addEventListener('astro:before-swap', () => {
     for (const fn of cleanupFns) fn();
     cleanupFns.length = 0;
   });
 
-  // 立即尝试 + DOMContentLoaded 兜底 + 延迟兜底（兼容各种加载时机）
   startParticleBg();
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', startParticleBg);
@@ -224,8 +201,7 @@ const { variant = 'light' } = Astro.props;
     setTimeout(startParticleBg, 0);
   }
   setTimeout(startParticleBg, 200);
-  // View Transitions：切换页面（如中英文）时 body 被替换、模块脚本不重跑，
-  // 新页面的 canvas 需要在此重启（监听器挂 document，跨导航持久）
+
   document.addEventListener('astro:page-load', startParticleBg);
 </script>
 

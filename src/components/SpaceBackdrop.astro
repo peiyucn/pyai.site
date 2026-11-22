@@ -1,8 +1,5 @@
 ---
-// 全站深空背景层（安静版）：固定极淡星点 + 顶部金色光晕
-// 纯 CSS 实现，零 JS、零运行时开销；放在负 z-index，浮于 html 深色底之上、内容之下
-// 首页由 MoonshotHero 的纯黑 hero 覆盖，本组件只作用于其他页面
-// 星点坐标来自 src/data/stars.ts（与首页 Hero 共用数据源，逐点 alpha 差异保留）
+
 import { siteFar, siteMid, siteNear, starShadows } from '../data/stars';
 
 const farShadows = starShadows(siteFar, '255, 255, 255');
@@ -25,7 +22,7 @@ const nearShadows = starShadows(siteNear, '255, 255, 255');
     z-index: -1;
     overflow: hidden;
     pointer-events: none;
-    /* 顶部金色光晕（呼应首页月食金色）+ 底部极淡蓝紫深空纵深 */
+
     background:
       radial-gradient(
         ellipse 80% 45% at 50% -10%,
@@ -39,7 +36,6 @@ const nearShadows = starShadows(siteNear, '255, 255, 255');
       );
   }
 
-  /* 星点容器：只在内容列（max-w-3xl ≈ 48rem）两侧的边栏显示，避免遮挡正文 */
   .star-field {
     position: absolute;
     inset: 0;
@@ -47,7 +43,6 @@ const nearShadows = starShadows(siteNear, '255, 255, 255');
     mask-image: linear-gradient(to right, black 0, black calc(50% - 24rem), transparent calc(50% - 24rem), transparent calc(50% + 24rem), black calc(50% + 24rem), black 100%);
   }
 
-  /* 星点层：1×1 透明点；box-shadow 由 frontmatter 依据 src/data/stars.ts 生成 */
   .star-layer {
     position: absolute;
     top: 0;
@@ -59,13 +54,6 @@ const nearShadows = starShadows(siteNear, '255, 255, 255');
     will-change: transform;
   }
 
-  /* 第一层：灰白细星，密集但极暗 */
-  
-
-  /* 第二层：暖金亮星，稀疏，稍亮 */
-  
-
-  /* 第三层：近景亮星（2px 更大更亮），与远/中两层形成纵深 */
   .star-layer--3 {
     width: 2px;
     height: 2px;
@@ -73,14 +61,14 @@ const nearShadows = starShadows(siteNear, '255, 255, 255');
 </style>
 
 <script>
-  // 内页星空滚动视差：随滚动缓慢上移（越远越慢），带阻尼（指数平滑滞后跟随）
+
   (() => {
     const LAYERS = [
-      { selector: '.star-layer--1', factor: 0.05 }, // 远
-      { selector: '.star-layer--2', factor: 0.1 }, // 中
-      { selector: '.star-layer--3', factor: 0.15 }, // 近
+      { selector: '.star-layer--1', factor: 0.05 },
+      { selector: '.star-layer--2', factor: 0.1 },
+      { selector: '.star-layer--3', factor: 0.15 },
     ];
-    const DAMP = 3; // 阻尼系数：越小越"黏"、滞后越明显（时间常数 ≈ 1/DAMP 秒）
+    const DAMP = 3;
     const smooth = LAYERS.map(() => 0);
     let rafId = 0;
     let lastT = 0;
@@ -88,7 +76,7 @@ const nearShadows = starShadows(siteNear, '255, 255, 255');
     function loop(now: number) {
       const dt = lastT ? Math.min(0.1, (now - lastT) / 1000) : 0.016;
       lastT = now;
-      const alpha = 1 - Math.exp(-DAMP * dt); // 帧率无关的指数平滑
+      const alpha = 1 - Math.exp(-DAMP * dt);
       const y = window.scrollY || 0;
       let settled = true;
       for (let i = 0; i < LAYERS.length; i++) {

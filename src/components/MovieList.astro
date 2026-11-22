@@ -11,7 +11,7 @@ interface Props {
   total: number;
   currentPage: number;
   totalPages: number;
-  /** 当前影/剧筛选：'all' | 'films' | 'series' */
+
   filter?: 'all' | 'films' | 'series';
 }
 
@@ -23,7 +23,6 @@ const statusLabel: Record<string, string> = {
   想看: t(locale, 'movies.wishlist'),
 };
 
-/** 筛选标签配置：all / films / series（路径参数，静态生成友好） */
 const filterTabs: { key: 'all' | 'films' | 'series'; label: string; href: string }[] = [
   { key: 'all', label: t(locale, 'movies.filterAll'), href: `/${locale}/movies/` },
   { key: 'films', label: t(locale, 'movies.filterMovie'), href: `/${locale}/movies/films/` },
@@ -43,7 +42,6 @@ const filterTabs: { key: 'all' | 'films' | 'series'; label: string; href: string
   </a>
 </div>
 
-{/* 影/剧筛选标签：与记录页标签筛选同风格（小胶囊 + 选中黑底白字 + hover 灰底） */}
 <div class="mb-4 flex flex-wrap items-center gap-1.5">
   {
     filterTabs.map((tab) => (
@@ -62,7 +60,6 @@ const filterTabs: { key: 'all' | 'films' | 'series'; label: string; href: string
   }
 </div>
 
-{/* 顶部翻页 */}
 <Pagination
   locale={locale}
   currentPage={currentPage}
@@ -77,7 +74,7 @@ const filterTabs: { key: 'all' | 'films' | 'series'; label: string; href: string
         {
           movies.map((movie) => {
             const isWatched = movie.data.status === '看过';
-            // 看过 → 显示“何时看过”（浅色小字）；其他状态 → 浅色药丸
+
             const watchedLabel = isWatched
               ? locale === 'zh'
                 ? `${formatDate(movie.data.date, locale)} ${t(locale, 'movies.watched')}`
@@ -149,7 +146,6 @@ const filterTabs: { key: 'all' | 'films' | 'series'; label: string; href: string
         }
       </ul>
 
-      {/* 底部翻页 */}
       <div class="mt-8">
         <Pagination
           locale={locale}

@@ -14,7 +14,6 @@ const { locale } = Astro.params as { locale: Locale };
 const pathname = Astro.url.pathname;
 const projects = await getProjects(locale);
 
-// 最近一次 GitHub Action 同步时间（data/projects/meta.json 由 projects-sync workflow 写入）
 const meta = getProjectsMeta();
 const syncNote = meta.updatedAt
   ? t(locale, 'projects.lastUpdated', { date: formatSyncTimeUTC8(meta.updatedAt) })

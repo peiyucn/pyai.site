@@ -5,12 +5,10 @@ import type { Locale } from '../../../../i18n/ui';
 import { t } from '../../../../i18n/utils';
 import { getMovies, getMoviesCount } from '../../../../utils/douban';
 
-// 注意：PER_PAGE 不要用顶层 const（Astro 编译会把它移进组件作用域，
-// getStaticPaths 将拿不到），直接内联或用模块级函数常量。
 const PER_PAGE = 50;
 
 export function getStaticPaths() {
-  // 轻量读条数（不经过 getCollection，避免构建时重复加载大 JSON）
+
   const count = getMoviesCount();
   const totalPages = Math.max(1, Math.ceil(count / 50));
   const paths: { params: { locale: Locale; page: string } }[] = [];

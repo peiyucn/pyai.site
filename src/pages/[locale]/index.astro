@@ -1,8 +1,8 @@
 ---
 import Base from '../../layouts/Base.astro';
-// 首页：单屏深色月食 Hero（黑底 + 金色光弧 + 星点粒子），不展示具体内容
-import MoonshotHero from '../../components/MoonshotHero.astro'; // 月食动画（文字带 + 光弧跟随）
-import ParticleBackground from '../../components/ParticleBackground.astro'; // 深色星点粒子
+
+import MoonshotHero from '../../components/MoonshotHero.astro';
+import ParticleBackground from '../../components/ParticleBackground.astro';
 import LanguageSwitcher from '../../components/LanguageSwitcher.astro';
 import GitHubLink from '../../components/GitHubLink.astro';
 import DeepSeekLogo from '../../components/DeepSeekLogo.astro';
@@ -10,7 +10,6 @@ import type { Locale, UIKey } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
 import { heroFar, heroMid, heroNear, starShadows } from '../../data/stars';
 
-// 生成 zh / en 两套主页
 export function getStaticPaths() {
   return [{ params: { locale: 'zh' } }, { params: { locale: 'en' } }];
 }
@@ -18,7 +17,6 @@ export function getStaticPaths() {
 const { locale } = Astro.params as { locale: Locale };
 const pathname = Astro.url.pathname;
 
-// 首页导航：以药丸形式放在 Hero 中间（不含"首页"自身）
 const pills: { key: UIKey; href: string }[] = [
   { key: 'nav.records', href: `/${locale}/records/` },
   { key: 'nav.projects', href: `/${locale}/projects/` },
@@ -26,7 +24,6 @@ const pills: { key: UIKey; href: string }[] = [
   { key: 'nav.about', href: `/${locale}/about/` },
 ];
 
-// 首页星点三层 box-shadow（数据源 src/data/stars.ts，逐点 alpha 与内页不同）
 const heroFarShadows = starShadows(heroFar, '255, 255, 255');
 const heroMidShadows = starShadows(heroMid, '255, 212, 138');
 const heroNearShadows = starShadows(heroNear, '255, 255, 255');
@@ -40,15 +37,14 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
   hideHeader
   hideFooter
 >
-  <!-- 深色 Hero：日全食动画（含 pyai.site 大标题）+ 星点粒子 + 内容层 -->
+
   <section class="hero-section">
     <div class="hero-anim">
       <MoonshotHero />
     </div>
-    <!-- 移动端静态标题（无 WebGL 时的回退，像素字体） -->
+
     <div class="hero-static-title" aria-hidden="true">pyai.site</div>
-    <!-- 星点层：星点数据源与内页共用 src/data/stars.ts；
-         mask 径向挖洞让黑洞中心保持纯黑（跟随 --bh-x/--bh-y） -->
+
     <div class="hero-stars" aria-hidden="true">
       <div class="hero-star-layer hero-star-layer--1" style={`box-shadow: ${heroFarShadows}`}></div>
       <div class="hero-star-layer hero-star-layer--2" style={`box-shadow: ${heroMidShadows}`}></div>
@@ -102,9 +98,7 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
 </Base>
 
 <style>
-  /* ===== 深色 Hero：月食动画 + 星点粒子 + 内容层 ===== */
-  /* 首页单屏不滚动，无需全局的 scrollbar-gutter: stable 占位；
-     否则该槽位会透出 body 浅色背景，在深色 hero 右侧形成白色竖条 */
+
   :global(html) {
     scrollbar-gutter: auto;
   }
@@ -112,15 +106,14 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
     position: relative;
     display: flex;
     flex-direction: column;
-    /* 精确单屏：不触发滚动条 */
+
     height: 100vh;
     width: 100%;
     overflow: hidden;
     background: #000;
     color: #edebe4;
   }
-  /* 黑洞动画层：全屏铺满（含 pyai.site 大标题），最底层；
-     就绪前透明，WebGL 初始化完成后淡入（MoonshotHero 加 .hero-anim-ready），避免"突然弹出" */
+
   .hero-anim {
     position: absolute;
     inset: 0;
@@ -131,7 +124,7 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
   .hero-anim.hero-anim-ready {
     opacity: 1;
   }
-  /* 移动端静态标题（无 WebGL 时的回退）：像素字体，居中 */
+
   .hero-static-title {
     position: absolute;
     inset: 0;
@@ -146,9 +139,7 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
     letter-spacing: 0.02em;
     color: #edebe4;
   }
-  /* 星点层：星点数据源与内页共用 src/data/stars.ts，
-     mask 径向挖洞让黑洞中心保持纯黑（跟随 --bh-x/--bh-y CSS 变量，
-     由 MoonshotHero 的 beam hook 每帧写入） */
+
   .hero-stars {
     position: absolute;
     inset: 0;
@@ -167,14 +158,12 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
     background: transparent;
     will-change: transform;
   }
-  
-  
-  /* 近景亮星：2px 更大更亮，与远/中两层形成纵深 */
+
   .hero-star-layer--3 {
     width: 2px;
     height: 2px;
   }
-  /* 闪烁星点：少数几颗独立闪烁（各自节奏不同），营造"活"的星空 */
+
   .hero-star-twinkle {
     position: absolute;
     inset: 0;
@@ -205,13 +194,13 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
     78% { opacity: 0.4; }
     88% { opacity: 0.65; }
   }
-  /* 星点粒子背景层：覆盖在动画之上、内容之下（否则被黑洞黑底 canvas 盖住看不见） */
+
   .hero-bg {
     position: absolute;
     inset: 0;
     z-index: 1;
   }
-  /* 内容层：浮在最上，副标题 + 按钮靠下 */
+
   .hero-content {
     position: absolute;
     inset: 0;
@@ -222,11 +211,11 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
     justify-content: flex-end;
     text-align: center;
     padding: 0 1.25rem clamp(2.5rem, 9vh, 5rem);
-    pointer-events: none; /* 空白区域不挡日食视觉 */
+    pointer-events: none;
   }
   .hero-content :global(a),
   .hero-content :global(button) {
-    pointer-events: auto; /* 按钮可交互 */
+    pointer-events: auto;
   }
 
   .hero-tagline {
@@ -235,7 +224,7 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
     max-width: 36em;
     margin: 0 auto;
   }
-  /* 技术署名 */
+
   .hero-working {
     margin-top: 0.6rem;
     display: inline-flex;
@@ -257,10 +246,10 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
     width: auto;
     flex: none;
     color: #fff;
-    /* 缩小鲸鱼与 DeepSeek 文字之间的间距（.hero-working gap 0.4em 偏宽） */
+
     margin-left: -0.18em;
   }
-  /* 导航区 */
+
   .hero-nav {
     margin-top: 2.5rem;
     display: flex;
@@ -280,7 +269,7 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
     justify-content: center;
     gap: 0.75rem;
   }
-  /* 药丸导航：金色渐变（呼应月食），深色文字 */
+
   .hero-pill {
     position: relative;
     display: inline-flex;
@@ -299,7 +288,7 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
     color: #2a1a06;
     text-decoration: none;
   }
-  /* hover 时边框变为单束亮弧 */
+
   .hero-pill:hover {
     background:
       linear-gradient(135deg, #ffd48a 0%, #f0b95e 50%, #e8a24a 100%) padding-box,
@@ -324,16 +313,14 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
       --angle: 360deg;
     }
   }
-  /* "关于"按钮：不透明暖白底 + 深色文字（呼应原版"白底"关于按钮）。
-     与金色按钮"金底深字"区分，且不透明底能挡住黑底。 */
+
   .hero-pill-about {
     background:
       linear-gradient(#f4f0e8, #f4f0e8) padding-box,
       linear-gradient(#f4f0e8, #f4f0e8) border-box;
     color: #241a0c;
   }
-  /* 关于按钮 hover：与其他按钮行为一致 —— 颜色完全不变，仅边框变为金色光弧转动。
-     暖白底不透明，conic 透明段透出暖白而非黑底（无雷达），金色弧与"金底白弧"镜像互补。 */
+
   .hero-pill-about:hover {
     background:
       linear-gradient(#f4f0e8, #f4f0e8) padding-box,
@@ -346,12 +333,11 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
         transparent 145deg,
         transparent 360deg
       ) border-box;
-    /* 覆盖 .hero-pill:hover 的文字色（其特异性更高），保证关于按钮文字颜色真正固定 */
+
     color: #241a0c;
     animation: pill-sweep 2s linear infinite;
   }
 
-  /* 渐入动画：延迟递增制造层叠感 */
   .hero-section .animate-in {
     animation-delay: 0s;
   }
@@ -374,11 +360,6 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
     }
   }
 
-  /* 移动端：静态标题与底部内容都改为文档流 flex 项（标题占据上方弹性空间、
-     内容自然高度贴底），避免在矮视口（横屏/小屏）下居中标题与内容重叠。
-     ⚠️ 必须放在组件全部基础规则之后：本组件 .hero-content 基础规则是
-     position:absolute，若本块写在它之前会被覆盖 → 内容层仍是绝对定位、
-     标题独占 flex 区 → 移动端重叠。 */
   @media (max-width: 768px) {
     .hero-anim {
       opacity: 1;
@@ -389,7 +370,7 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
       inset: auto;
       flex: 1 1 auto;
       min-height: 0;
-      overflow: hidden; /* 空间不足时裁剪标题文字，而不是溢出压到内容上 */
+      overflow: hidden;
     }
     .hero-content {
       position: relative;
@@ -400,18 +381,16 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
 </style>
 
 <script>
-  // 星点视差：星星跟随黑洞（window.__pyaiBH，由 MoonshotHero 每帧写入）做小幅度位移。
-  // 三层幅度递减（越远越小），与黑洞的大幅移动形成空间纵深。
+
   (() => {
     const LAYERS = [
-      { selector: '.hero-star-layer--1', factor: 0.08 }, // 远
-      { selector: '.hero-star-layer--2', factor: 0.16 }, // 中
-      { selector: '.hero-star-layer--3', factor: 0.24 }, // 近
-      { selector: '.hero-star-twinkle', factor: 0.24 }, // 闪烁星（跟随近景）
+      { selector: '.hero-star-layer--1', factor: 0.08 },
+      { selector: '.hero-star-layer--2', factor: 0.16 },
+      { selector: '.hero-star-layer--3', factor: 0.24 },
+      { selector: '.hero-star-twinkle', factor: 0.24 },
     ];
     let rafId = 0;
-    // 全局位移量：统一缩放星星的移动幅度（1.0 = 当前默认），
-    // 调大/调小整体放大/缩小，不改变三层之间的相对比例。
+
     const AMOUNT = 1.0;
 
     function apply() {
@@ -425,17 +404,17 @@ const heroNearShadows = starShadows(heroNear, '255, 255, 255');
           el.style.transform = '';
           continue;
         }
-        const ox = bh.x - 0.5; // 黑洞偏移（UV 归一化，中心 0.5）
-        const oy = bh.y - 0.5; // y 向上为正
+        const ox = bh.x - 0.5;
+        const oy = bh.y - 0.5;
         const tx = ox * factor * AMOUNT * vw;
-        const ty = -oy * factor * AMOUNT * vh; // CSS y 向下为正 → 取反
+        const ty = -oy * factor * AMOUNT * vh;
         el.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
       }
     }
 
     function loop() {
       if (!document.querySelector('.hero-star-layer--1')) {
-        rafId = 0; // 已离开首页，停止空转
+        rafId = 0;
         return;
       }
       apply();

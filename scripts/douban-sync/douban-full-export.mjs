@@ -1,11 +1,5 @@
-#!/usr/bin/env node
-/**
- * 豆瓣观影记录全量抓取（HTTP，无需登录）
- * 来源：movie.douban.com/people/{USER}/collect 列表页（公开可访问）
- * 输出：data/{USER}/movies.json（含导演/年份/类型）
- *
- * 用法：DOUBAN_USER=pei830 node scripts/douban-sync/douban-full-export.mjs
- */
+
+
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -25,11 +19,7 @@ const UA =
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/**
- * 把豆瓣字段当纯文本：丢掉每个 `<` 到其后首个 `>` 之间的内容（含两端）。
- * 不用 `/<[^>]+>/g` 剥标签——那对裸 `<script` 这类没有闭合 `>` 的半截标签无效，
- * 正是 CodeQL 的 js/incomplete-multi-character-sanitization 抓的写法。
- */
+
 const stripTags = (s) => {
   let out = '';
   let i = 0;
@@ -46,30 +36,30 @@ const stripTags = (s) => {
   return out.trim();
 };
 
-/** 从 HTML 提取单页列表项 */
+
 export function parseListPage(html) {
   const items = [];
-  // 每个 <li id="list..." class="item..."> 块（最后一条 class 含 last）
+
   const blocks = html.split(/<li id="list\d+" class="item[^"]*">/).slice(1);
   for (const block of blocks) {
     const titleMatch = block.match(/<div class="title">\s*<a href="([^"]+)">\s*([\s\S]*?)\s*<\/a>/);
     if (!titleMatch) continue;
     const url = titleMatch[1].trim();
     const rawTitle = stripTags(titleMatch[2]);
-    // 标题可能是 "中文名 / English Name" 或只有中文名
+
     const title = rawTitle.split(' / ')[0].trim();
 
-    // 日期与评分
+
     const dateMatch = block.match(/(\d{4}-\d{2}-\d{2})/);
     const date = dateMatch ? dateMatch[1] : '';
     const ratingMatch = block.match(/<span class="rating(\d)-t"><\/span>/);
     const rating = ratingMatch ? ratingMatch[1] : '';
 
-    // 短评（grid 区域）
+
     const commentMatch = block.match(/<span class="comment">([\s\S]*?)<\/span>/);
     const comment = commentMatch ? stripTags(commentMatch[1]) : '';
 
-    // intro：导演 / 年份 / 类型
+
     const introMatch = block.match(/<span class="intro">([\s\S]*?)<\/span>/);
     let intro = introMatch ? stripTags(introMatch[1]) : '';
 
@@ -78,45 +68,41 @@ export function parseListPage(html) {
   return items;
 }
 
-/** 从 intro 提取导演（片长段前的最后一个名字段） */
+
 export function extractDirector(intro) {
-  const m = intro.match(/\/\s*([^\/]+?)\s*\/\s*\d+分钟/);
+  const m = intro.match(/\/\s*([^/]+?)\s*\/\s*\d+分钟/);
   return m ? m[1].trim() : '';
 }
 
-/** 从 intro 提取年份（上映年份，取第一个 4 位数字年份） */
+
 export function extractYear(intro) {
   const m = intro.match(/\d{4}年/);
   if (m) return m[0].replace('年', '');
-  // 兜底：取日期形式的年份 2022-09-03
+
   const m2 = intro.match(/(\d{4})-\d{2}-\d{2}/);
   return m2 ? m2[1] : '';
 }
 
-/** 从 intro 提取类型（片长后的段，中文类型） */
+
 export function extractGenre(intro) {
-  const m = intro.match(/\/\s*\d+分钟\s*\/\s*[^\/]+\s*\/\s*([^\/]+)/);
+  const m = intro.match(/\/\s*\d+分钟\s*\/\s*[^/]+\s*\/\s*([^/]+)/);
   return m ? m[1].trim() : '';
 }
 
-/** 从 subject URL 提取 ID */
+
 function subjectId(url) {
   const m = url.match(/subject\/(\d+)\//);
   return m ? m[1] : '';
 }
 
-/**
- * 用 rexxar API 补充权威数据（导演/国籍/类型/豆瓣评分/年份）。
- * 单线程顺序请求 + 间隔，避免触发豆瓣限流。
- * 已带 doubanRating 的条目直接跳过（断点续跑安全）。
- */
+
 export async function enrichWithRexxar(items) {
   const results = new Array(items.length);
   const DELAY_MS = 500;
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
-    // 已有权威数据则跳过（用于断点续跑）
+
     if (item.doubanRating && item.country) {
       results[i] = item;
       continue;
@@ -130,18 +116,18 @@ export async function enrichWithRexxar(items) {
         const j = await resp.json();
         results[i] = {
           ...item,
-          // 权威字段（覆盖 intro 解析）
+
           director: (j.directors || []).map((d) => d.name).join(' / '),
           country: (j.countries || []).join(' / '),
           genre: (j.genres || []).join(' / '),
           year: j.year ? String(j.year) : extractYear(item.intro),
           doubanRating: typeof j.rating?.value === 'number' ? j.rating.value : 0,
-          // 影/剧区分：rexxar type 为 'tv' 即剧集
+
           isTv: j.type === 'tv',
           subtype: typeof j.subtype === 'string' ? j.subtype.toLowerCase() : '',
         };
       } else {
-        // 条目可能已下架：保留 intro fallback
+
         results[i] = {
           ...item,
           director: extractDirector(item.intro),
@@ -165,7 +151,7 @@ export async function enrichWithRexxar(items) {
         subtype: '',
       };
     }
-    await sleep(DELAY_MS); // 限速保护
+    await sleep(DELAY_MS);
   }
 
   return results;
@@ -184,7 +170,7 @@ async function main() {
 
   const all = [];
   const perPage = 30;
-  const maxPages = 80; // 安全上限
+  const maxPages = 80;
   let total = 0;
   let emptyStreak = 0;
 
@@ -193,7 +179,7 @@ async function main() {
     const html = await fetchPage(start);
     const items = parseListPage(html);
 
-    // 页总数（从 <title> 提取：如 "pei看过的影视(2151)"）
+
     if (page === 0) {
       const tm = html.match(/<title>([\s\S]*?)<\/title>/);
       const numMatch = tm ? tm[1].match(/\((\d+)\)/) : null;
@@ -204,22 +190,22 @@ async function main() {
     console.log(`  page ${page + 1} start=${start}: ${items.length} items`);
     all.push(...items);
 
-    // 连续两页无数据才停止（部分页可能因下架条目不足 30，不能作为结束信号）
+
     if (items.length === 0) {
       emptyStreak++;
       if (emptyStreak >= 2) break;
     } else {
       emptyStreak = 0;
     }
-    // 已抓满总数即停止
+
     if (total > 0 && all.length >= total) break;
 
-    await sleep(1500); // 限速保护
+    await sleep(1500);
   }
 
   console.log(`\nFetched ${all.length} items.`);
 
-  // 用 rexxar API 补充权威数据（导演/国籍/类型/豆瓣评分）
+
   console.log('Enriching with rexxar API ...');
   const enriched = await enrichWithRexxar(all);
   const withData = enriched.filter(Boolean);
@@ -230,7 +216,7 @@ async function main() {
     `Enriched: ${withData.length} items | rating ${withRating} | director ${withDirector} | country ${withCountry}`,
   );
 
-  // 写入完整 JSON（含导演/年份/类型/国籍/豆瓣评分）
+
   const jsonPath = path.join(OUTPUT_DIR, 'movies.json');
   const output = withData.map((it) => ({
     title: it.title,

@@ -1,6 +1,4 @@
-# 站点发布：真实过程 build → deploy（GitHub Pages；push main 即部署）。
-# Pages 的 artifact 只能在同一 workflow run 内交接，故 build 在 publish.yml 内自含。
-name: Publish
+name: publish
 
 on:
   push:
@@ -21,21 +19,18 @@ jobs:
     name: build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
         with:
           version: 11
-      - name: Setup Node
-        uses: actions/setup-node@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: '24'
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build
-        run: pnpm build
+        run: pnpm run build
       - name: Setup Pages
         uses: actions/configure-pages@v6
       - name: Upload artifact
@@ -51,6 +46,26 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Verify commit is on main
+        shell: bash
+        run: |
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor "${GITHUB_SHA}" origin/main; then
+            echo "::error::部署提交不在 main 上；先把改动合入 main 再部署（E16）"
+            exit 1
+          fi
+      - name: Security gate (fail-closed)
+        timeout-minutes: 5
+        env:
+          REPO: ${{ github.repository }}
+          ALERTS_TOKEN: ${{ secrets.SECURITY_ALERTS_TOKEN }}
+        run: node scripts/security-gate.mjs
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5

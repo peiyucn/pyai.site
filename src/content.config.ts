@@ -5,8 +5,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { subjectIdFromUrl } from './utils/douban';
 
-// 读取豆瓣全量数据（JSON 含导演/年份/类型）
-// 由 scripts/douban-sync 定时同步生成
+
+
 type MovieJson = {
   title: string;
   url: string;
@@ -33,10 +33,10 @@ function loadMoviesJson(): MovieJson[] {
   }
 }
 
-// 语言集合
+
 const localeEnum = z.enum(['zh', 'en']);
 
-// 记录（博客 + 笔记统一，用 tags 区分内容类型）
+
 const records = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/records' }),
   schema: z.object({
@@ -44,30 +44,30 @@ const records = defineCollection({
     description: z.string().default(''),
     date: z.coerce.date(),
     updated: z.coerce.date().optional(),
-    // 标签区分内容类型（随笔 / 技术 / 读书 / 建站……无限扩展）
+
     tags: z.array(z.string()).default([]),
     locale: localeEnum,
     draft: z.boolean().default(false),
-    // 关联的翻译版本 slug（不含 locale 前缀），用于语言切换
+
     translationOf: z.string().optional(),
   }),
 });
 
-// 项目
+
 const projects = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/projects' }),
   schema: z.object({
     title: z.string(),
     description: z.string(),
     locale: localeEnum,
-    // GitHub 仓库地址
+
     repo: z.url().optional(),
-    // 在线演示 / 官网
+
     link: z.url().optional(),
     status: z.enum(['active', 'wip', 'archived']).default('active'),
-    // GitHub 最近推送时间（用于「最近更新在前」排序）
+
     updated: z.coerce.date().optional(),
-    // GitHub 星标 / fork 数 / 主语言 / 主题标签
+
     stars: z.number().default(0),
     forks: z.number().default(0),
     language: z.string().optional(),
@@ -75,13 +75,13 @@ const projects = defineCollection({
   }),
 });
 
-// 豆瓣观影记录（数据来自 data/pei830/movies.json，由 douban-sync 定时同步）
+
 const movies = defineCollection({
   loader: async () => {
     const data = loadMoviesJson();
     return data.map((row, index) => ({
       id: subjectIdFromUrl(row.url) || `movie-${index}`,
-      // 函数式 loader 返回扁平结构：id 与其他 data 字段平级
+
       title: row.title,
       url: row.url,
       date: new Date(row.date || '1970-01-01'),
@@ -100,18 +100,18 @@ const movies = defineCollection({
     title: z.string(),
     url: z.string(),
     date: z.date(),
-    // 0-5 星（我的评分）
+
     rating: z.number().default(0),
     status: z.string(),
     comment: z.string().default(''),
-    // 导演 / 制片地区 / 上映年份 / 类型（来自 rexxar 权威数据）
+
     director: z.string().default(''),
     country: z.string().default(''),
     year: z.string().default(''),
     genre: z.string().default(''),
-    // 豆瓣当前评分（0-10 分）
+
     doubanRating: z.number().default(0),
-    // 是否为剧集（豆瓣 type: 'tv'），用于影/剧区分
+
     isTv: z.boolean().default(false),
   }),
 });

@@ -5,7 +5,7 @@ import type { Locale } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
 import { stripLocale } from '../../utils/content';
 
-// 生成 /zh/rss.xml 与 /en/rss.xml
+
 export function getStaticPaths() {
   return [{ params: { locale: 'zh' } }, { params: { locale: 'en' } }];
 }

@@ -1,14 +1,12 @@
 ---
-// DeepSeek logo（图标 + 文字），首页 "working with" 与 Footer "Powered by" 共用
-// 注意：Astro 多根组件不能传 class（会自动应用到所有根元素），尺寸由父容器 CSS 控制
+
 interface Props {
-  /** 是否显示文字版 logo（"DeepSeek" 字标） */
+
   text?: boolean;
-  /** 显示在文字前面的小图标（deepseek 图标）；text 模式下默认不显示，需显式 icon */
+
   icon?: boolean;
 }
 
-// icon 默认仅在纯图标模式（text 缺省）下为 true
 const { text = false, icon = !text } = Astro.props;
 ---
 
@@ -38,13 +36,13 @@ const { text = false, icon = !text } = Astro.props;
 )}
 
 <style>
-  /* DeepSeek 图标：默认与文字视觉等高 */
+
   .ds-logo {
     width: 1.28em;
     height: 1.28em;
     flex: none;
   }
-  /* DeepSeek 文字 logo：与图标同色；高度补偿 viewBox 内字形留白 */
+
   .ds-text {
     height: 1.17em;
     width: auto;

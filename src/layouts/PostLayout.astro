@@ -6,20 +6,19 @@ import type { Record } from '../utils/content';
 import { formatDate } from '../utils/content';
 
 interface Props {
-  /** 记录条目（博客 + 笔记统一） */
+
   entry: Record;
   locale: Locale;
   pathname: string;
-  /** 翻译版本的 URL（若有） */
+
   translationUrl?: string;
-  /** 返回列表页地址 */
+
   backHref: string;
 }
 
 const { entry, locale, pathname, translationUrl, backHref } = Astro.props;
 const { data } = entry;
 
-// 翻译链接文案
 const translationLabel =
   locale === 'zh'
     ? `Read in English`

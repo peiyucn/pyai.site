@@ -19,7 +19,6 @@ const currentPage = 1;
 const totalPages = Math.max(1, Math.ceil(movies.length / PER_PAGE));
 const pageMovies = movies.slice(0, PER_PAGE);
 
-// 最近一次 GitHub Action 同步成功时间（meta.json 由 douban-sync workflow 写入）
 const meta = getMoviesMeta();
 const syncNote = meta.updatedAt
   ? t(locale, 'movies.syncedAt', { date: formatSyncTimeUTC8(meta.updatedAt) })

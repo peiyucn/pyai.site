@@ -1,9 +1,9 @@
-# 站点 CI：真实过程 typecheck（push main 即验证；构建与部署由 publish.yml 承担——
-# 二者同触发，build 不在 CI 里重复跑）。
-name: CI
+name: ci
 
 on:
   push:
+    branches: [main]
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
@@ -15,18 +15,32 @@ jobs:
     name: typecheck
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
         with:
           version: 11
-      - name: Setup Node
-        uses: actions/setup-node@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: '24'
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Check (astro check)
+      - name: Lint (ESLint + repository policy)
+        run: pnpm run lint
+      - name: Typecheck (astro check)
         run: pnpm run check
+      - name: Typecheck policy tests
+        run: pnpm run typecheck:policy
+      - name: Policy negative fixtures
+        run: pnpm run test:report
+      - name: Release gate self-test
+        run: pnpm run test:gate
+      - name: Build
+        run: pnpm run build
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-report
+          path: test-report.xml
+          retention-days: 7

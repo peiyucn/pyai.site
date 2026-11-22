@@ -1,4 +1,4 @@
-// 站点支持的两种语言
+
 export const languages = {
   zh: '中文',
   en: 'English',
@@ -6,19 +6,19 @@ export const languages = {
 
 export type Locale = keyof typeof languages;
 
-// 站点所有 UI 文案的 key
+
 export type UIKey =
-  // 导航
+
   | 'nav.records'
   | 'nav.projects'
   | 'nav.movies'
   | 'nav.about'
-  // 通用
+
   | 'common.publishedAt'
   | 'common.updatedAt'
   | 'common.noContent'
   | 'common.allTags'
-  // 记录
+
   | 'records.title'
   | 'records.description'
   | 'projects.title'
@@ -45,20 +45,20 @@ export type UIKey =
   | 'movies.filterAll'
   | 'movies.filterMovie'
   | 'movies.filterTv'
-  // 关于
+
   | 'about.title'
   | 'about.description'
-  // 页脚
+
   | 'footer.tagline'
   | 'footer.rights'
   | 'footer.poweredBy'
-  // 首页
+
   | 'hero.workingWith'
-  // 聊天入口（内页迷你黑洞按钮）
+
   | 'chat.label'
   | 'chat.comingSoon';
 
-// 各语言 UI 文案
+
 export const ui: Record<Locale, Record<UIKey, string>> = {
   zh: {
     'nav.records': '记录',
