@@ -26,7 +26,7 @@
 1. `Verify commit is on main`：`git merge-base --is-ancestor "$GITHUB_SHA" origin/main`，不在 `main` 上即中止（手动派发到分支时生效）。
 2. `Security gate`：`node scripts/security-gate.mjs` 查询三类未处理告警；任一非零、查询失败或凭据缺失都中止部署。
 
-凭据：环境级 secret `SECURITY_ALERTS_TOKEN`，fine-grained token 需具备 Dependabot alerts / Code scanning alerts / Secret scanning alerts 的只读权限。三类查询统一走该 token：`GITHUB_TOKEN` 读不到 Dependabot 与 secret scanning 告警，混用会假失败或 fail-open。该 secret 由 owner 在 `github-pages` 环境配置，agent 不代建。
+凭据：环境级 secret `SECURITY_ALERTS_TOKEN`，fine-grained token 需具备 Dependabot alerts / Code scanning alerts / Secret scanning alerts 的只读权限。三类查询统一走该 token：`GITHUB_TOKEN` 在 workflow 声明 `security-events: read` 后可读 Code scanning、声明 `vulnerability-alerts: read` 后可读 Dependabot，但读不到 secret scanning（实测 403）；混用会在 secret scanning 一步 fail-closed。该 secret 由 owner 在 `github-pages` 环境配置，agent 不代建。
 
 ## 发布后
 
