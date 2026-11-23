@@ -7,6 +7,6 @@ updated: 2026-11-22
 link: https://pyai.site/
 language: Astro
 forks: 0
-stars: 0
+stars: 1
 status: active
 ---

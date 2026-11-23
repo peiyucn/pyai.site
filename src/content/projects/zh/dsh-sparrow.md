@@ -5,7 +5,7 @@ locale: zh
 repo: https://github.com/peiyucn/dsh-sparrow
 status: active
 updated: 2026-11-22
-stars: 10
+stars: 13
 forks: 0
 language: TypeScript
 topics: ["annotations","calendar","deepseek-harness","desk-one","dsh","dsh-plugin","notes","plugin","tasks"]
