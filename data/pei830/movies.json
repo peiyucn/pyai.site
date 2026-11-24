@@ -32038,5 +32038,20 @@
     "doubanRating": 0,
     "isTv": false,
     "subtype": "movie"
+  },
+  {
+    "title": "生化危机：爆发夜",
+    "url": "https://movie.douban.com/subject/37068446/",
+    "date": "2026-11-24",
+    "rating": 1,
+    "status": "看过",
+    "comment": "",
+    "director": "扎克·克雷格",
+    "country": "德国",
+    "year": "2026",
+    "genre": "",
+    "doubanRating": 7.3,
+    "isTv": false,
+    "subtype": "movie"
   }
 ]
